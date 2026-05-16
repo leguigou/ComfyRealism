@@ -1,6 +1,12 @@
 # Development Logs
 
-## Current Version: 1.2.11
+## Current Version: 1.2.12
+
+---
+
+### v1.2.12 (2026-05-16)
+- **Linux Support**: Added `run.sh` script to simplify launching the full-stack application on Linux/Raspberry Pi.
+- **Portability**: Standardized paths in the start script for easier deployment across different environments.
 
 ---
 

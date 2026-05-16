@@ -1032,7 +1032,7 @@ function App() {
                 <div className="settings-grid">
                   <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                     <label>{t.currentVersion}</label>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.11</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.12</div>
                     
                     <label>{t.devLogs}</label>
                     <div className="logs-container" style={{ 
@@ -1046,13 +1046,13 @@ function App() {
                       fontFamily: 'monospace'
                     }}>
                       <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.11 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Mise à jour du titre de l\'application : ComfyRealism.' : 'Updated application title: ComfyRealism.'}</div>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.12 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Ajout du script run.sh pour Linux/Raspberry Pi.' : 'Added run.sh script for Linux/Raspberry Pi.'}</div>
+                        <div>• {lang === 'fr' ? 'Amélioration de la portabilité du projet.' : 'Improved project portability.'}</div>
                       </div>
                       <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
-                        <div style={{ fontWeight: 'bold' }}>v1.2.10 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Application de la nouvelle politique de sauvegarde (code uniquement).' : 'Applied new backup policy (code only).'}</div>
-                        <div>• {lang === 'fr' ? 'Exclusion du dossier images pour des backups plus légers.' : 'Excluded images directory for lightweight backups.'}</div>
+                        <div style={{ fontWeight: 'bold' }}>v1.2.11 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Mise à jour du titre de l\'application : ComfyRealism.' : 'Updated application title: ComfyRealism.'}</div>
                       </div>
                       <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
                         <div style={{ fontWeight: 'bold' }}>v1.2.9 (2026-05-16)</div>

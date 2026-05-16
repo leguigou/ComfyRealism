@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ComfyRealism
 
 Une application full-stack moderne pour générer des images réalistes via une interface de chat connectée à un backend ComfyUI.
@@ -42,3 +43,6 @@ Pour accéder à votre instance depuis l'extérieur (ex: `http://votre-domaine.f
 - `backend/` : Serveur Express + Node.js gérant la logique et l'historique.
 - `backend/images/` : Stockage local des images générées.
 - `backend/data/history.json` : Base de données JSON de l'historique.
+=======
+# ComfyRealism
+>>>>>>> d46a50977a1d949ed97a7ce62be027d29d080765
