@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+*.db
+*.db-shm
+*.db-wal
+backup/
+images/
+backend/images/
+frontend/node_modules/
+backend/node_modules/
+.DS_Store
