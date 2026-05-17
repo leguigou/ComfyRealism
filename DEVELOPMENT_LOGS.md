@@ -1,6 +1,13 @@
 # Development Logs
 
-## Current Version: 1.2.47
+## Current Version: 1.2.48
+
+---
+
+### v1.2.48 (2026-05-17)
+- **Critical Backend Restoration**: Restored essential functions (`processQueue`, `getWorkflow`, `parseComfyError`) that were accidentally omitted during previous refactoring.
+- **Robust WebSocket Handover**: Simplified the WebSocket upgrade logic to be more resilient to various proxy header configurations.
+- **Global Error Handling**: Added `uncaughtException` and `unhandledRejection` handlers to the backend to prevent silent crashes and improve debuggability.
 
 ---
 
