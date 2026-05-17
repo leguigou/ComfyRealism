@@ -137,6 +137,14 @@ const WelcomeScreen = ({ lang }: { lang: Language }) => {
 };
 
 function App() {
+  const [lang, setLang] = useState<Language>(() => {
+    return (localStorage.getItem('lang') as Language) || 'fr';
+  });
+  const [theme, setTheme] = useState<Theme>(() => {
+    return (localStorage.getItem('theme') as Theme) || 'dark';
+  });
+  const t = translations[lang];
+
   const getFullImageUrl = useCallback((url: string) => {
     if (!url) return '';
     if (url.startsWith('http')) return url;
@@ -333,18 +341,11 @@ function App() {
   const [massActionType, setMassActionType] = useState<'archiveAll' | 'deleteAll' | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
-  const [lang, setLang] = useState<Language>(() => {
-    return (localStorage.getItem('lang') as Language) || 'fr';
-  });
-  const [theme, setTheme] = useState<Theme>(() => {
-    return (localStorage.getItem('theme') as Theme) || 'dark';
-  });
   const [activeInfoId, setActiveInfoId] = useState<string | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const clientId = useRef<string>('');
-  const t = translations[lang];
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
     setTimeout(() => {
