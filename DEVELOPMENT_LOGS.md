@@ -1,6 +1,19 @@
 # Development Logs
 
-## Current Version: 1.2.44
+## Current Version: 1.2.46
+
+---
+
+### v1.2.46 (2026-05-17)
+- **Message Ordering Fix**: Removed the timestamp update upon generation completion. Messages now strictly maintain their original creation order in the chat history, preventing "jumping" blocks when the queue is active.
+
+---
+
+### v1.2.45 (2026-05-17)
+- **Asynchronous Message Queuing**: Users can now send multiple prompts sequentially without waiting for the previous generation to finish.
+- **UI State Refactoring**: Decoupled the "Send" button from the generation state. The button now remains active for new input while previous tasks process in the background.
+- **Per-Message Status Tracking**: Each message now displays its own specific state (AI Thinking, Waiting in Queue, or Generating), providing better feedback for concurrent tasks.
+- **Enhanced Reliability**: Implemented a counter-based state for AI enhancement (LLM) to handle multiple simultaneous interpretations.
 
 ---
 
