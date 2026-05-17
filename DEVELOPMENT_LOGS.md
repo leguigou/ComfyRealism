@@ -1,6 +1,13 @@
 # Development Logs
 
-## Current Version: 1.2.25
+## Current Version: 1.2.26
+
+---
+
+### v1.2.26 (2026-05-16)
+- **Build Fix**: Resolved a TypeScript compilation error in the frontend caused by a stale reference to `comfyModelsPath`. This was blocking the Docker image build.
+- **Node.js Upgrade**: Updated both Frontend and Backend Dockerfiles to use Node.js 22 (LTS) to improve performance and avoid deprecation warnings.
+- **Improved Reliability**: Verified local compilation with `tsc` to ensure image builds succeed on GitHub Actions.
 
 ---
 
