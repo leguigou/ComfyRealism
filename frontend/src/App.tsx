@@ -169,7 +169,9 @@ function App() {
   }, []);
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [currentUser, setCurrentUser] = useState<{username: string, isAdmin: boolean} | null>(null);
   const [loginError, setLoginError] = useState(false);
   
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -187,8 +189,52 @@ function App() {
     messageId: string;
     source: 'chat' | 'gallery';
   } | null>(null);
-  
-  const [view, setView] = useState<'chat' | 'gallery' | 'archives'>('chat');
+
+  const [adminUsers, setAdminUsers] = useState<any[]>([]);
+  const [newUser, setNewUser] = useState({ username: '', password: '', isAdmin: false });
+  const fetchAdminUsers = useCallback(async () => {
+    if (!currentUser?.isAdmin) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/users`, { credentials: 'include' });
+      const data = await res.json();
+      setAdminUsers(data);
+    } catch (err) { console.error('Error fetching users:', err); }
+  }, [currentUser]);
+
+  const handleAddUser = async () => {
+    if (!newUser.username || !newUser.password) return;
+    setIsAdminLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newUser),
+        credentials: 'include'
+      });
+      if (res.ok) {
+        setNewUser({ username: '', password: '', isAdmin: false });
+        fetchAdminUsers();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to add user');
+      }
+    } catch (err) { console.error('Error adding user:', err); }
+    finally { setIsAdminLoading(false); }
+  };
+
+  const deleteUser = async (id: string) => {
+    if (!confirm(t.confirmDeleteUser)) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/users/${id}`, { method: 'DELETE', credentials: 'include' });
+      if (res.ok) fetchAdminUsers();
+    } catch (err) { console.error('Error deleting user:', err); }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'admin') {
+      fetchAdminUsers();
+    }
+  }, [activeTab, fetchAdminUsers]);
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
   const [galleryOffset, setGalleryOffset] = useState(0);
   const [hasMoreGallery, setHasMoreGallery] = useState(true);
@@ -487,6 +533,9 @@ function App() {
         const res = await fetch(`${API_BASE}/api/auth/check`, { credentials: 'include' });
         const data = await res.json();
         setIsAuthenticated(data.authenticated);
+        if (data.authenticated && data.user) {
+          setCurrentUser(data.user);
+        }
       } catch {
         setIsAuthenticated(false);
       }
@@ -663,27 +712,32 @@ function App() {
   const handleLogin = async (e?: React.FormEvent) => {
     e?.preventDefault();
     setLoginError(false);
+    const trimmedUsername = loginUsername.trim();
     const trimmedPassword = loginPassword.trim();
     const loginUrl = `${API_BASE}/api/auth/login`;
-    
-    console.log(`[Auth] Attempting login at: ${loginUrl}`);
-    
+
+    if (!trimmedUsername || !trimmedPassword) return;
+
+    console.log(`[Auth] Attempting login for ${trimmedUsername} at: ${loginUrl}`);
+
     try {
       const res = await fetch(loginUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: trimmedPassword }),
+        body: JSON.stringify({ username: trimmedUsername, password: trimmedPassword }),
         credentials: 'include'
       });
-      
-      if (res.ok) {
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && data.success) {
         console.log('[Auth] Login successful');
+        setCurrentUser(data.user);
         setIsAuthenticated(true);
       } else {
         setLoginError(true);
-        const data = await res.json().catch(() => ({}));
         console.error(`[Auth] Login rejected. Status: ${res.status}`, data);
-        alert(`Échec de connexion (Code: ${res.status}).\nMot de passe incorrect ou erreur serveur.`);
+        alert(data.error || `Échec de connexion (Code: ${res.status}).\nIdentifiants incorrects.`);
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
@@ -691,7 +745,6 @@ function App() {
       alert(`Erreur Réseau : Impossible de joindre l'API.\n\nURL tentée : ${loginUrl}\n\nDétails : ${message}\n\nAssurez-vous que le domaine de l'API est correct et que le certificat HTTPS est valide.`);
     }
   };
-
   const handleLogout = async () => {
     await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST', credentials: 'include' });
     setIsAuthenticated(false);
@@ -1082,9 +1135,13 @@ function App() {
             <p className="login-subtitle">Connectez-vous pour commencer à créer</p>
           </div>
           <div className="input-group">
+            <label>{t.username}</label>
+            <input type="text" autoFocus value={loginUsername} onChange={(e) => setLoginUsername(e.target.value)} className={loginError ? 'error' : ''} placeholder="admin" />
+          </div>
+          <div className="input-group">
             <label>{t.password}</label>
-            <input type="password" autoFocus value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className={loginError ? 'error' : ''} placeholder="••••••••" />
-            {loginError && <p className="error-msg">{t.incorrectPassword}</p>}
+            <input type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className={loginError ? 'error' : ''} placeholder="••••••••" />
+            {loginError && <p className="error-msg">{t.incorrectLogin}</p>}
           </div>
           <button type="submit">{t.login}</button>
         </form>
@@ -1151,6 +1208,10 @@ function App() {
               <button className={`tab-btn ${activeTab === 'llm' ? 'active' : ''}`} onClick={() => setActiveTab('llm')}>{t.tabLLM}</button>
               <button className={`tab-btn ${activeTab === 'archives' ? 'active' : ''}`} onClick={() => setActiveTab('archives')}>{t.tabArchives}</button>
               <button className={`tab-btn ${activeTab === 'logs' ? 'active' : ''}`} onClick={() => setActiveTab('logs')}>{t.tabLogs}</button>
+              {currentUser?.isAdmin && (
+                <button className={`tab-btn ${activeTab === 'admin' ? 'active' : ''}`} onClick={() => setActiveTab('admin')}>{t.tabAdmin}</button>
+              )}
+
             </div>
 
             <div className="tab-content">
@@ -1484,6 +1545,57 @@ function App() {
                       </div>
                       )}
 
+                      {activeTab === 'admin' && (
+                        <div className="settings-grid admin-panel">
+                          <div className="setting-item" style={{ gridColumn: 'span 2' }}>
+                            <h3>{t.addUser}</h3>
+                            <div className="add-user-form">
+                              <input type="text" placeholder={t.username} value={newUser.username} onChange={(e) => setNewUser({ ...newUser, username: e.target.value })} />
+                              <input type="password" placeholder={t.password} value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} />
+                              <label className="admin-checkbox">
+                                <input type="checkbox" checked={newUser.isAdmin} onChange={(e) => setNewUser({ ...newUser, isAdmin: e.target.checked })} />
+                                {t.admin}
+                              </label>
+                              <button onClick={handleAddUser} disabled={isAdminLoading || !newUser.username || !newUser.password}>
+                                {isAdminLoading ? '...' : '+'}
+                              </button>
+                            </div>
+                          </div>
+                          
+                          <div className="setting-item" style={{ gridColumn: 'span 2' }}>
+                            <h3>{t.userList}</h3>
+                            <div className="user-table-wrapper">
+                              <table className="user-table">
+                                <thead>
+                                  <tr>
+                                    <th>{t.username}</th>
+                                    <th>{t.role}</th>
+                                    <th>{t.actions}</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {adminUsers.map(u => (
+                                    <tr key={u.id}>
+                                      <td>{u.username}</td>
+                                      <td>{u.isAdmin ? t.admin : t.user}</td>
+                                      <td>
+                                        <button 
+                                          className="delete-user-btn" 
+                                          onClick={() => deleteUser(u.id)}
+                                          disabled={u.username === currentUser?.username}
+                                        >
+                                          🗑️
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
                       {activeTab === 'archives' && (
                       <div className="settings-grid">
                       <div className="setting-item" style={{ gridColumn: 'span 2' }}>

@@ -1380,3 +1380,79 @@ body {
   }
 }
 
+/* Admin Panel Styles */
+.admin-panel h3 {
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  color: var(--accent);
+}
+
+.add-user-form {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.add-user-form input[type="text"],
+.add-user-form input[type="password"] {
+  flex: 1;
+  min-width: 150px;
+}
+
+.admin-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.user-table-wrapper {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.user-table th {
+  text-align: left;
+  padding: 0.8rem;
+  background: rgba(255, 255, 255, 0.05);
+  font-weight: 600;
+  border-bottom: 1px solid var(--sidebar-border);
+}
+
+.user-table td {
+  padding: 0.8rem;
+  border-bottom: 1px solid var(--sidebar-border);
+}
+
+.user-table tr:last-child td {
+  border-bottom: none;
+}
+
+.delete-user-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.4rem;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.delete-user-btn:hover:not(:disabled) {
+  background: rgba(231, 76, 60, 0.2);
+}
+
+.delete-user-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
