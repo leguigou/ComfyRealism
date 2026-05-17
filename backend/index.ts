@@ -400,8 +400,8 @@ const processQueue = async () => {
     const imageUrl = `/api/image-files/${fullWebpName}`;
     const thumbnailUrl = `/api/image-files/thumbnails/${thumbWebpName}`;
 
-    db.prepare('UPDATE messages SET imageUrl = ?, thumbnailUrl = ?, status = ?, timestamp = ? WHERE id = ?')
-      .run(imageUrl, thumbnailUrl, 'completed', Date.now(), task.messageId);
+    db.prepare('UPDATE messages SET imageUrl = ?, thumbnailUrl = ?, status = ? WHERE id = ?')
+      .run(imageUrl, thumbnailUrl, 'completed', task.messageId);
     
     db.prepare('DELETE FROM queue WHERE id = ?').run(task.id);
 

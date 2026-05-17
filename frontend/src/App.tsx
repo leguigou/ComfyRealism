@@ -19,6 +19,7 @@ interface Message {
   seed?: number;
   timestamp: number;
   status?: 'pending' | 'processing' | 'completed' | 'failed';
+  isEnhancing?: boolean;
 }
 
 interface GalleryItem {
@@ -160,8 +161,11 @@ function App() {
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
+  const enhancingCount = useRef(0);
+
+  // Derived state for isGenerating: true if any bot message is pending or processing, or if enhancing
+  const isGenerating = isEnhancing || messages.some(m => m.role === 'bot' && (m.status === 'pending' || m.status === 'processing'));
   const [activeLightbox, setActiveLightbox] = useState<{
     url: string;
     sessionId: string;
@@ -229,8 +233,9 @@ function App() {
       } else {
         setLlmCheckStatus({ type: 'error', msg: `${t.connectionFailed} (Server error: ${res.status})` });
       }
-    } catch (err: any) {
-      setLlmCheckStatus({ type: 'error', msg: t.connectionFailed + ': ' + err.message });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setLlmCheckStatus({ type: 'error', msg: t.connectionFailed + ': ' + message });
     } finally {
       setIsCheckingLLM(false);
     }
@@ -260,8 +265,9 @@ function App() {
         console.error('Server returned non-JSON response:', text);
         setComfyCheckStatus({ type: 'error', msg: `${t.connectionFailed} (Server error: ${res.status})` });
       }
-    } catch (err: any) {
-      setComfyCheckStatus({ type: 'error', msg: t.connectionFailed + ': ' + err.message });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setComfyCheckStatus({ type: 'error', msg: t.connectionFailed + ': ' + message });
     } finally {
       setIsCheckingComfy(false);
     }
@@ -436,9 +442,6 @@ function App() {
       const data = await res.json();
       if (data.messages) {
         setMessages(data.messages);
-        // Mettre à jour l'état de génération si des messages sont encore en cours
-        const stillGenerating = data.messages.some((m: Message) => m.role === 'bot' && !m.imageUrl && m.status !== 'failed');
-        setIsGenerating(stillGenerating);
       }
     } catch (err) {
       console.error('Error fetching session details:', err);
@@ -531,7 +534,6 @@ function App() {
             });
           }
           if (data.status === 'completed') {
-            setIsGenerating(false);
             fetchSessions();
           }
         }
@@ -657,9 +659,10 @@ function App() {
         console.error(`[Auth] Login rejected. Status: ${res.status}`, data);
         alert(`Échec de connexion (Code: ${res.status}).\nMot de passe incorrect ou erreur serveur.`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
       console.error('[Auth] Network error during login:', err);
-      alert(`Erreur Réseau : Impossible de joindre l'API.\n\nURL tentée : ${loginUrl}\n\nDétails : ${err.message}\n\nAssurez-vous que le domaine de l'API est correct et que le certificat HTTPS est valide.`);
+      alert(`Erreur Réseau : Impossible de joindre l'API.\n\nURL tentée : ${loginUrl}\n\nDétails : ${message}\n\nAssurez-vous que le domaine de l'API est correct et que le certificat HTTPS est valide.`);
     }
   };
 
@@ -846,8 +849,6 @@ function App() {
     const promptToSend = overrideInput !== undefined ? overrideInput : input;
     if (!promptToSend.trim() || !currentSessionId) return;
 
-    setIsGenerating(true);
-
     if (!isRegeneration) {
       const userMsg: Message = { id: Math.random().toString(36).substring(7), role: 'user', text: promptToSend, timestamp: Date.now() };
       setMessages(prev => [...prev, userMsg]);
@@ -867,6 +868,7 @@ function App() {
         text: promptToSend, // On commence avec le texte source
         prompt: promptToSend, 
         status: 'pending',
+        isEnhancing: params.llmEnabled && !!params.llmUrl && !!params.llmModel && !isRegeneration,
         timestamp: Date.now(),
         model: params.comfyModel,
         workflow: params.workflowFile,
@@ -879,6 +881,7 @@ function App() {
 
       // 2. Interprétation IA si activée (uniquement si ce n'est PAS une régénération directe)
       if (params.llmEnabled && params.llmUrl && params.llmModel && !isRegeneration) {
+        enhancingCount.current++;
         setIsEnhancing(true);
         try {
           const enhanceRes = await fetch(`${API_BASE}/api/enhance-prompt`, {
@@ -897,10 +900,18 @@ function App() {
             finalPrompt = enhanceData.enhancedPrompt;
             if (enhanceData.negativePrompt) finalNegativePrompt = enhanceData.negativePrompt;
             // Mettre à jour la bulle bot avec le texte final optimisé
-            setMessages(prev => prev.map(m => m.id === botMsgId ? { ...m, text: finalPrompt } : m));
+            setMessages(prev => prev.map(m => m.id === botMsgId ? { ...m, text: finalPrompt, isEnhancing: false } : m));
+          } else {
+            setMessages(prev => prev.map(m => m.id === botMsgId ? { ...m, isEnhancing: false } : m));
           }
-        } catch (err) { console.error('Enhancement failed:', err); }
-        finally { setIsEnhancing(false); }
+        } catch (err) { 
+          console.error('Enhancement failed:', err); 
+          setMessages(prev => prev.map(m => m.id === botMsgId ? { ...m, isEnhancing: false } : m));
+        }
+        finally { 
+          enhancingCount.current--;
+          if (enhancingCount.current <= 0) setIsEnhancing(false);
+        }
       }
 
       // 3. Lancer la génération réelle
@@ -930,8 +941,6 @@ function App() {
         fetchSessions(); 
       } else throw new Error(data.error || 'Unknown error');
     } catch (error: unknown) {
-      setIsGenerating(false);
-      setIsEnhancing(false);
       const message = error instanceof Error ? error.message : 'Unknown error';
       setMessages(prev => [...prev, { id: Math.random().toString(36).substring(7), role: 'bot', text: `Error: ${message}`, timestamp: Date.now() }]);
     }
@@ -951,8 +960,6 @@ function App() {
         body: JSON.stringify({ params }),
         credentials: 'include'
       });
-      setIsGenerating(false);
-      setIsEnhancing(false);
     } catch (err) { console.error('Failed to interrupt:', err); }
   };
 
@@ -1559,7 +1566,7 @@ function App() {
                           <div className="bounced-ball"></div>
                           <div className="bounced-ball"></div>
                         </div>
-                        <p>{isEnhancing ? t.enhancing : (msg.status === 'processing' ? t.generating : t.waiting)}</p>
+                        <p>{msg.isEnhancing ? t.enhancing : (msg.status === 'processing' ? t.generating : t.waiting)}</p>
                         <button className="cancel-gen-btn" onClick={interruptGeneration} title="Annuler la génération">
                           <div className="stop-icon-small"></div>
                           <span>{t.cancel}</span>
@@ -1673,8 +1680,8 @@ function App() {
             <div className="input-box">
               <textarea ref={textareaRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())} placeholder={params.llmEnabled ? t.aiPlaceholder : t.placeholder} rows={1} />
               {input && <button className="clear-input-btn" onClick={() => setInput('')} title="Effacer le texte">×</button>}
-              <button className={`send-btn ${isGenerating ? 'stop-btn' : ''}`} onClick={() => isGenerating ? interruptGeneration() : handleSend()} disabled={!isGenerating && !input.trim()}>
-                {isGenerating ? (
+              <button className={`send-btn ${isGenerating && !input.trim() ? 'stop-btn' : ''}`} onClick={() => isGenerating && !input.trim() ? interruptGeneration() : handleSend()} disabled={!input.trim() && !isGenerating}>
+                {isGenerating && !input.trim() ? (
                   <div className="stop-icon"></div>
                 ) : (
                   <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
