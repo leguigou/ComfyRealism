@@ -1,6 +1,19 @@
 # Development Logs
 
-## Current Version: 1.2.50-beta
+## Current Version: 1.2.52-beta
+
+---
+
+### v1.2.52-beta (2026-05-17)
+- **Smart Auto-Scroll**: Fixed aggressive auto-scrolling that prevented users from reading previous messages during generation. Scroll now only triggers once on submission and once on image completion.
+- **Timer Stability**: Resolved an issue where the generation counter would occasionally flicker or reset to zero during updates.
+
+---
+
+### v1.2.51-beta (2026-05-17)
+- **Live Generation Timer**: Added a real-time counter below the "Generating..." status in the chat bubbles, showing elapsed seconds.
+- **Duration Persistence**: The backend now calculates and stores the final generation duration in the SQLite database.
+- **Info Panel Update**: The generation duration is now displayed in the "Info" panel of each bot message.
 
 ---
 
