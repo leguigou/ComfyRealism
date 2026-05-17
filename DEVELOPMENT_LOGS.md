@@ -1,6 +1,22 @@
 # Development Logs
 
-## Current Version: 1.2.12
+## Current Version: 1.2.14
+
+---
+
+### v1.2.14 (2026-05-16)
+- **Dockerization**: Added `Dockerfile` for both frontend and backend, along with a root `docker-compose.yml`.
+- **Infrastructure as Code**: Optimized containers for production (Nginx for frontend, Node slim for backend).
+- **Persistence**: Configured Docker volumes to ensure that the SQLite database, custom workflows, and generated images are preserved across container restarts.
+- **Network Compatibility**: Added `host.docker.internal` support to allow the backend container to easily communicate with a ComfyUI instance running on the host machine.
+
+---
+
+### v1.2.13 (2026-05-16)
+- **Robust Error Handling**: Implemented a comprehensive error parsing system for ComfyUI. The backend now detects specific failures such as "Out of VRAM", "Missing Model", or "Node Errors".
+- **Infinite Loop Prevention**: Added a 5-minute timeout to the generation polling loop to prevent the backend from hanging indefinitely on silent failures.
+- **UI Error Feedback**: Updated the chat interface to display detailed error messages and added a "Retry" button for failed generations.
+- **Automatic State Recovery**: The system now correctly clears the queue and updates the message status when a fatal generation error occurs.
 
 ---
 

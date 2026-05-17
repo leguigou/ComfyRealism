@@ -79,7 +79,9 @@ export const translations = {
     checkpointModel: 'Modèle (Checkpoint)',
     modelsFound: 'modèles trouvés',
     active: 'Actifs',
-    archived: 'Archives'
+    archived: 'Archives',
+    retry: 'Réessayer',
+    genFailed: 'La génération a échoué'
   },
   en: {
     title: 'ComfyRealism',
@@ -159,6 +161,8 @@ export const translations = {
     checkpointModel: 'Model (Checkpoint)',
     modelsFound: 'models found',
     active: 'Active',
-    archived: 'Archived'
+    archived: 'Archived',
+    retry: 'Retry',
+    genFailed: 'Generation failed'
   }
 };

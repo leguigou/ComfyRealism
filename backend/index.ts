@@ -251,19 +251,34 @@ const getWorkflow = (prompt: string, params?: any) => {
   return workflow;
 };
 
+const parseComfyError = (error: any) => {
+  if (error.response?.data?.error?.message) {
+    let msg = error.response.data.error.message;
+    if (error.response.data.error.details) msg += ` (${error.response.data.error.details})`;
+    return msg;
+  }
+  if (error.response?.data?.node_errors) {
+    const nodes = Object.keys(error.response.data.node_errors);
+    const node = nodes[0];
+    const err = error.response.data.node_errors[node].errors[0];
+    return `Node ${node} (${error.response.data.node_errors[node].class_type}): ${err.message}${err.details ? ' - ' + err.details : ''}`;
+  }
+  if (error.message?.includes('ECONNREFUSED')) return 'ComfyUI is unreachable. Please check if it is running on http://127.0.0.1:8188';
+  if (error.code === 'ETIMEDOUT' || error.message?.includes('timeout')) return 'ComfyUI request timed out (possible GPU overload or hang).';
+  return error.message || 'Unknown server error';
+};
+
 // Queue Processor
 let isProcessingQueue = false;
 const processQueue = async () => {
   if (isProcessingQueue) return;
-  isProcessingQueue = true;
-
+  
+  let task: any = null;
   try {
-    const task = db.prepare('SELECT * FROM queue WHERE status = ? ORDER BY createdAt ASC LIMIT 1').get('pending') as any;
-    if (!task) {
-      isProcessingQueue = false;
-      return;
-    }
+    task = db.prepare('SELECT * FROM queue WHERE status = ? ORDER BY createdAt ASC LIMIT 1').get('pending');
+    if (!task) return;
 
+    isProcessingQueue = true;
     db.prepare('UPDATE queue SET status = ? WHERE id = ?').run('processing', task.id);
     db.prepare('UPDATE messages SET status = ? WHERE id = ?').run('processing', task.messageId);
     
@@ -282,20 +297,54 @@ const processQueue = async () => {
       } catch (e) { }
     }
 
-    const response = await axios.post(`${targetComfyUrl}/prompt`, { prompt: workflow, client_id: uuidv4() });
-    const promptId = response.data.prompt_id;
+    // Submit Prompt
+    let promptId = '';
+    try {
+      const response = await axios.post(`${targetComfyUrl}/prompt`, { prompt: workflow, client_id: uuidv4() }, { timeout: 10000 });
+      promptId = response.data.prompt_id;
+    } catch (err: any) {
+      throw new Error(`Submission failed: ${parseComfyError(err)}`);
+    }
 
+    // Polling with Timeout (5 minutes)
     let finished = false, filename = '';
+    const startTime = Date.now();
+    const POLLING_TIMEOUT = 5 * 60 * 1000; 
+
     while (!finished) {
-      const hResp = await axios.get(`${targetComfyUrl}/history/${promptId}`);
-      if (hResp.data[promptId]?.outputs?.[saveNodeId]?.images?.[0]) {
-        filename = hResp.data[promptId].outputs[saveNodeId].images[0].filename;
-        finished = true;
-      } else {
+      if (Date.now() - startTime > POLLING_TIMEOUT) {
+        throw new Error('Generation timed out after 5 minutes.');
+      }
+
+      let hResp;
+      try {
+        hResp = await axios.get(`${targetComfyUrl}/history/${promptId}`, { timeout: 5000 });
+      } catch (err: any) {
+        // If it's a network error during polling, we might want to retry a few times before failing
+        console.warn(`[Queue] Polling attempt failed: ${err.message}`);
+        await new Promise(r => setTimeout(r, 2000));
+        continue;
+      }
+
+      const history = hResp.data[promptId];
+
+      if (history) {
+        if (history.status?.status_str === 'error' || (history.status?.completed && !history.outputs)) {
+          const errMsg = history.status?.messages?.[0]?.[1]?.message || 'ComfyUI execution error';
+          throw new Error(`Execution failed: ${errMsg}`);
+        }
+
+        if (history.outputs?.[saveNodeId]?.images?.[0]) {
+          filename = history.outputs[saveNodeId].images[0].filename;
+          finished = true;
+        }
+      }
+
+      if (!finished) {
         await new Promise(r => setTimeout(r, 1000));
+        // Check if task was cancelled by user
         const stillExists = db.prepare('SELECT id FROM queue WHERE id = ?').get(task.id);
         if (!stillExists) {
-          finished = true;
           isProcessingQueue = false;
           setTimeout(processQueue, 100);
           return;
@@ -303,7 +352,17 @@ const processQueue = async () => {
       }
     }
 
-    const imgResp = await axios.get(`${targetComfyUrl}/view`, { params: { filename }, responseType: 'arraybuffer' });
+    // Download Image
+    let imgResp;
+    try {
+      imgResp = await axios.get(`${targetComfyUrl}/view`, { 
+        params: { filename }, 
+        responseType: 'arraybuffer',
+        timeout: 15000
+      });
+    } catch (err: any) {
+      throw new Error(`Failed to retrieve image: ${parseComfyError(err)}`);
+    }
     
     // IMAGE PROCESSING WITH SHARP
     const baseName = `${Date.now()}-${filename.replace(/\.[^/.]+$/, "")}`;
@@ -344,7 +403,18 @@ const processQueue = async () => {
     });
 
   } catch (error: any) {
-    console.error('[Queue] Error:', error.message);
+    const errorMsg = error.message || 'Unexpected error';
+    console.error(`[Queue] Fatal error for task ${task?.messageId}:`, errorMsg);
+    
+    if (task) {
+      db.prepare('UPDATE messages SET status = ?, text = ? WHERE id = ?').run('failed', errorMsg, task.messageId);
+      db.prepare('DELETE FROM queue WHERE id = ?').run(task.id);
+      broadcastToSession(task.sessionId, { 
+        messageId: task.messageId, 
+        status: 'failed', 
+        error: errorMsg 
+      });
+    }
   } finally {
     isProcessingQueue = false;
     setTimeout(processQueue, 500);
