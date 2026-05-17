@@ -1057,7 +1057,7 @@ function App() {
                 <div className="settings-grid">
                   <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                     <label>{t.currentVersion}</label>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.16</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.17</div>
                     
                     <label>{t.devLogs}</label>
                     <div className="logs-container" style={{ 
@@ -1071,9 +1071,13 @@ function App() {
                       fontFamily: 'monospace'
                     }}>
                       <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.17 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Amélioration de l\'accessibilité mobile (bouton de test plus grand).' : 'Improved mobile accessibility (larger test button).'}</div>
+                        <div>• {lang === 'fr' ? 'Standardisation des hauteurs de bouton sur mobile (min 44px).' : 'Standardized button heights on mobile (min 44px).'}</div>
+                      </div>
+                      <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
                         <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.16 (2026-05-16)</div>
                         <div>• {lang === 'fr' ? 'Messages de statut en couleur (Vert pour succès, Rouge pour erreur).' : 'Color-coded status messages (Green for success, Red for error).'}</div>
-                        <div>• {lang === 'fr' ? 'Amélioration de la visibilité des retours dans les paramètres.' : 'Improved feedback visibility in settings.'}</div>
                       </div>
                       <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
                         <div style={{ fontWeight: 'bold' }}>v1.2.15 (2026-05-16)</div>
@@ -1190,15 +1194,13 @@ function App() {
                         style={{ flex: 1 }}
                       />
                       <button
-                        className="refresh-models-btn"
+                        className="refresh-models-btn test-conn-btn"
                         onClick={testComfyConnection}
                         disabled={isCheckingComfy || !params.comfyUrl}
                         title={t.testConnection}
-                        style={{ width: 'auto', padding: '0 1rem' }}
                       >
                         {isCheckingComfy ? '...' : t.testConnection}
-                      </button>
-                    </div>
+                      </button>                    </div>
                     {comfyCheckStatus && <p className={`llm-status-msg ${comfyCheckStatus.type}`}>{comfyCheckStatus.msg}</p>}
                   </div>                  <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                     <label>{t.checkpointModel}</label>
