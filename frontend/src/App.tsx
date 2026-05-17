@@ -1625,10 +1625,10 @@ function App() {
                           <div className="bounce2"></div>
                           <div className="bounce3"></div>
                         </div>
-                        <p>
+                        <p className="ai-text-shimmer">
                           {msg.isEnhancing ? t.enhancing : (msg.status === 'processing' ? t.generating : t.waiting)}
                           {msg.status === 'processing' && msg.duration !== undefined && (
-                            <span style={{ display: 'block', fontSize: '0.8rem', opacity: 0.7, marginTop: '4px' }}>
+                            <span style={{ display: 'block', fontSize: '0.8rem', opacity: 0.7, marginTop: '4px', color: 'var(--text)' }}>
                               {formatDuration(msg.duration)}
                             </span>
                           )}
