@@ -16,9 +16,16 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
-const PORT = 3001;
-const COMFY_URL = 'http://127.0.0.1:8188';
-const COMFY_WS_URL = 'ws://127.0.0.1:8188/ws';
+
+const PORT = Number(process.env.PORT) || 3001;
+const COMFY_URL = process.env.COMFY_URL || 'http://127.0.0.1:8188';
+
+// Helper to get WS URL from HTTP URL
+const getComfyWsUrl = (httpUrl: string) => {
+  return httpUrl.replace(/^http/, 'ws') + '/ws';
+};
+
+const COMFY_WS_URL = getComfyWsUrl(COMFY_URL);
 
 const AUTH_SECRET = process.env.AUTH_SECRET || 'fallback_secret';
 const APP_PASSWORD = process.env.APP_PASSWORD || 'comfy';
