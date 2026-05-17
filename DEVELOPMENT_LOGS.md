@@ -1,6 +1,31 @@
 # Development Logs
 
-## Current Version: 1.2.54-beta
+## Current Version: 1.2.59-beta
+
+---
+
+### v1.2.59-beta (2026-05-17)
+- **Reversed Status Animation**: The color-shifting shimmer effect on status text now moves diagonally from the bottom-right to the top-left, creating a reversed visual flow (right-to-left) as requested.
+
+---
+
+### v1.2.58-beta (2026-05-17)
+- **Message Rendering Fix**: Resolved an issue where user prompts could be hidden when AI interpretation was enabled. The UI now correctly falls back to the original prompt if the optimized text is missing, and the duplicate detection logic has been improved to ensure visibility of all unique content.
+
+---
+
+### v1.2.57-beta (2026-05-17)
+- **Refined Status Animation**: The color-shifting effect is now exclusive to "Generating" and "AI Thinking" states. The animation has been updated to move diagonally (135°) from left to right for a more dynamic visual experience.
+
+---
+
+### v1.2.56-beta (2026-05-17)
+- **Timer Visibility Fix**: Isolated the animated status text effect to prevent it from making the generation timer invisible. The timer is now clearly visible with its standard styling.
+
+---
+
+### v1.2.55-beta (2026-05-17)
+- **Animated Status Text**: Applied a smooth, color-shifting shimmer effect to the "Generating..." and "AI Thinking..." status text, mirroring the "intelligent" look of the AI-active input box.
 
 ---
 

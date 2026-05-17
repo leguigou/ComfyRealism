@@ -831,6 +831,28 @@ body {
   box-shadow: 0 0 20px rgba(16, 163, 127, 0.5);
 }
 
+.ai-text-shimmer {
+  background: linear-gradient(
+    315deg, 
+    #10a37f 0%, 
+    #8e44ad 25%, 
+    #3498db 50%, 
+    #8e44ad 75%, 
+    #10a37f 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+  animation: ai-text-glow 4s linear infinite reverse;
+  font-weight: 700 !important;
+}
+
+@keyframes ai-text-glow {
+  to { background-position: 200% center; }
+}
+
 .input-box textarea { 
   flex: 1; 
   background: transparent; 
