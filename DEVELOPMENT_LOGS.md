@@ -1,6 +1,11 @@
 # Development Logs
 
-## Current Version: 1.2.59-beta
+## Current Version: 1.2.60-beta
+
+---
+
+### v1.2.60-beta (2026-05-17)
+- **Selective Bouncing Loader**: The bouncing ball animation is now exclusively shown during "Generating" and "AI Thinking" states. In the "Waiting" state, only the text is displayed to maintain a clear visual distinction between queueing and active processing.
 
 ---
 
