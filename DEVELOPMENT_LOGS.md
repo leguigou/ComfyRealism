@@ -1,6 +1,11 @@
 # Development Logs
 
-## Current Version: 1.2.54-beta
+## Current Version: 1.2.55-beta
+
+---
+
+### v1.2.55-beta (2026-05-17)
+- **Animated Status Text**: Applied a smooth, color-shifting shimmer effect to the "Generating..." and "AI Thinking..." status text, mirroring the "intelligent" look of the AI-active input box.
 
 ---
 
