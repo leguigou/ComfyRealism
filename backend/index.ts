@@ -438,7 +438,14 @@ setInterval(processQueue, 2000);
 app.post('/api/auth/login', (req, res) => {
   const { password } = req.body;
   if (password && password.trim() === APP_PASSWORD.trim()) {
-    res.cookie('authenticated', 'true', { httpOnly: true, signed: true, sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000 });
+    const isProd = process.env.NODE_ENV === 'production';
+    res.cookie('authenticated', 'true', { 
+      httpOnly: true, 
+      signed: true, 
+      sameSite: isProd ? 'none' : 'lax', 
+      secure: isProd, // Must be true if sameSite is 'none'
+      maxAge: 30 * 24 * 60 * 60 * 1000 
+    });
     return res.json({ success: true });
   }
   res.status(401).json({ error: 'Incorrect password' });
