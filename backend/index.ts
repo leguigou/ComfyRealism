@@ -437,17 +437,23 @@ setInterval(processQueue, 2000);
 // Auth Endpoints
 app.post('/api/auth/login', (req, res) => {
   const { password } = req.body;
-  if (password && password.trim() === APP_PASSWORD.trim()) {
+  const submitted = (password || '').trim();
+  const expected = APP_PASSWORD.trim();
+  
+  if (submitted === expected) {
     const isProd = process.env.NODE_ENV === 'production';
+    console.log(`[Auth] Successful login. Production mode: ${isProd}`);
     res.cookie('authenticated', 'true', { 
       httpOnly: true, 
       signed: true, 
       sameSite: isProd ? 'none' : 'lax', 
-      secure: isProd, // Must be true if sameSite is 'none'
+      secure: isProd,
       maxAge: 30 * 24 * 60 * 60 * 1000 
     });
     return res.json({ success: true });
   }
+  
+  console.warn(`[Auth] Failed login attempt. Received length: ${submitted.length}, Expected length: ${expected.length}`);
   res.status(401).json({ error: 'Incorrect password' });
 });
 
