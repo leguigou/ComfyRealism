@@ -1126,7 +1126,7 @@ function App() {
                 <div className="settings-grid">
                   <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                     <label>{t.currentVersion}</label>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.40</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.43</div>
                     
                     <label>{t.devLogs}</label>
                     <div className="logs-container" style={{ 
@@ -1139,6 +1139,15 @@ function App() {
                       lineHeight: '1.4',
                       fontFamily: 'monospace'
                     }}>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.43 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Correction du conflit de routage (retrait du middleware redondant).' : 'Routing conflict fix (removed redundant middleware).'}</div>
+                        <div>• {lang === 'fr' ? 'Routage explicite double ( / et /api ) pour une compatibilité native parfaite avec les reverse proxies.' : 'Explicit dual routing (/ and /api) for perfect native proxy compatibility.'}</div>
+                      </div>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.41 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Correction du double préfixe /api en production.' : 'Fixed double /api prefix bug in production.'}</div>
+                      </div>
                       <div style={{ marginBottom: '1rem' }}>
                         <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.40 (2026-05-16)</div>
                         <div>• {lang === 'fr' ? 'Anonymisation du code : suppression des domaines personnels.' : 'Anonymized code: removed personal domains.'}</div>

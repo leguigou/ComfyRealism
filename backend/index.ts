@@ -130,14 +130,8 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser(AUTH_SECRET));
 
-// Proxy-Agnostic Routing Middleware
-// This ensures that if Traefik strips /api or not, the backend still finds the route.
-app.use((req, res, next) => {
-  if (!req.url.startsWith('/api') && !req.url.startsWith('/ws')) {
-    req.url = '/api' + req.url;
-  }
-  next();
-});
+// Create a router for all API endpoints
+const apiRouter = express.Router();
 
 // Auth Middleware
 const authenticate = (req: express.Request, res: express.Response, next: express.NextFunction) => {

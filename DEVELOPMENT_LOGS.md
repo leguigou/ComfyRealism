@@ -1,10 +1,27 @@
 # Development Logs
 
-## Current Version: 1.2.41
+## Current Version: 1.2.43
+
+---
+
+### v1.2.43 (2026-05-16)
+- **Routing Conflict Fix**: Removed the proxy-agnostic middleware introduced in v1.2.42 which caused internal routing failures due to double-prefixing.
+- **Explicit Dual Routing**: Replaced the middleware with an explicit `apiRouter` mounted at both `/` and `/api`. This guarantees native Express compatibility with Dokploy's Traefik path stripping behavior without side effects.
+
+---
+
+### v1.2.42 (2026-05-16)
+- **Proxy-Agnostic Routing**: Attempted to implement a middleware to handle Traefik path stripping (later reverted in v1.2.43).
 
 ---
 
 ### v1.2.41 (2026-05-16)
+- **Routing Bug Fix**: Resolved double `/api/api/` prefix issue in production that caused 404 errors. `API_BASE` now correctly identifies the root domain.
+- **WebSocket Fix**: Standardized WebSocket URL construction to consistently use the `/api/ws` path across all environments.
+
+---
+
+### v1.2.40 (2026-05-16)
 - **Routing Bug Fix**: Resolved double `/api/api/` prefix issue in production that caused 404 errors. `API_BASE` now correctly identifies the root domain.
 - **WebSocket Fix**: Standardized WebSocket URL construction to consistently use the `/api/ws` path across all environments.
 
