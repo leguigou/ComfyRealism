@@ -1,6 +1,13 @@
 # Development Logs
 
-## Current Version: 1.2.33
+## Current Version: 1.2.34
+
+---
+
+### v1.2.34 (2026-05-16)
+- **Production UX Fix**: Implemented automatic API subdomain detection. If the app runs on `comfyui.*`, it now automatically tries to reach the API on `api-comfy.*`.
+- **Debug Improvement**: Added explicit error reporting on login failure, displaying the attempted API URL to help users diagnose connectivity issues.
+- **Resilience**: The frontend is now more capable of running on custom domains without requiring manual environment variable configuration at build time.
 
 ---
 
