@@ -1,6 +1,13 @@
 # Development Logs
 
-## Current Version: 1.2.27
+## Current Version: 1.2.28
+
+---
+
+### v1.2.28 (2026-05-16)
+- **Fix**: Resolved `ECONNREFUSED` error on Raspberry Pi/Docker environments by ensuring WebSocket connections use the same dynamic URL as HTTP requests.
+- **Robustness**: Removed hardcoded `127.0.0.1` addresses in the backend. The system now correctly derives the WebSocket URL from the configured `COMFY_URL`.
+- **Environment Support**: Added support for `PORT` environment variable in the backend.
 
 ---
 
