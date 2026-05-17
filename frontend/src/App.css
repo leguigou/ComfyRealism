@@ -813,6 +813,24 @@ body {
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--accent-border);
 }
 
+.input-box.ai-active {
+  border-color: transparent;
+  animation: ai-glow 3s infinite linear;
+  box-shadow: 0 0 15px rgba(16, 163, 127, 0.2);
+}
+
+@keyframes ai-glow {
+  0% { border-color: #10a37f; box-shadow: 0 0 10px rgba(16, 163, 127, 0.4); }
+  33% { border-color: #8e44ad; box-shadow: 0 0 15px rgba(142, 68, 173, 0.4); }
+  66% { border-color: #3498db; box-shadow: 0 0 15px rgba(52, 152, 219, 0.4); }
+  100% { border-color: #10a37f; box-shadow: 0 0 10px rgba(16, 163, 127, 0.4); }
+}
+
+.input-box.ai-active:focus-within {
+  animation-duration: 1.5s; /* Speed up animation on focus */
+  box-shadow: 0 0 20px rgba(16, 163, 127, 0.5);
+}
+
 .input-box textarea { 
   flex: 1; 
   background: transparent; 

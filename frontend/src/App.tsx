@@ -1731,7 +1731,7 @@ function App() {
 
         {view === 'chat' && (
           <div className="input-container">
-            <div className="input-box">
+            <div className={`input-box ${params.llmEnabled ? 'ai-active' : ''}`}>
               <textarea ref={textareaRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())} placeholder={params.llmEnabled ? t.aiPlaceholder : t.placeholder} rows={1} />
               {input && <button className="clear-input-btn" onClick={() => setInput('')} title="Effacer le texte">×</button>}
               <button className={`send-btn ${isGenerating && !input.trim() ? 'stop-btn' : ''}`} onClick={() => isGenerating && !input.trim() ? interruptGeneration() : handleSend()} disabled={!input.trim() && !isGenerating}>
