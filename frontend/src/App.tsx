@@ -195,6 +195,8 @@ function App() {
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
   const [newUser, setNewUser] = useState({ username: '', password: '', isAdmin: false });
   const [isAdminLoading, setIsAdminLoading] = useState(false);
+  
+  const [view, setView] = useState<'chat' | 'gallery' | 'archives'>('chat');
 
   const fetchAdminUsers = useCallback(async () => {
     if (!currentUser?.isAdmin) return;
