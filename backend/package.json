@@ -1,6 +1,7 @@
 {
   "name": "backend",
-  "version": "1.2.60",
+  "version": "1.2.62",
+
   "main": "index.js",
   "scripts": {
     "dev": "ts-node-dev index.ts",

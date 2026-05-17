@@ -1,6 +1,15 @@
 # Development Logs
 
-## Current Version: 1.2.60-beta
+## Current Version: 1.2.62-multiuser
+
+---
+
+### v1.2.62-multiuser (2026-05-17)
+- **User Usage Statistics**: Administrators can now see the total number of images and disk space used by each user in the Administration panel.
+- **Admin Password Reset**: Added the ability for administrators to reset any user's password directly from the UI.
+- **Enhanced Admin UI**: Improved the user management layout with better visibility on mobile, a modern toggle for admin rights, and a clearer "Add User" button.
+- **Multi-User Isolation**: Implemented a complete authentication system with bcrypt hashing. Users now have isolated sessions, messages, and galleries.
+- **Admin CLI Tool**: Added a terminal-based utility (`cli.ts`) for managing users via SSH.
 
 ---
 
