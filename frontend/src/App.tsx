@@ -456,7 +456,17 @@ function App() {
       if (!res.ok) throw new Error('Failed to fetch session details');
       const data = await res.json();
       if (data.messages) {
-        setMessages(data.messages);
+        setMessages(prev => {
+          const newMessages = data.messages.map((newMsg: Message) => {
+            const existingMsg = prev.find(m => m.id === newMsg.id);
+            // Persistent duration: if local state has a duration and new data doesn't, keep local one
+            if (existingMsg && existingMsg.duration !== undefined && (newMsg.duration === undefined || newMsg.duration === null)) {
+              return { ...newMsg, duration: existingMsg.duration };
+            }
+            return newMsg;
+          });
+          return newMessages;
+        });
       }
     } catch (err) {
       console.error('Error fetching session details:', err);
