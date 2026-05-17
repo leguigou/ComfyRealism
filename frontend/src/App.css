@@ -1411,6 +1411,19 @@ body {
   height: 44px;
 }
 
+.admin-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-toggle-label .toggle-container {
+  margin: 0;
+}
+
 .add-user-submit-btn {
   background-color: var(--accent) !important;
   color: white !important;
