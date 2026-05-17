@@ -108,6 +108,14 @@ const formatDuration = (seconds: number | undefined) => {
   return `${m}m${s.toString().padStart(2, '0')}s`;
 };
 
+const formatBytes = (bytes: number) => {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
 const API_BASE = getApiBase();
 console.log(`[App] API Base URL: ${API_BASE}`);
 
@@ -195,6 +203,8 @@ function App() {
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
   const [newUser, setNewUser] = useState({ username: '', password: '', isAdmin: false });
   const [isAdminLoading, setIsAdminLoading] = useState(false);
+  const [resetPasswordId, setResetPasswordId] = useState<string | null>(null);
+  const [newPasswordValue, setNewPasswordValue] = useState('');
   
   const [view, setView] = useState<'chat' | 'gallery' | 'archives'>('chat');
 
@@ -234,6 +244,26 @@ function App() {
       const res = await fetch(`${API_BASE}/api/users/${id}`, { method: 'DELETE', credentials: 'include' });
       if (res.ok) fetchAdminUsers();
     } catch (err) { console.error('Error deleting user:', err); }
+  };
+
+  const handleResetPassword = async (id: string) => {
+    if (!newPasswordValue.trim()) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/users/${id}/password`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: newPasswordValue.trim() }),
+        credentials: 'include'
+      });
+      if (res.ok) {
+        alert(lang === 'fr' ? 'Mot de passe mis à jour !' : 'Password updated successfully!');
+        setResetPasswordId(null);
+        setNewPasswordValue('');
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to update password');
+      }
+    } catch (err) { console.error('Error resetting password:', err); }
   };
 
   useEffect(() => {
@@ -1258,7 +1288,7 @@ function App() {
                 <div className="settings-grid">
                   <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                     <label>{t.currentVersion}</label>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.60</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.62-multiuser</div>
                     
                     <label>{t.devLogs}</label>
                     <div className="logs-container" style={{ 
@@ -1271,6 +1301,17 @@ function App() {
                       lineHeight: '1.4',
                       fontFamily: 'monospace'
                     }}>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.62 (2026-05-17)</div>
+                        <div>• {lang === 'fr' ? 'Statistiques d\'utilisation et espace disque par utilisateur.' : 'User usage statistics and disk space tracking.'}</div>
+                        <div>• {lang === 'fr' ? 'Réinitialisation des mots de passe via l\'interface admin.' : 'Admin password reset from UI.'}</div>
+                      </div>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.61 (2026-05-17)</div>
+                        <div>• {lang === 'fr' ? 'Système multi-utilisateur complet (bcrypt).' : 'Full multi-user system (bcrypt).'}</div>
+                        <div>• {lang === 'fr' ? 'Panneau d\'administration UI.' : 'Administrative UI panel.'}</div>
+                        <div>• {lang === 'fr' ? 'Outil CLI pour gestion SSH.' : 'CLI tool for SSH management.'}</div>
+                      </div>
                       <div style={{ marginBottom: '1rem' }}>
                         <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.60 (2026-05-17)</div>
                         <div>• {lang === 'fr' ? 'Billes rebondissantes sélectives (uniquement si actif).' : 'Selective bouncing balls (active only).'}</div>
@@ -1616,6 +1657,8 @@ function App() {
                                   <tr>
                                     <th>{t.username}</th>
                                     <th>{t.role}</th>
+                                    <th>{t.images}</th>
+                                    <th>{t.diskUsage}</th>
                                     <th>{t.actions}</th>
                                   </tr>
                                 </thead>
@@ -1624,14 +1667,40 @@ function App() {
                                     <tr key={u.id}>
                                       <td>{u.username}</td>
                                       <td>{u.isAdmin ? t.admin : t.user}</td>
-                                      <td>
-                                        <button 
-                                          className="delete-user-btn" 
-                                          onClick={() => deleteUser(u.id)}
-                                          disabled={u.username === currentUser?.username}
-                                        >
-                                          🗑️
-                                        </button>
+                                      <td>{u.imageCount || 0}</td>
+                                      <td>{formatBytes(u.diskUsage || 0)}</td>
+                                      <td className="user-actions-cell">
+                                        {resetPasswordId === u.id ? (
+                                          <div className="reset-password-inline">
+                                            <input 
+                                              type="password" 
+                                              placeholder="Nouveau mdp" 
+                                              value={newPasswordValue} 
+                                              onChange={(e) => setNewPasswordValue(e.target.value)} 
+                                              autoFocus
+                                            />
+                                            <button className="confirm-reset-btn" onClick={() => handleResetPassword(u.id)}>✅</button>
+                                            <button className="cancel-reset-btn" onClick={() => setResetPasswordId(null)}>❌</button>
+                                          </div>
+                                        ) : (
+                                          <div className="action-buttons-wrapper">
+                                            <button 
+                                              className="reset-user-btn" 
+                                              onClick={() => setResetPasswordId(u.id)}
+                                              title="Modifier le mot de passe"
+                                            >
+                                              🔑
+                                            </button>
+                                            <button 
+                                              className="delete-user-btn" 
+                                              onClick={() => deleteUser(u.id)}
+                                              disabled={u.username === currentUser?.username}
+                                              title="Supprimer l'utilisateur"
+                                            >
+                                              🗑️
+                                            </button>
+                                          </div>
+                                        )}
                                       </td>
                                     </tr>
                                   ))}

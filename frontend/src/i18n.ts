@@ -94,6 +94,8 @@ export const translations = {
     admin: 'Admin',
     user: 'Utilisateur',
     actions: 'Actions',
+    images: 'Images',
+    diskUsage: 'Espace disque',
     confirmDeleteUser: 'Supprimer cet utilisateur ?'
   },
   en: {
@@ -189,6 +191,8 @@ export const translations = {
     admin: 'Admin',
     user: 'User',
     actions: 'Actions',
+    images: 'Images',
+    diskUsage: 'Disk Usage',
     confirmDeleteUser: 'Delete this user?'
   }
 };

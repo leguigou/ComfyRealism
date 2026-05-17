@@ -1508,3 +1508,52 @@ body {
   cursor: not-allowed;
 }
 
+/* User Table Actions */
+.user-actions-cell {
+  min-width: 120px;
+}
+
+.action-buttons-wrapper {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.reset-user-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.4rem;
+  border-radius: 4px;
+  transition: background 0.2s;
+  font-size: 1.1rem;
+}
+
+.reset-user-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.reset-password-inline {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.reset-password-inline input {
+  padding: 0.4rem 0.6rem !important;
+  font-size: 0.85rem !important;
+  width: 120px !important;
+  min-width: 0 !important;
+}
+
+.confirm-reset-btn, .cancel-reset-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.2rem;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.confirm-reset-btn:hover { background: rgba(46, 204, 113, 0.2); }
+.cancel-reset-btn:hover { background: rgba(231, 76, 60, 0.2); }
+

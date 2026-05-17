@@ -463,8 +463,44 @@ apiRouter.post('/auth/logout', (req, res) => { res.clearCookie('userId'); res.js
 
 // Admin User Management Endpoints
 apiRouter.get('/users', requireAdmin, (req, res) => {
-  const users = db.prepare('SELECT id, username, isAdmin, createdAt FROM users ORDER BY createdAt DESC').all();
-  res.json(users);
+  const users = db.prepare('SELECT id, username, isAdmin, createdAt FROM users ORDER BY createdAt DESC').all() as any[];
+  
+  const usersWithStats = users.map(user => {
+    // Get all image and thumbnail URLs for this user
+    const userImages = db.prepare(`
+      SELECT m.imageUrl, m.thumbnailUrl 
+      FROM messages m 
+      JOIN sessions s ON m.sessionId = s.id 
+      WHERE s.userId = ? AND m.imageUrl IS NOT NULL
+    `).all(user.id) as any[];
+
+    let totalBytes = 0;
+    const imageCount = userImages.length;
+
+    userImages.forEach(img => {
+      try {
+        // Resolve absolute paths for main image and thumbnail
+        if (img.imageUrl) {
+          const imgPath = path.join(imagesDir, path.basename(img.imageUrl));
+          if (fs.existsSync(imgPath)) totalBytes += fs.statSync(imgPath).size;
+        }
+        if (img.thumbnailUrl) {
+          const thumbPath = path.join(thumbnailsDir, path.basename(img.thumbnailUrl));
+          if (fs.existsSync(thumbPath)) totalBytes += fs.statSync(thumbPath).size;
+        }
+      } catch (err) {
+        // Ignore file access errors
+      }
+    });
+
+    return {
+      ...user,
+      imageCount,
+      diskUsage: totalBytes
+    };
+  });
+
+  res.json(usersWithStats);
 });
 
 apiRouter.post('/users', requireAdmin, (req, res) => {
