@@ -1158,7 +1158,7 @@ function App() {
                 <div className="settings-grid">
                   <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                     <label>{t.currentVersion}</label>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.54</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.59</div>
                     
                     <label>{t.devLogs}</label>
                     <div className="logs-container" style={{ 
@@ -1171,6 +1171,18 @@ function App() {
                       lineHeight: '1.4',
                       fontFamily: 'monospace'
                     }}>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.59 (2026-05-17)</div>
+                        <div>• {lang === 'fr' ? 'Inversion du sens de l\'animation de statut (droite à gauche).' : 'Reversed status animation flow (right-to-left).'}</div>
+                      </div>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.58 (2026-05-17)</div>
+                        <div>• {lang === 'fr' ? 'Correction de la visibilité des messages utilisateur.' : 'User message visibility fix.'}</div>
+                      </div>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.55 (2026-05-17)</div>
+                        <div>• {lang === 'fr' ? 'Effet de texte animé (shimmer) pour les statuts.' : 'Animated status text (shimmer effect).'}</div>
+                      </div>
                       <div style={{ marginBottom: '1rem' }}>
                         <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.54 (2026-05-17)</div>
                         <div>• {lang === 'fr' ? 'Indicateur visuel IA (contour animé).' : 'AI visual feedback (glowing border).'}</div>
@@ -1607,15 +1619,17 @@ function App() {
                 view === 'chat' ? <WelcomeScreen lang={lang} /> : <div className="empty-state"><p>{t.noArchives}</p></div>
               )}
               {messages.map((msg, index) => {
-                const isRedundant = index > 0 && msg.text === messages[index - 1].text;
+                const messageText = msg.text || msg.prompt;
+                const isRedundant = index > 0 && messageText === (messages[index - 1].text || messages[index - 1].prompt);
+                
                 return (
                   <div key={msg.id} id={`msg-${msg.id}`} className={`message-row ${msg.role}`}>
                     <div className="avatar">{msg.role === 'user' ? 'U' : 'C'}</div>
                     <div className="message-content">
-                      {msg.text && !isRedundant && (
+                      {messageText && !isRedundant && (
                         <div className="message-text-wrapper">
-                          {msg.text !== msg.prompt && msg.role === 'bot' && <span className="ai-badge" title="Optimisé par l'IA">✨</span>}
-                          <MessageText text={msg.text} lang={lang} />
+                          {msg.text && msg.text !== msg.prompt && msg.role === 'bot' && <span className="ai-badge" title="Optimisé par l'IA">✨</span>}
+                          <MessageText text={messageText} lang={lang} />
                         </div>
                       )}
                     {msg.role === 'bot' && !msg.imageUrl && msg.status !== 'failed' && (
@@ -1626,7 +1640,9 @@ function App() {
                           <div className="bounce3"></div>
                         </div>
                         <p>
-                          {msg.isEnhancing ? t.enhancing : (msg.status === 'processing' ? t.generating : t.waiting)}
+                          <span className={msg.isEnhancing || msg.status === 'processing' ? 'ai-text-shimmer' : ''}>
+                            {msg.isEnhancing ? t.enhancing : (msg.status === 'processing' ? t.generating : t.waiting)}
+                          </span>
                           {msg.status === 'processing' && msg.duration !== undefined && (
                             <span style={{ display: 'block', fontSize: '0.8rem', opacity: 0.7, marginTop: '4px' }}>
                               {formatDuration(msg.duration)}
