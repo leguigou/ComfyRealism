@@ -78,8 +78,8 @@ const getApiBase = () => {
   const { protocol, hostname, port } = window.location;
 
   // 2. Production Path Routing (Solution B)
-  // If we are on deloffre.fr, we use the same domain but with /api
-  if (hostname.includes('deloffre.fr')) {
+  // If we are not on localhost or a known dev port, we assume we use path routing /api
+  if (hostname !== 'localhost' && hostname !== '127.0.0.1' && (!port || port === '80' || port === '443')) {
     return `${protocol}//${hostname}/api`;
   }
 
@@ -1124,7 +1124,7 @@ function App() {
                 <div className="settings-grid">
                   <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                     <label>{t.currentVersion}</label>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.37</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.40</div>
                     
                     <label>{t.devLogs}</label>
                     <div className="logs-container" style={{ 
@@ -1138,14 +1138,18 @@ function App() {
                       fontFamily: 'monospace'
                     }}>
                       <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.32 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Support de la variable d\'environnement VITE_API_URL.' : 'Added support for VITE_API_URL environment variable.'}</div>
-                        <div>• {lang === 'fr' ? 'Détection intelligente de l\'API pour les domaines personnalisés (Dokploy).' : 'Smart API detection for custom domains (Dokploy).'}</div>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.40 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Anonymisation du code : suppression des domaines personnels.' : 'Anonymized code: removed personal domains.'}</div>
+                        <div>• {lang === 'fr' ? 'Détection dynamique du domaine parent pour les cookies.' : 'Dynamic parent domain detection for cookies.'}</div>
                       </div>
                       <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.31 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Refonte du backend pour prioriser les réglages de la base de données.' : 'Refactored backend to prioritize database settings.'}</div>
-                        <div>• {lang === 'fr' ? 'WebSocket dynamique utilisant l\'URL configurée au lieu de 127.0.0.1.' : 'Dynamic WebSocket using configured URL instead of 127.0.0.1.'}</div>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.39 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Refonte de l\'infrastructure en domaine unique (Path Routing).' : 'Overhauled infrastructure to single domain (Path Routing).'}</div>
+                        <div>• {lang === 'fr' ? 'Relocalisation des WebSockets sur /api/ws.' : 'Relocated WebSockets to /api/ws.'}</div>
+                      </div>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.38 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Correction critique du crash de la page blanche.' : 'Critical white screen crash fix.'}</div>
                       </div>
                       <div style={{ marginBottom: '1rem' }}>
                         <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.30 (2026-05-16)</div>
