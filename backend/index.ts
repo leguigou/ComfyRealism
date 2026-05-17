@@ -178,7 +178,7 @@ console.log(`[Config] Startup ComfyUI URL: ${COMFY_URL}`);
 console.log(`[Config] Startup ComfyUI WS: ${COMFY_WS_URL}`);
 
 const AUTH_SECRET = process.env.AUTH_SECRET || 'fallback_secret';
-const APP_PASSWORD = process.env.APP_PASSWORD || 'comfy';
+// APP_PASSWORD is declared above during migration
 
 app.use(cors({
   origin: true,
