@@ -1,4 +1,4 @@
-FROM node:20-bullseye-slim
+FROM node:22-bullseye-slim
 
 # Install build dependencies for better-sqlite3 and sharp
 RUN apt-get update && apt-get install -y \
