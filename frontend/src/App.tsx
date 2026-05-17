@@ -89,8 +89,13 @@ const getApiBase = () => {
     return `${protocol}//${hostname}:3001`;
   }
   
-  const targetPort = (port === '55200') ? '55201' : '3001';
-  return `${protocol}//${hostname}:${targetPort}`;
+  // 4. Smart mapping for external access (e.g. 55200 -> 55201, 55300 -> 55301)
+  if (port.endsWith('00') && port.length >= 5) {
+    const apiPort = (parseInt(port) + 1).toString();
+    return `${protocol}//${hostname}:${apiPort}`;
+  }
+
+  return `${protocol}//${hostname}:3001`;
 };
 
 const API_BASE = getApiBase();
