@@ -100,6 +100,14 @@ const getApiBase = () => {
   return `${protocol}//${hostname}:3001`;
 };
 
+const formatDuration = (seconds: number | undefined) => {
+  if (seconds === undefined || seconds === null) return '';
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}m${s.toString().padStart(2, '0')}s`;
+};
+
 const API_BASE = getApiBase();
 console.log(`[App] API Base URL: ${API_BASE}`);
 
@@ -534,9 +542,8 @@ function App() {
                     cfg: data.cfg || m.cfg,
                     seed: data.seed || m.seed,
                     workflow: data.workflow || m.workflow,
-                    duration: data.duration !== undefined ? data.duration : (m.duration ?? 0)
+                    duration: (data.duration !== undefined && data.duration !== null) ? data.duration : m.duration
                     };
-
                 }
                 return m;
               });
@@ -1595,7 +1602,7 @@ function App() {
                           {msg.isEnhancing ? t.enhancing : (msg.status === 'processing' ? t.generating : t.waiting)}
                           {msg.status === 'processing' && msg.duration !== undefined && (
                             <span style={{ display: 'block', fontSize: '0.8rem', opacity: 0.7, marginTop: '4px' }}>
-                              {msg.duration}s
+                              {formatDuration(msg.duration)}
                             </span>
                           )}
                         </p>
@@ -1653,7 +1660,7 @@ function App() {
                         <p><strong>{t.dimensions}:</strong> {msg.width}x{msg.height}</p>
                         <p><strong>{t.steps}:</strong> {msg.steps} | <strong>CFG:</strong> {msg.cfg} | <strong>{t.seed}:</strong> {msg.seed || t.unknown}</p>
                         {msg.duration !== undefined && (
-                          <p><strong>{lang === 'fr' ? 'Durée' : 'Duration'}:</strong> {msg.duration}s</p>
+                          <p><strong>{lang === 'fr' ? 'Durée' : 'Duration'}:</strong> {formatDuration(msg.duration)}</p>
                         )}
 
                       </div>
