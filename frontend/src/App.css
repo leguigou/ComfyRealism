@@ -1010,7 +1010,7 @@ body {
   height: 40px;
 }
 
-.bounced-ball {
+.bounced-ball, .bounce1, .bounce2, .bounce3 {
   width: 12px;
   height: 12px;
   background: linear-gradient(135deg, var(--accent) 0%, #0d8a6a 100%);
@@ -1018,6 +1018,10 @@ body {
   animation: bounce 0.6s infinite alternate cubic-bezier(0.6, 0.05, 0.15, 0.95);
   box-shadow: 0 5px 15px rgba(16, 163, 127, 0.3);
 }
+
+.bounce1 { animation-delay: 0s; }
+.bounce2 { animation-delay: 0.15s; }
+.bounce3 { animation-delay: 0.3s; }
 
 .bounced-ball:nth-child(2) { animation-delay: 0.15s; }
 .bounced-ball:nth-child(3) { animation-delay: 0.3s; }
