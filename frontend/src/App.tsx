@@ -1591,12 +1591,14 @@ function App() {
                             <div className="add-user-form">
                               <input type="text" placeholder={t.username} value={newUser.username} onChange={(e) => setNewUser({ ...newUser, username: e.target.value })} />
                               <input type="password" placeholder={t.password} value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} />
-                              <label className="admin-checkbox">
-                                <input type="checkbox" checked={newUser.isAdmin} onChange={(e) => setNewUser({ ...newUser, isAdmin: e.target.checked })} />
-                                {t.admin}
-                              </label>
-                              <button onClick={handleAddUser} disabled={isAdminLoading || !newUser.username || !newUser.password}>
-                                {isAdminLoading ? '...' : '+'}
+                              <div className="admin-checkbox-wrapper">
+                                <label className="admin-checkbox">
+                                  <input type="checkbox" checked={newUser.isAdmin} onChange={(e) => setNewUser({ ...newUser, isAdmin: e.target.checked })} />
+                                  {t.admin}
+                                </label>
+                              </div>
+                              <button className="add-user-submit-btn" onClick={handleAddUser} disabled={isAdminLoading || !newUser.username || !newUser.password}>
+                                {isAdminLoading ? '...' : t.addUser}
                               </button>
                             </div>
                           </div>
