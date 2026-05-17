@@ -1,48 +1,65 @@
-<<<<<<< HEAD
 # ComfyRealism
 
-Une application full-stack moderne pour générer des images réalistes via une interface de chat connectée à un backend ComfyUI.
+Une application full-stack moderne et élégante pour générer des images via une interface de chat connectée à un backend ComfyUI.
 
-## Fonctionnalités
-- **Interface de Chat** : Une expérience fluide type ChatGPT pour interagir avec l'IA.
-- **Paramètres Avancés** : Ajustez la largeur, la hauteur, le CFG et les étapes directement depuis l'interface.
-- **Accès Distant** : Support natif pour l'accès via nom de domaine ou IP externe (gestion dynamique des ports).
-- **Sécurité** : Protection par mot de passe et cookies signés pour restreindre l'accès.
-- **Gestion de l'Historique** : Sauvegarde automatique des sessions et des images générées.
-- **Galerie** : Un espace dédié "Mes contenus" pour retrouver toutes vos créations triées par date.
+## ✨ Fonctionnalités
 
-## Installation Rapide
+- **💬 Interface de Chat Intuitive** : Une expérience fluide type ChatGPT pour interagir avec vos modèles d'image.
+- **🎨 Génération Dynamique** : Support complet pour ComfyUI avec polling en temps réel.
+- **🖼️ Gestion Intelligente des Médias** :
+  - Stockage centralisé à la racine du projet.
+  - **Miniatures à la volée** : Recréation automatique des miniatures si elles manquent.
+  - Galerie "Mes contenus" pour parcourir vos créations.
+- **🛠️ Paramètres Avancés** :
+  - Sélection des Checkpoints via l'API ComfyUI (plus besoin de configurer les chemins locaux).
+  - Contrôle précis : Dimensions, Steps, CFG, Seed, Negative Prompt.
+  - Gestion des Workflows JSON personnalisés.
+- **🤖 Optimisation IA (LLM)** : Option pour reformuler vos prompts via une API LLM compatible OpenAI/Ollama.
+- **🌍 Multi-langue** : Support complet **Français** et **Anglais**.
+- **🌙 Thèmes** : Modes Sombre et Clair disponibles.
+- **🛡️ Sécurité & Robustesse** :
+  - Protection par mot de passe et cookies signés.
+  - Base de données **SQLite** performante via `better-sqlite3`.
+  - Gestion d'erreurs détaillée (VRAM, modèles manquants, timeouts).
+- **📝 Journal de Développement** : Suivi des versions et améliorations directement dans l'interface.
 
-1. **Prérequis** :
-   - Node.js installé.
-   - ComfyUI installé et en cours d'exécution sur le port 8188.
+## 🚀 Installation & Lancement
 
-2. **Configuration** :
-   - Créez un fichier `backend/.env` (si non existant) :
-     ```env
-     AUTH_SECRET=une_cle_secrete_longue_et_aleatoire
-     APP_PASSWORD=votre_mot_de_passe
-     ```
+### Méthode 1 : Docker (Recommandé)
+Assurez-vous que Docker et Docker Compose sont installés.
+```bash
+docker-compose up --build -d
+```
+*L'interface sera accessible sur `http://localhost:5173`.*
 
-3. **Lancement** :
-   - Exécutez simplement `run.bat` à la racine du projet.
+### Méthode 2 : Lancement Local (Windows)
+1. **Prérequis** : Node.js (v18+) et ComfyUI (port 8188).
+2. **Configuration** : Créez un fichier `backend/.env` :
+   ```env
+   AUTH_SECRET=votre_secret_aleatoire
+   APP_PASSWORD=votre_mot_de_passe
+   ```
+3. **Lancement** : Double-cliquez sur `run.bat` à la racine.
 
-## Accès Externe (Configuration Routeur)
+### Méthode 3 : Lancement Local (Linux/Raspberry Pi)
+```bash
+chmod +x run.sh
+./run.sh
+```
 
-Pour accéder à votre instance depuis l'extérieur (ex: `http://votre-domaine.fr:55200`) :
+## 📂 Structure du Projet
 
-| Service | Port WAN (Externe) | Port LAN (Interne) |
+- `/frontend` : Interface React + Vite + TypeScript.
+- `/backend` : Serveur Express + Node.js (API & Gestion de file d'attente).
+- `/images` : Stockage des générations (exclu des sauvegardes).
+- `DEVELOPMENT_LOGS.md` : Historique détaillé des modifications techniques.
+
+## 🛠️ Accès Externe
+
+| Service | Port Interne | Port Externe (Suggéré) |
 | :--- | :--- | :--- |
-| **Interface Web** | 55200 | 5173 |
-| **API Backend** | 55201 | 3001 |
+| **Interface Web** | 5173 | 55200 |
+| **API Backend** | 3001 | 55201 |
 
-*Note : L'application détecte automatiquement le passage sur le port 55200 pour rediriger les requêtes API vers le port 55201.*
-
-## Structure du Projet
-- `frontend/` : Interface React + Vite + TypeScript.
-- `backend/` : Serveur Express + Node.js gérant la logique et l'historique.
-- `backend/images/` : Stockage local des images générées.
-- `backend/data/history.json` : Base de données JSON de l'historique.
-=======
-# ComfyRealism
->>>>>>> d46a50977a1d949ed97a7ce62be027d29d080765
+## 📝 Crédits
+Développé pour offrir une interface simplifiée et puissante à la puissance de ComfyUI.
