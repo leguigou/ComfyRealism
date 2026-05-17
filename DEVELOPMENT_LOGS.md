@@ -1,6 +1,17 @@
 # Development Logs
 
-## Current Version: 1.2.52-beta
+## Current Version: 1.2.54-beta
+
+---
+
+### v1.2.54-beta (2026-05-17)
+- **AI Visual Feedback**: Added an animated, color-shifting glowing border to the input box when AI optimization is enabled, providing intuitive feedback on the current generation mode.
+
+---
+
+### v1.2.53-beta (2026-05-17)
+- **Timer Formatting**: Durations exceeding 60 seconds are now formatted as "XmXXs" (e.g., 1m05s) for better readability.
+- **Flicker-Free Timer**: Hardened the WebSocket update logic to prevent the generation timer from disappearing or flickering during state transitions.
 
 ---
 
