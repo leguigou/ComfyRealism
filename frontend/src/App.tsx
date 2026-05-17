@@ -1158,7 +1158,7 @@ function App() {
                 <div className="settings-grid">
                   <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                     <label>{t.currentVersion}</label>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.48</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.54</div>
                     
                     <label>{t.devLogs}</label>
                     <div className="logs-container" style={{ 
@@ -1171,6 +1171,23 @@ function App() {
                       lineHeight: '1.4',
                       fontFamily: 'monospace'
                     }}>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.54 (2026-05-17)</div>
+                        <div>• {lang === 'fr' ? 'Indicateur visuel IA (contour animé).' : 'AI visual feedback (glowing border).'}</div>
+                      </div>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.53 (2026-05-17)</div>
+                        <div>• {lang === 'fr' ? 'Formatage du minuteur (1m05s).' : 'Timer formatting (1m05s).'}</div>
+                        <div>• {lang === 'fr' ? 'Suppression du clignotement du timer.' : 'Flicker-free timer updates.'}</div>
+                      </div>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.52 (2026-05-17)</div>
+                        <div>• {lang === 'fr' ? 'Auto-scroll intelligent.' : 'Smart auto-scroll behavior.'}</div>
+                      </div>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.51 (2026-05-17)</div>
+                        <div>• {lang === 'fr' ? 'Minuteur de génération en direct.' : 'Live generation timer.'}</div>
+                      </div>
                       <div style={{ marginBottom: '1rem' }}>
                         <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.48 (2026-05-17)</div>
                         <div>• {lang === 'fr' ? 'Restauration critique du backend.' : 'Critical backend restoration.'}</div>
