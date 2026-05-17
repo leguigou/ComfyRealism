@@ -18,29 +18,6 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 const PORT = Number(process.env.PORT) || 3001;
-const COMFY_URL = process.env.COMFY_URL || 'http://127.0.0.1:8188';
-
-// Helper to get WS URL from HTTP URL
-const getComfyWsUrl = (httpUrl: string) => {
-  return httpUrl.replace(/^http/, 'ws') + '/ws';
-};
-
-const COMFY_WS_URL = getComfyWsUrl(COMFY_URL);
-
-console.log(`[Config] ComfyUI URL: ${COMFY_URL}`);
-console.log(`[Config] ComfyUI WS: ${COMFY_WS_URL}`);
-
-const AUTH_SECRET = process.env.AUTH_SECRET || 'fallback_secret';
-const APP_PASSWORD = process.env.APP_PASSWORD || 'comfy';
-
-app.use(cors({
-  origin: (origin, callback) => {
-    callback(null, true);
-  },
-  credentials: true
-}));
-app.use(express.json());
-app.use(cookieParser(AUTH_SECRET));
 
 // Setup directories
 const rootDir = path.join(__dirname, '..');
@@ -102,7 +79,7 @@ db.exec(`
   );
 `);
 
-// Migration to add missing columns if they don't exist
+// Migration to add missing columns
 const columns = ['model', 'width', 'height', 'steps', 'cfg', 'workflow', 'status', 'thumbnailUrl', 'seed'];
 columns.forEach(col => {
   try {
@@ -113,18 +90,45 @@ columns.forEach(col => {
   }
 });
 
-// Migration for queue table just in case
-db.exec(`CREATE TABLE IF NOT EXISTS queue (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    messageId TEXT NOT NULL,
-    prompt TEXT NOT NULL,
-    originalPrompt TEXT,
-    sessionId TEXT NOT NULL,
-    params TEXT NOT NULL,
-    status TEXT DEFAULT 'pending',
-    createdAt INTEGER NOT NULL,
-    FOREIGN KEY (messageId) REFERENCES messages(id) ON DELETE CASCADE
-)`);
+// Helper to get WS URL from HTTP URL
+const getComfyWsUrl = (httpUrl: string) => {
+  return httpUrl.replace(/^http/, 'ws') + '/ws';
+};
+
+// Helper to get effective ComfyUI URL (Priority: Env > DB > Default)
+const getEffectiveComfyUrl = () => {
+  if (process.env.COMFY_URL) {
+    return { url: process.env.COMFY_URL, source: 'Environment' };
+  }
+  try {
+    const settings = db.prepare('SELECT data FROM settings WHERE id = 1').get() as any;
+    if (settings) {
+      const data = JSON.parse(settings.data);
+      if (data.comfyUrl) return { url: data.comfyUrl, source: 'Database' };
+    }
+  } catch (e) {}
+  return { url: 'http://127.0.0.1:8188', source: 'Default' };
+};
+
+const startupCfg = getEffectiveComfyUrl();
+const COMFY_URL = startupCfg.url;
+const COMFY_WS_URL = getComfyWsUrl(COMFY_URL);
+
+console.log(`[Config] Startup ComfyUI Source: ${startupCfg.source}`);
+console.log(`[Config] Startup ComfyUI URL: ${COMFY_URL}`);
+console.log(`[Config] Startup ComfyUI WS: ${COMFY_WS_URL}`);
+
+const AUTH_SECRET = process.env.AUTH_SECRET || 'fallback_secret';
+const APP_PASSWORD = process.env.APP_PASSWORD || 'comfy';
+
+app.use(cors({
+  origin: (origin, callback) => {
+    callback(null, true);
+  },
+  credentials: true
+}));
+app.use(express.json());
+app.use(cookieParser(AUTH_SECRET));
 
 // Auth Middleware
 const authenticate = (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -144,8 +148,16 @@ wss.on('connection', (ws) => {
   // Send the assigned clientId to the frontend
   ws.send(JSON.stringify({ type: 'connected', clientId }));
 
-  const comfyWs = new WebSocket(`${COMFY_WS_URL}?clientId=${clientId}`);
+  // Get dynamic URL for this specific connection
+  const currentCfg = getEffectiveComfyUrl();
+  const currentComfyWsUrl = getComfyWsUrl(currentCfg.url);
   
+  const comfyWs = new WebSocket(`${currentComfyWsUrl}?clientId=${clientId}`);
+  
+  comfyWs.on('open', () => {
+    console.log(`[WS] Relay connected to ComfyUI at ${currentComfyWsUrl}`);
+  });
+
   comfyWs.on('message', (data) => {
     if (ws.readyState === WebSocket.OPEN) {
       ws.send(data.toString());
@@ -153,7 +165,7 @@ wss.on('connection', (ws) => {
   });
 
   comfyWs.on('error', (err) => { 
-    console.error('ComfyUI WS Error:', err); 
+    console.error(`[WS] ComfyUI Error (${currentComfyWsUrl}):`, err.message); 
     ws.close(); 
   });
 
@@ -174,7 +186,6 @@ const broadcastToSession = (sessionId: string, data: any) => {
   });
 };
 
-// Serving images with aggressive caching
 // Custom handler for thumbnails to allow on-the-fly generation
 app.get('/api/image-files/thumbnails/:filename', async (req, res, next) => {
   const filename = req.params.filename;
@@ -273,7 +284,7 @@ const parseComfyError = (error: any) => {
     const err = error.response.data.node_errors[node].errors[0];
     return `Node ${node} (${error.response.data.node_errors[node].class_type}): ${err.message}${err.details ? ' - ' + err.details : ''}`;
   }
-  if (error.message?.includes('ECONNREFUSED')) return 'ComfyUI is unreachable. Please check if it is running on http://127.0.0.1:8188';
+  if (error.message?.includes('ECONNREFUSED')) return 'ComfyUI is unreachable. Please check settings.';
   if (error.code === 'ETIMEDOUT' || error.message?.includes('timeout')) return 'ComfyUI request timed out (possible GPU overload or hang).';
   return error.message || 'Unknown server error';
 };
@@ -296,7 +307,10 @@ const processQueue = async () => {
 
     const params = JSON.parse(task.params);
     const workflow = getWorkflow(task.prompt, params);
-    const targetComfyUrl = params?.comfyUrl || COMFY_URL;
+    
+    // Use dynamic URL from params or DB fallback
+    const dynamicCfg = getEffectiveComfyUrl();
+    const targetComfyUrl = params?.comfyUrl || dynamicCfg.url;
 
     const configPath = path.join(__dirname, 'workflows', (params?.workflowFile || 'workflow_lcm.json').replace('.json', '.config.json'));
     let saveNodeId = "99";
@@ -330,7 +344,6 @@ const processQueue = async () => {
       try {
         hResp = await axios.get(`${targetComfyUrl}/history/${promptId}`, { timeout: 5000 });
       } catch (err: any) {
-        // If it's a network error during polling, we might want to retry a few times before failing
         console.warn(`[Queue] Polling attempt failed: ${err.message}`);
         await new Promise(r => setTimeout(r, 2000));
         continue;
@@ -352,7 +365,6 @@ const processQueue = async () => {
 
       if (!finished) {
         await new Promise(r => setTimeout(r, 1000));
-        // Check if task was cancelled by user
         const stillExists = db.prepare('SELECT id FROM queue WHERE id = ?').get(task.id);
         if (!stillExists) {
           isProcessingQueue = false;
@@ -379,16 +391,8 @@ const processQueue = async () => {
     const fullWebpName = `${baseName}.webp`;
     const thumbWebpName = `${baseName}_thumb.webp`;
     
-    // Save Full HD WebP
-    await sharp(imgResp.data)
-      .webp({ quality: 85 })
-      .toFile(path.join(imagesDir, fullWebpName));
-      
-    // Save Thumbnail WebP
-    await sharp(imgResp.data)
-      .resize(400, 400, { fit: 'inside', withoutEnlargement: true })
-      .webp({ quality: 70 })
-      .toFile(path.join(thumbnailsDir, thumbWebpName));
+    await sharp(imgResp.data).webp({ quality: 85 }).toFile(path.join(imagesDir, fullWebpName));
+    await sharp(imgResp.data).resize(400, 400, { fit: 'inside', withoutEnlargement: true }).webp({ quality: 70 }).toFile(path.join(thumbnailsDir, thumbWebpName));
 
     const imageUrl = `/api/image-files/${fullWebpName}`;
     const thumbnailUrl = `/api/image-files/thumbnails/${thumbWebpName}`;
@@ -419,11 +423,7 @@ const processQueue = async () => {
     if (task) {
       db.prepare('UPDATE messages SET status = ?, text = ? WHERE id = ?').run('failed', errorMsg, task.messageId);
       db.prepare('DELETE FROM queue WHERE id = ?').run(task.id);
-      broadcastToSession(task.sessionId, { 
-        messageId: task.messageId, 
-        status: 'failed', 
-        error: errorMsg 
-      });
+      broadcastToSession(task.sessionId, { messageId: task.messageId, status: 'failed', error: errorMsg });
     }
   } finally {
     isProcessingQueue = false;
@@ -474,7 +474,6 @@ app.get('/api/gallery', authenticate, (req, res) => {
   const limit = parseInt(req.query.limit as string) || 25;
   const offset = parseInt(req.query.offset as string) || 0;
   const onlyArchived = req.query.includeArchived === 'true';
-  
   const query = `
     SELECT m.sessionId, m.id as messageId, m.imageUrl, m.thumbnailUrl, m.prompt, m.text, m.timestamp, m.model, m.width, m.height, m.steps, m.cfg, m.workflow, m.seed 
     FROM messages m
@@ -483,7 +482,6 @@ app.get('/api/gallery', authenticate, (req, res) => {
     ORDER BY m.timestamp DESC
     LIMIT ? OFFSET ?
   `;
-  
   const gallery = db.prepare(query).all(onlyArchived ? 1 : 0, limit, offset);
   res.json(gallery);
 });
@@ -549,16 +547,11 @@ app.post('/api/enhance-prompt', authenticate, async (req, res) => {
     if (jsonMatch) {
       try { 
         const parsed = JSON.parse(jsonMatch[0]);
-        // Handle common variations in key names
         const pos = parsed.positive || parsed.prompt || parsed.positive_prompt || parsed.text;
         const neg = parsed.negative || parsed.negative_prompt || parsed.neg || "";
-        if (pos) {
-          result.positive = pos;
-          result.negative = neg;
-        }
+        if (pos) { result.positive = pos; result.negative = neg; }
       } catch (e) {}
     }
-
     res.json({ enhancedPrompt: result.positive, negativePrompt: result.negative });
   } catch (error: any) { 
     res.status(500).json({ error: 'LLM Error: ' + (error.response?.data?.error?.message || error.message) }); 
@@ -587,7 +580,8 @@ app.post('/api/llm-check', authenticate, async (req, res) => {
 app.post('/api/comfy-check', authenticate, async (req, res) => {
   try {
     const { comfyUrl } = req.body;
-    const targetUrl = comfyUrl || COMFY_URL;
+    const currentCfg = getEffectiveComfyUrl();
+    const targetUrl = comfyUrl || currentCfg.url;
     const response = await axios.get(`${targetUrl}/system_stats`, { timeout: 3000 });
     res.json({ success: true, stats: response.data });
   } catch (error: any) {
@@ -598,27 +592,21 @@ app.post('/api/comfy-check', authenticate, async (req, res) => {
 app.post('/api/comfy-models', authenticate, async (req, res) => {
   try {
     const { comfyUrl } = req.body;
-    const targetUrl = comfyUrl || COMFY_URL;
-    
-    // Fetch models directly from ComfyUI API
+    const currentCfg = getEffectiveComfyUrl();
+    const targetUrl = comfyUrl || currentCfg.url;
     const response = await axios.get(`${targetUrl}/models/checkpoints`, { timeout: 5000 });
-    
-    if (Array.isArray(response.data)) {
-      res.json({ models: response.data.sort() });
-    } else {
-      // Fallback to object_info if /models/checkpoints is not supported by the ComfyUI version
+    if (Array.isArray(response.data)) { res.json({ models: response.data.sort() }); } else {
       const infoResp = await axios.get(`${targetUrl}/object_info`, { timeout: 5000 });
       const checkpoints = infoResp.data["CheckpointLoaderSimple"]?.input?.required?.ckpt_name?.[0] || [];
       res.json({ models: checkpoints.sort() });
     }
-  } catch (error: any) { 
-    res.status(500).json({ error: 'Failed to fetch models from ComfyUI: ' + error.message }); 
-  }
+  } catch (error: any) { res.status(500).json({ error: 'Failed to fetch models from ComfyUI: ' + error.message }); }
 });
 
 app.post('/api/interrupt', authenticate, async (req, res) => {
   try {
-    await axios.post(`${req.body.params?.comfyUrl || COMFY_URL}/interrupt`);
+    const currentCfg = getEffectiveComfyUrl();
+    await axios.post(`${req.body.params?.comfyUrl || currentCfg.url}/interrupt`);
     res.json({ success: true });
   } catch (error: any) { res.status(500).json({ error: 'Failed to interrupt' }); }
 });
@@ -629,49 +617,20 @@ app.post('/api/generate', authenticate, async (req, res) => {
     const timestamp = Date.now();
     const messageId = uuidv4();
     const userMessageId = uuidv4();
-
     const displayPrompt = originalPrompt || prompt;
-    const isEnhanced = prompt && prompt !== originalPrompt;
-    const enhancedText = (isEnhanced || req.body.isRegeneration) ? prompt : '';
-
+    const enhancedText = (prompt && prompt !== originalPrompt || req.body.isRegeneration) ? prompt : '';
     const model = params?.comfyModel || 'dirtyRealism_DMDSAT.safetensors';
     const workflowFile = params?.workflowFile || 'workflow_lcm.json';
     const seed = params?.seed || Math.floor(Math.random() * 1000000000000000);
-
     const insertMsg = db.prepare('INSERT INTO messages (id, sessionId, role, text, prompt, imageUrl, timestamp, model, width, height, steps, cfg, workflow, status, seed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-    
-    if (!req.body.isRegeneration) {
-      insertMsg.run(userMessageId, sessionId, 'user', displayPrompt, '', null, timestamp - 1, null, null, null, null, null, null, 'completed', null);
-    }
-
-    insertMsg.run(
-      messageId, 
-      sessionId, 
-      'bot', 
-      enhancedText, 
-      displayPrompt, 
-      null, 
-      timestamp,
-      model,
-      params?.width || 896,
-      params?.height || 1152,
-      params?.steps || 8,
-      params?.cfg || 1.1,
-      workflowFile,
-      'pending',
-      seed
-    );
-    
-    const taskParams = { ...params, seed };
+    if (!req.body.isRegeneration) { insertMsg.run(userMessageId, sessionId, 'user', displayPrompt, '', null, timestamp - 1, null, null, null, null, null, null, 'completed', null); }
+    insertMsg.run(messageId, sessionId, 'bot', enhancedText, displayPrompt, null, timestamp, model, params?.width || 896, params?.height || 1152, params?.steps || 8, params?.cfg || 1.1, workflowFile, 'pending', seed);
     db.prepare('INSERT INTO queue (messageId, prompt, originalPrompt, sessionId, params, status, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)')
-      .run(messageId, prompt, originalPrompt, sessionId, JSON.stringify(taskParams), 'pending', timestamp);
-
+      .run(messageId, prompt, originalPrompt, sessionId, JSON.stringify({ ...params, seed }), 'pending', timestamp);
     db.prepare('UPDATE sessions SET title = ?, updatedAt = ? WHERE id = ? AND title = \'New Chat\'').run(displayPrompt.substring(0, 30), timestamp, sessionId);
     db.prepare('UPDATE sessions SET updatedAt = ? WHERE id = ?').run(timestamp, sessionId);
-
     res.json({ success: true, messageId, status: 'pending' });
     processQueue();
-
   } catch (error: any) { res.status(500).json({ success: false, error: error.message }); }
 });
 
