@@ -122,10 +122,10 @@ const AUTH_SECRET = process.env.AUTH_SECRET || 'fallback_secret';
 const APP_PASSWORD = process.env.APP_PASSWORD || 'comfy';
 
 app.use(cors({
-  origin: (origin, callback) => {
-    callback(null, true);
-  },
-  credentials: true
+  origin: true, // Reflect any incoming origin to allow cross-subdomain credentials
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 app.use(cookieParser(AUTH_SECRET));
@@ -443,13 +443,30 @@ app.post('/api/auth/login', (req, res) => {
   if (submitted === expected) {
     const isProd = process.env.NODE_ENV === 'production';
     console.log(`[Auth] Successful login. Production mode: ${isProd}`);
-    res.cookie('authenticated', 'true', { 
+    
+    const cookieOptions: any = { 
       httpOnly: true, 
       signed: true, 
-      sameSite: isProd ? 'none' : 'lax', 
-      secure: isProd,
       maxAge: 30 * 24 * 60 * 60 * 1000 
-    });
+    };
+
+    if (isProd) {
+      cookieOptions.sameSite = 'none';
+      cookieOptions.secure = true;
+      
+      // Support for cross-subdomain cookies (even behind proxies)
+      const host = (req.headers['x-forwarded-host'] as string) || req.headers.host || '';
+      console.log(`[Auth] Detected host for cookie: ${host}`);
+      
+      if (host.includes('deloffre.fr')) {
+        cookieOptions.domain = '.deloffre.fr';
+        console.log('[Auth] Applying domain .deloffre.fr to cookie');
+      }
+    } else {
+      cookieOptions.sameSite = 'lax';
+    }
+
+    res.cookie('authenticated', 'true', cookieOptions);
     return res.json({ success: true });
   }
   

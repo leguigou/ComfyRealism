@@ -629,20 +629,30 @@ function App() {
     e?.preventDefault();
     setLoginError(false);
     const trimmedPassword = loginPassword.trim();
+    const loginUrl = `${API_BASE}/api/auth/login`;
+    
+    console.log(`[Auth] Attempting login at: ${loginUrl}`);
+    
     try {
-      const res = await fetch(`${API_BASE}/api/auth/login`, {
+      const res = await fetch(loginUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: trimmedPassword }),
         credentials: 'include'
       });
+      
       if (res.ok) {
+        console.log('[Auth] Login successful');
         setIsAuthenticated(true);
       } else {
         setLoginError(true);
+        const data = await res.json().catch(() => ({}));
+        console.error(`[Auth] Login rejected. Status: ${res.status}`, data);
+        alert(`Échec de connexion (Code: ${res.status}).\nMot de passe incorrect ou erreur serveur.`);
       }
-    } catch {
-      setLoginError(true);
+    } catch (err: any) {
+      console.error('[Auth] Network error during login:', err);
+      alert(`Erreur Réseau : Impossible de joindre l'API.\n\nURL tentée : ${loginUrl}\n\nDétails : ${err.message}\n\nAssurez-vous que le domaine de l'API est correct et que le certificat HTTPS est valide.`);
     }
   };
 
