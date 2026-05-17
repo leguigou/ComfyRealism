@@ -1,6 +1,13 @@
 # Development Logs
 
-## Current Version: 1.2.24
+## Current Version: 1.2.25
+
+---
+
+### v1.2.25 (2026-05-16)
+- **CI/CD Fix**: Fixed Docker image tag naming by forcing lowercase names (required by GHCR/Docker standards).
+- **Future-Proofing**: Added `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` to address Node.js 20 deprecation warnings in GitHub Actions.
+- **Workflow Optimization**: Standardized container naming for better consistency in the registry.
 
 ---
 
