@@ -1585,10 +1585,10 @@ function App() {
                       )}
                     {msg.role === 'bot' && !msg.imageUrl && msg.status !== 'failed' && (
                       <div className="generation-placeholder">
-                        <div className=\"bounced-loader\">
-                          <div className=\"bounce1\"></div>
-                          <div className=\"bounce2\"></div>
-                          <div className=\"bounce3\"></div>
+                        <div className="bounced-loader">
+                          <div className="bounce1"></div>
+                          <div className="bounce2"></div>
+                          <div className="bounce3"></div>
                         </div>
                         <p>
                           {msg.isEnhancing ? t.enhancing : (msg.status === 'processing' ? t.generating : t.waiting)}
