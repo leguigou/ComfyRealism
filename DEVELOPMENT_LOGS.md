@@ -1,6 +1,12 @@
 # Development Logs
 
-## Current Version: 1.2.23
+## Current Version: 1.2.24
+
+---
+
+### v1.2.24 (2026-05-16)
+- **UI Readability Fix**: Fixed "gray on gray" text issue in the light theme by darkening the default text color and explicitly styling `.message-text`.
+- **Theme Polish**: Updated `.light` theme variables to provide better contrast across the entire interface (Text, Headings, and Backgrounds).
 
 ---
 
