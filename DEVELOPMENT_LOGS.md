@@ -1,6 +1,13 @@
 # Development Logs
 
-## Current Version: 1.2.46
+## Current Version: 1.2.47
+
+---
+
+### v1.2.47 (2026-05-17)
+- **Proxy-Agnostic Routing**: Refactored backend routes to be compatible with various proxy configurations (like Dokploy/Traefik). All API routes are now handled by a router mounted at both `/` and `/api`.
+- **Flexible WebSockets**: Updated the WebSocket server to accept connections on both `/api/ws` and `/ws`, ensuring real-time updates work even if the proxy strips the path prefix.
+- **Improved Code Quality**: Cleaned up the backend routing logic by centralizing API endpoints into a dedicated router.
 
 ---
 
