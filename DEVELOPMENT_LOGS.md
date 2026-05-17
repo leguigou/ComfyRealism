@@ -1,6 +1,12 @@
 # Development Logs
 
-## Current Version: 1.2.37
+## Current Version: 1.2.38
+
+---
+
+### v1.2.38 (2026-05-16)
+- **Critical Bug Fix**: Resolved "white screen" (frontend crash) by reordering variable definitions. The `lang` and `t` variables are now defined at the top of the `App` component, making them safely available to all state initializers and functions.
+- **Maintenance**: Improved code stability for local development and production.
 
 ---
 
