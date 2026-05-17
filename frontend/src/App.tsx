@@ -78,9 +78,9 @@ const getApiBase = () => {
   const { protocol, hostname, port } = window.location;
 
   // 2. Production Path Routing (Solution B)
-  // If we are not on localhost or a known dev port, we assume we use path routing /api
+  // If we are not on localhost or a known dev port, we use the root domain
   if (hostname !== 'localhost' && hostname !== '127.0.0.1' && (!port || port === '80' || port === '443')) {
-    return `${protocol}//${hostname}/api`;
+    return `${protocol}//${hostname}`;
   }
 
   // 3. Fallback for local development
@@ -484,8 +484,10 @@ function App() {
     if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
 
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsBase = API_BASE.startsWith('http') ? API_BASE.replace(/^http/, 'ws') : `${wsProtocol}//${window.location.host}/api`;
-    const wsUrl = `${wsBase}/ws`;
+    // If API_BASE is just a domain (production), we need to add /api/ws
+    // If it's a domain with a port (dev), we need to add /api/ws
+    const wsBase = API_BASE.startsWith('http') ? API_BASE.replace(/^http/, 'ws') : `${wsProtocol}//${window.location.host}`;
+    const wsUrl = `${wsBase}/api/ws`;
 
     console.log(`[WS] Connecting to: ${wsUrl}`);
     const ws = new WebSocket(wsUrl);    wsRef.current = ws;

@@ -1,6 +1,12 @@
 # Development Logs
 
-## Current Version: 1.2.40
+## Current Version: 1.2.41
+
+---
+
+### v1.2.41 (2026-05-16)
+- **Routing Bug Fix**: Resolved double `/api/api/` prefix issue in production that caused 404 errors. `API_BASE` now correctly identifies the root domain.
+- **WebSocket Fix**: Standardized WebSocket URL construction to consistently use the `/api/ws` path across all environments.
 
 ---
 
