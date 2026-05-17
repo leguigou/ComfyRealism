@@ -1,6 +1,12 @@
 # Development Logs
 
-## Current Version: 1.2.21
+## Current Version: 1.2.22
+
+---
+
+### v1.2.22 (2026-05-16)
+- **UI Refinement**: Reduced sidebar item height (40px) and adjusted alignment for a sleeker, more balanced "capsule" look.
+- **Improved Spacing**: Tuned padding and horizontal alignment to ensure titles are closer to the left edge without touching it, maximizing space for text.
 
 ---
 

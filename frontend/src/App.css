@@ -104,7 +104,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0;
-  padding: 0.5rem;
+  padding: 0.5rem 0.3rem;
 }
 
 /* Custom Scrollbar for Sidebar */
@@ -125,9 +125,9 @@ body {
 .session-item {
   display: flex;
   align-items: center;
-  padding: 0 1rem;
-  min-height: 46px;
-  height: 46px;
+  padding: 0 0.8rem;
+  min-height: 40px;
+  height: 40px;
   border-radius: 999px;
   cursor: pointer;
   gap: 0.8rem;
