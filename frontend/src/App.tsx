@@ -1158,7 +1158,7 @@ function App() {
                 <div className="settings-grid">
                   <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                     <label>{t.currentVersion}</label>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.59</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.60</div>
                     
                     <label>{t.devLogs}</label>
                     <div className="logs-container" style={{ 
@@ -1172,12 +1172,12 @@ function App() {
                       fontFamily: 'monospace'
                     }}>
                       <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.59 (2026-05-17)</div>
-                        <div>• {lang === 'fr' ? 'Inversion du sens de l\'animation de statut (droite à gauche).' : 'Reversed status animation flow (right-to-left).'}</div>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.60 (2026-05-17)</div>
+                        <div>• {lang === 'fr' ? 'Billes rebondissantes sélectives (uniquement si actif).' : 'Selective bouncing balls (active only).'}</div>
                       </div>
                       <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.58 (2026-05-17)</div>
-                        <div>• {lang === 'fr' ? 'Correction de la visibilité des messages utilisateur.' : 'User message visibility fix.'}</div>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.59 (2026-05-17)</div>
+                        <div>• {lang === 'fr' ? 'Inversion du sens de l\'animation de statut (droite à gauche).' : 'Reversed status animation flow (right-to-left).'}</div>
                       </div>
                       <div style={{ marginBottom: '1rem' }}>
                         <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.55 (2026-05-17)</div>
@@ -1634,11 +1634,13 @@ function App() {
                       )}
                     {msg.role === 'bot' && !msg.imageUrl && msg.status !== 'failed' && (
                       <div className="generation-placeholder">
-                        <div className="bounced-loader">
-                          <div className="bounce1"></div>
-                          <div className="bounce2"></div>
-                          <div className="bounce3"></div>
-                        </div>
+                        {(msg.isEnhancing || msg.status === 'processing') && (
+                          <div className="bounced-loader">
+                            <div className="bounce1"></div>
+                            <div className="bounce2"></div>
+                            <div className="bounce3"></div>
+                          </div>
+                        )}
                         <p>
                           <span className={msg.isEnhancing || msg.status === 'processing' ? 'ai-text-shimmer' : ''}>
                             {msg.isEnhancing ? t.enhancing : (msg.status === 'processing' ? t.generating : t.waiting)}
