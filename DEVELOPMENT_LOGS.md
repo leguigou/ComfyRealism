@@ -1,6 +1,11 @@
 # Development Logs
 
-## Current Version: 1.2.49-beta
+## Current Version: 1.2.50-beta
+
+---
+
+### v1.2.50-beta (2026-05-17)
+- **Dynamic API Port Discovery**: Refactored the frontend's API detection logic to support multiple external machines. It now automatically maps `55X00` UI ports to `55X01` API ports, enabling seamless multi-instance external access.
 
 ---
 
