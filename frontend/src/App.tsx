@@ -20,6 +20,7 @@ interface Message {
   timestamp: number;
   status?: 'pending' | 'processing' | 'completed' | 'failed';
   isEnhancing?: boolean;
+  duration?: number;
 }
 
 interface GalleryItem {
@@ -36,6 +37,7 @@ interface GalleryItem {
   height?: number;
   steps?: number;
   cfg?: number;
+  duration?: number;
 }
 
 interface NodeMapping {
@@ -96,6 +98,14 @@ const getApiBase = () => {
   }
 
   return `${protocol}//${hostname}:3001`;
+};
+
+const formatDuration = (seconds: number | undefined) => {
+  if (seconds === undefined || seconds === null) return '';
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}m${s.toString().padStart(2, '0')}s`;
 };
 
 const API_BASE = getApiBase();
@@ -446,7 +456,17 @@ function App() {
       if (!res.ok) throw new Error('Failed to fetch session details');
       const data = await res.json();
       if (data.messages) {
-        setMessages(data.messages);
+        setMessages(prev => {
+          const newMessages = data.messages.map((newMsg: Message) => {
+            const existingMsg = prev.find(m => m.id === newMsg.id);
+            // Persistent duration: if local state has a duration and new data doesn't, keep local one
+            if (existingMsg && existingMsg.duration !== undefined && (newMsg.duration === undefined || newMsg.duration === null)) {
+              return { ...newMsg, duration: existingMsg.duration };
+            }
+            return newMsg;
+          });
+          return newMessages;
+        });
       }
     } catch (err) {
       console.error('Error fetching session details:', err);
@@ -531,8 +551,9 @@ function App() {
                     steps: data.steps || m.steps,
                     cfg: data.cfg || m.cfg,
                     seed: data.seed || m.seed,
-                    workflow: data.workflow || m.workflow
-                  };
+                    workflow: data.workflow || m.workflow,
+                    duration: (data.duration !== undefined && data.duration !== null) ? data.duration : m.duration
+                    };
                 }
                 return m;
               });
@@ -883,6 +904,9 @@ function App() {
         cfg: params.cfg
       };
       setMessages(prev => [...prev, initialBotMsg]);
+      
+      // Faire défiler vers le bas immédiatement après l'envoi
+      setTimeout(() => scrollToBottom(), 50);
 
       // 2. Interprétation IA si activée (uniquement si ce n'est PAS une régénération directe)
       if (params.llmEnabled && params.llmUrl && params.llmModel && !isRegeneration) {
@@ -974,10 +998,6 @@ function App() {
       fetchSessionDetails(currentSessionId);
     }
   }, [currentSessionId, fetchSessionDetails, isAuthenticated]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isGenerating, scrollToBottom]);
 
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
 
@@ -1584,11 +1604,19 @@ function App() {
                     {msg.role === 'bot' && !msg.imageUrl && msg.status !== 'failed' && (
                       <div className="generation-placeholder">
                         <div className="bounced-loader">
-                          <div className="bounced-ball"></div>
-                          <div className="bounced-ball"></div>
-                          <div className="bounced-ball"></div>
+                          <div className="bounce1"></div>
+                          <div className="bounce2"></div>
+                          <div className="bounce3"></div>
                         </div>
-                        <p>{msg.isEnhancing ? t.enhancing : (msg.status === 'processing' ? t.generating : t.waiting)}</p>
+                        <p>
+                          {msg.isEnhancing ? t.enhancing : (msg.status === 'processing' ? t.generating : t.waiting)}
+                          {msg.status === 'processing' && msg.duration !== undefined && (
+                            <span style={{ display: 'block', fontSize: '0.8rem', opacity: 0.7, marginTop: '4px' }}>
+                              {formatDuration(msg.duration)}
+                            </span>
+                          )}
+                        </p>
+
                         <button className="cancel-gen-btn" onClick={interruptGeneration} title="Annuler la génération">
                           <div className="stop-icon-small"></div>
                           <span>{t.cancel}</span>
@@ -1641,6 +1669,10 @@ function App() {
                         <p><strong>{t.workflow}:</strong> {msg.workflow || t.unknown}</p>
                         <p><strong>{t.dimensions}:</strong> {msg.width}x{msg.height}</p>
                         <p><strong>{t.steps}:</strong> {msg.steps} | <strong>CFG:</strong> {msg.cfg} | <strong>{t.seed}:</strong> {msg.seed || t.unknown}</p>
+                        {msg.duration !== undefined && (
+                          <p><strong>{lang === 'fr' ? 'Durée' : 'Duration'}:</strong> {formatDuration(msg.duration)}</p>
+                        )}
+
                       </div>
                     )}
                   </div>
