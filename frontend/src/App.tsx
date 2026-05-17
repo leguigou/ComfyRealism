@@ -1032,7 +1032,7 @@ function App() {
                 <div className="settings-grid">
                   <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                     <label>{t.currentVersion}</label>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.12</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.14</div>
                     
                     <label>{t.devLogs}</label>
                     <div className="logs-container" style={{ 
@@ -1046,13 +1046,15 @@ function App() {
                       fontFamily: 'monospace'
                     }}>
                       <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.12 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Ajout du script run.sh pour Linux/Raspberry Pi.' : 'Added run.sh script for Linux/Raspberry Pi.'}</div>
-                        <div>• {lang === 'fr' ? 'Amélioration de la portabilité du projet.' : 'Improved project portability.'}</div>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.14 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Dockerisation complète du projet (Docker Compose).' : 'Full project dockerization (Docker Compose).'}</div>
+                        <div>• {lang === 'fr' ? 'Configuration des volumes pour la persistance des données et images.' : 'Configured volumes for data and image persistence.'}</div>
+                        <div>• {lang === 'fr' ? 'Optimisation pour le déploiement multi-plateforme.' : 'Optimized for multi-platform deployment.'}</div>
                       </div>
                       <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
-                        <div style={{ fontWeight: 'bold' }}>v1.2.11 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Mise à jour du titre de l\'application : ComfyRealism.' : 'Updated application title: ComfyRealism.'}</div>
+                        <div style={{ fontWeight: 'bold' }}>v1.2.13 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Gestion robuste des erreurs ComfyUI (VRAM, modèles manquants).' : 'Robust ComfyUI error handling (VRAM, missing models).'}</div>
+                        <div>• {lang === 'fr' ? 'Ajout d\'un bouton "Réessayer" et de messages d\'erreur détaillés.' : 'Added "Retry" button and detailed error messages.'}</div>
                       </div>
                       <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
                         <div style={{ fontWeight: 'bold' }}>v1.2.9 (2026-05-16)</div>
@@ -1374,7 +1376,7 @@ function App() {
                           <MessageText text={msg.text} lang={lang} />
                         </div>
                       )}
-                    {msg.role === 'bot' && !msg.imageUrl && (
+                    {msg.role === 'bot' && !msg.imageUrl && msg.status !== 'failed' && (
                       <div className="generation-placeholder">
                         <div className="bounced-loader">
                           <div className="bounced-ball"></div>
@@ -1386,6 +1388,19 @@ function App() {
                           <div className="stop-icon-small"></div>
                           <span>{t.cancel}</span>
                         </button>
+                      </div>
+                    )}
+
+                    {msg.role === 'bot' && msg.status === 'failed' && (
+                      <div className="generation-error-container">
+                        <div className="error-icon">⚠️</div>
+                        <div className="error-content">
+                          <p className="error-title">{t.genFailed}</p>
+                          <p className="error-details">{msg.text}</p>
+                          <button className="retry-btn" onClick={() => handleSend(msg.prompt || '', true)}>
+                            <span>{t.retry}</span>
+                          </button>
+                        </div>
                       </div>
                     )}                    {msg.imageUrl && (
                       <div className="image-wrapper" onClick={() => setActiveLightbox({ url: msg.imageUrl!, sessionId: currentSessionId!, messageId: msg.id, source: 'chat' })}>
