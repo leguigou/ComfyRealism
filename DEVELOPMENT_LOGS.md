@@ -1,6 +1,12 @@
 # Development Logs
 
-## Current Version: 1.2.22
+## Current Version: 1.2.23
+
+---
+
+### v1.2.23 (2026-05-16)
+- **CI/CD Integration**: Added GitHub Actions workflow to automatically build and push Docker images to GitHub Container Registry (GHCR).
+- **Automated Infrastructure**: The project now supports automated builds for both frontend and backend on every push to the main branch.
 
 ---
 

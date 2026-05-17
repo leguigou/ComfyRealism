@@ -1096,7 +1096,7 @@ function App() {
                 <div className="settings-grid">
                   <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                     <label>{t.currentVersion}</label>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.22</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.23</div>
                     
                     <label>{t.devLogs}</label>
                     <div className="logs-container" style={{ 
@@ -1110,13 +1110,13 @@ function App() {
                       fontFamily: 'monospace'
                     }}>
                       <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.22 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Affinement des gélules de la barre latérale (hauteur réduite à 40px).' : 'Refined sidebar pills (height reduced to 40px).'}</div>
-                        <div>• {lang === 'fr' ? 'Ajustement de l\'alignement à gauche pour maximiser l\'espace texte.' : 'Adjusted left alignment to maximize text space.'}</div>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.23 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Mise en place de l\'automatisation Docker (GitHub Actions).' : 'Implemented Docker automation (GitHub Actions).'}</div>
+                        <div>• {lang === 'fr' ? 'Construction automatique des images lors de chaque push.' : 'Automatic image builds on every push.'}</div>
                       </div>
                       <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
-                        <div style={{ fontWeight: 'bold' }}>v1.2.21 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Suppression des espaces entre les titres de discussion.' : 'Removed vertical gaps between discussion titles.'}</div>
+                        <div style={{ fontWeight: 'bold' }}>v1.2.22 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Affinement des gélules de la barre latérale (hauteur 40px).' : 'Refined sidebar pills (height 40px).'}</div>
                       </div>
                       <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
                         <div style={{ fontWeight: 'bold' }}>v1.2.15 (2026-05-16)</div>
