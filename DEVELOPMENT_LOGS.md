@@ -1,6 +1,13 @@
 # Development Logs
 
-## Current Version: 1.2.30
+## Current Version: 1.2.31
+
+---
+
+### v1.2.31 (2026-05-16)
+- **Dynamic Config**: Refactored the backend to prioritize ComfyUI URL settings stored in the database.
+- **Fix**: WebSocket connections now correctly use the URL configured via the UI, resolving `ECONNREFUSED` issues in Docker and remote environments.
+- **Transparency**: Added a new startup log `Startup ComfyUI URL` to confirm the loaded configuration from all sources (Env, DB, or Default).
 
 ---
 
