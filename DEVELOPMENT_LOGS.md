@@ -1,6 +1,12 @@
 # Development Logs
 
-## Current Version: 1.2.20
+## Current Version: 1.2.21
+
+---
+
+### v1.2.21 (2026-05-16)
+- **UI Refinement**: Removed vertical gaps between sidebar session items for a more compact and continuous list.
+- **Improved Spacing**: Adjusted padding to maintain clarity while increasing information density in the sidebar.
 
 ---
 
