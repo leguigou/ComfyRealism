@@ -1,6 +1,13 @@
 # Development Logs
 
-## Current Version: 1.2.31
+## Current Version: 1.2.32
+
+---
+
+### v1.2.32 (2026-05-16)
+- **Deployment UX**: Enhanced frontend API discovery logic to support custom domains and production environments like Dokploy.
+- **Environment Support**: Added support for `VITE_API_URL` environment variable, allowing the frontend to point to any backend endpoint.
+- **Smart Fallback**: Improved automatic detection of API endpoints when running on standard HTTP/HTTPS ports.
 
 ---
 

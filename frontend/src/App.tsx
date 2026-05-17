@@ -71,15 +71,28 @@ interface Session {
 
 type Theme = 'light' | 'dark';
 
-const API_BASE_DEFAULT = `${window.location.protocol}//${window.location.hostname}:3001`;
-
 const getApiBase = () => {
+  // 1. Priority: Environment variable (set during build or via Dokploy)
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+
   const { protocol, hostname, port } = window.location;
+
+  // 2. Specific Port Mappings (Legacy support)
   if (port === '55200') return `${protocol}//${hostname}:55201`;
-  return API_BASE_DEFAULT;
+  
+  // 3. Smart Fallback: 
+  // If we are on standard ports (80/443), we assume the API is on the same host but port 3001
+  // OR we expect the user to have set VITE_API_URL for subdomains.
+  if (!port || port === '80' || port === '443') {
+     return `${protocol}//${hostname}:3001`;
+  }
+
+  // 4. Default: same host, port 3001
+  return `${protocol}//${hostname}:3001`;
 };
 
 const API_BASE = getApiBase();
+console.log(`[App] API Base URL: ${API_BASE}`);
 
 const MessageText = memo(({ text, lang }: { text: string, lang: Language }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -1096,7 +1109,7 @@ function App() {
                 <div className="settings-grid">
                   <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                     <label>{t.currentVersion}</label>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.30</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.32</div>
                     
                     <label>{t.devLogs}</label>
                     <div className="logs-container" style={{ 
@@ -1110,8 +1123,18 @@ function App() {
                       fontFamily: 'monospace'
                     }}>
                       <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.29 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Sécurité : Ajout de .gemini/agents dans .gitignore.' : 'Security: Added .gemini/agents to .gitignore.'}</div>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.32 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Support de la variable d\'environnement VITE_API_URL.' : 'Added support for VITE_API_URL environment variable.'}</div>
+                        <div>• {lang === 'fr' ? 'Détection intelligente de l\'API pour les domaines personnalisés (Dokploy).' : 'Smart API detection for custom domains (Dokploy).'}</div>
+                      </div>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.31 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Refonte du backend pour prioriser les réglages de la base de données.' : 'Refactored backend to prioritize database settings.'}</div>
+                        <div>• {lang === 'fr' ? 'WebSocket dynamique utilisant l\'URL configurée au lieu de 127.0.0.1.' : 'Dynamic WebSocket using configured URL instead of 127.0.0.1.'}</div>
+                      </div>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.30 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Logs de transparence au démarrage du backend.' : 'Transparency logs on backend startup.'}</div>
                       </div>
                       <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
                         <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.28 (2026-05-16)</div>
