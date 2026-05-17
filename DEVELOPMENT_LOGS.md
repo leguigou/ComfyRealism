@@ -1,6 +1,16 @@
 # Development Logs
 
-## Current Version: 1.2.55-beta
+## Current Version: 1.2.57-beta
+
+---
+
+### v1.2.57-beta (2026-05-17)
+- **Refined Status Animation**: The color-shifting effect is now exclusive to "Generating" and "AI Thinking" states. The animation has been updated to move diagonally (135°) from left to right for a more dynamic visual experience.
+
+---
+
+### v1.2.56-beta (2026-05-17)
+- **Timer Visibility Fix**: Isolated the animated status text effect to prevent it from making the generation timer invisible. The timer is now clearly visible with its standard styling.
 
 ---
 
