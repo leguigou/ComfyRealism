@@ -1,6 +1,11 @@
 # Development Logs
 
-## Current Version: 1.2.58-beta
+## Current Version: 1.2.59-beta
+
+---
+
+### v1.2.59-beta (2026-05-17)
+- **Reversed Status Animation**: The color-shifting shimmer effect on status text now moves diagonally from the bottom-right to the top-left, creating a reversed visual flow (right-to-left) as requested.
 
 ---
 

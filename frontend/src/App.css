@@ -833,7 +833,7 @@ body {
 
 .ai-text-shimmer {
   background: linear-gradient(
-    135deg, 
+    315deg, 
     #10a37f 0%, 
     #8e44ad 25%, 
     #3498db 50%, 
@@ -845,7 +845,7 @@ body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   color: transparent;
-  animation: ai-text-glow 4s linear infinite;
+  animation: ai-text-glow 4s linear infinite reverse;
   font-weight: 700 !important;
 }
 
