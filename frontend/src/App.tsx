@@ -534,7 +534,7 @@ function App() {
                     cfg: data.cfg || m.cfg,
                     seed: data.seed || m.seed,
                     workflow: data.workflow || m.workflow,
-                    duration: data.duration !== undefined ? data.duration : m.duration
+                    duration: data.duration !== undefined ? data.duration : (m.duration ?? 0)
                     };
 
                 }
@@ -887,6 +887,9 @@ function App() {
         cfg: params.cfg
       };
       setMessages(prev => [...prev, initialBotMsg]);
+      
+      // Faire défiler vers le bas immédiatement après l'envoi
+      setTimeout(() => scrollToBottom(), 50);
 
       // 2. Interprétation IA si activée (uniquement si ce n'est PAS une régénération directe)
       if (params.llmEnabled && params.llmUrl && params.llmModel && !isRegeneration) {
@@ -978,10 +981,6 @@ function App() {
       fetchSessionDetails(currentSessionId);
     }
   }, [currentSessionId, fetchSessionDetails, isAuthenticated]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isGenerating, scrollToBottom]);
 
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
 
