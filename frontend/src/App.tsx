@@ -533,8 +533,10 @@ function App() {
                     steps: data.steps || m.steps,
                     cfg: data.cfg || m.cfg,
                     seed: data.seed || m.seed,
-                    workflow: data.workflow || m.workflow
-                  };
+                    workflow: data.workflow || m.workflow,
+                    duration: data.duration !== undefined ? data.duration : m.duration
+                    };
+
                 }
                 return m;
               });
