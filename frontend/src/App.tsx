@@ -20,6 +20,7 @@ interface Message {
   timestamp: number;
   status?: 'pending' | 'processing' | 'completed' | 'failed';
   isEnhancing?: boolean;
+  duration?: number;
 }
 
 interface GalleryItem {
@@ -36,6 +37,7 @@ interface GalleryItem {
   height?: number;
   steps?: number;
   cfg?: number;
+  duration?: number;
 }
 
 interface NodeMapping {
@@ -1583,12 +1585,20 @@ function App() {
                       )}
                     {msg.role === 'bot' && !msg.imageUrl && msg.status !== 'failed' && (
                       <div className="generation-placeholder">
-                        <div className="bounced-loader">
-                          <div className="bounced-ball"></div>
-                          <div className="bounced-ball"></div>
-                          <div className="bounced-ball"></div>
+                        <div className=\"bounced-loader\">
+                          <div className=\"bounce1\"></div>
+                          <div className=\"bounce2\"></div>
+                          <div className=\"bounce3\"></div>
                         </div>
-                        <p>{msg.isEnhancing ? t.enhancing : (msg.status === 'processing' ? t.generating : t.waiting)}</p>
+                        <p>
+                          {msg.isEnhancing ? t.enhancing : (msg.status === 'processing' ? t.generating : t.waiting)}
+                          {msg.status === 'processing' && msg.duration !== undefined && (
+                            <span style={{ display: 'block', fontSize: '0.8rem', opacity: 0.7, marginTop: '4px' }}>
+                              {msg.duration}s
+                            </span>
+                          )}
+                        </p>
+
                         <button className="cancel-gen-btn" onClick={interruptGeneration} title="Annuler la génération">
                           <div className="stop-icon-small"></div>
                           <span>{t.cancel}</span>
@@ -1641,6 +1651,10 @@ function App() {
                         <p><strong>{t.workflow}:</strong> {msg.workflow || t.unknown}</p>
                         <p><strong>{t.dimensions}:</strong> {msg.width}x{msg.height}</p>
                         <p><strong>{t.steps}:</strong> {msg.steps} | <strong>CFG:</strong> {msg.cfg} | <strong>{t.seed}:</strong> {msg.seed || t.unknown}</p>
+                        {msg.duration !== undefined && (
+                          <p><strong>{lang === 'fr' ? 'Durée' : 'Duration'}:</strong> {msg.duration}s</p>
+                        )}
+
                       </div>
                     )}
                   </div>

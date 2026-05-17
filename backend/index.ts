@@ -104,12 +104,15 @@ db.exec(`
 const columns = ['model', 'width', 'height', 'steps', 'cfg', 'workflow', 'status', 'thumbnailUrl', 'seed'];
 columns.forEach(col => {
   try {
-    db.prepare(`SELECT ${col} FROM messages LIMIT 1`).get();
+    db.prepare('SELECT duration FROM messages LIMIT 1').get();
   } catch (e) {
-    const type = (col === 'cfg') ? 'REAL' : (col === 'model' || col === 'workflow' || col === 'status' || col === 'thumbnailUrl' ? 'TEXT' : 'INTEGER');
-    db.exec(`ALTER TABLE messages ADD COLUMN ${col} ${type}`);
+    db.exec('ALTER TABLE messages ADD COLUMN duration INTEGER');
   }
-});
+  try {
+    db.prepare('SELECT seed FROM messages LIMIT 1').get();
+  } catch (e) {
+    db.exec('ALTER TABLE messages ADD COLUMN seed INTEGER');
+  }
 
 // Helper to get WS URL from HTTP URL
 const getComfyWsUrl = (httpUrl: string) => {
@@ -287,11 +290,18 @@ const processQueue = async () => {
       const response = await axios.post(`${targetComfyUrl}/prompt`, { prompt: workflow, client_id: uuidv4() }, { timeout: 10000 });
       promptId = response.data.prompt_id;
     } catch (err: any) { throw new Error(`Submission failed: ${parseComfyError(err)}`); }
+    // Polling with Timeout (5 minutes)
     let finished = false, filename = '';
     const startTime = Date.now();
     const POLLING_TIMEOUT = 5 * 60 * 1000; 
+
     while (!finished) {
       if (Date.now() - startTime > POLLING_TIMEOUT) throw new Error('Generation timed out after 5 minutes.');
+      
+      // Update duration in DB periodically (optional) or just send in broadcast
+      const currentDuration = Math.floor((Date.now() - startTime) / 1000);
+      broadcastToSession(task.sessionId, { messageId: task.messageId, status: 'processing', duration: currentDuration });
+
       let hResp;
       try { hResp = await axios.get(`${targetComfyUrl}/history/${promptId}`, { timeout: 5000 }); }
       catch (err: any) { console.warn(`[Queue] Polling attempt failed: ${err.message}`); await new Promise(r => setTimeout(r, 2000)); continue; }
@@ -312,6 +322,9 @@ const processQueue = async () => {
         if (!stillExists) { isProcessingQueue = false; setTimeout(processQueue, 100); return; }
       }
     }
+    
+    const finalDuration = Math.floor((Date.now() - startTime) / 1000);
+
     let imgResp;
     try {
       imgResp = await axios.get(`${targetComfyUrl}/view`, { params: { filename }, responseType: 'arraybuffer', timeout: 15000 });
@@ -323,10 +336,10 @@ const processQueue = async () => {
     await sharp(imgResp.data).resize(400, 400, { fit: 'inside', withoutEnlargement: true }).webp({ quality: 70 }).toFile(path.join(thumbnailsDir, thumbWebpName));
     const imageUrl = `/api/image-files/${fullWebpName}`;
     const thumbnailUrl = `/api/image-files/thumbnails/${thumbWebpName}`;
-    db.prepare('UPDATE messages SET imageUrl = ?, thumbnailUrl = ?, status = ? WHERE id = ?').run(imageUrl, thumbnailUrl, 'completed', task.messageId);
+    db.prepare('UPDATE messages SET imageUrl = ?, thumbnailUrl = ?, status = ?, duration = ? WHERE id = ?').run(imageUrl, thumbnailUrl, 'completed', finalDuration, task.messageId);
     db.prepare('DELETE FROM queue WHERE id = ?').run(task.id);
     broadcastToSession(task.sessionId, { 
-      messageId: task.messageId, status: 'completed', imageUrl, thumbnailUrl, 
+      messageId: task.messageId, status: 'completed', imageUrl, thumbnailUrl, duration: finalDuration,
       model: params.comfyModel, width: params.width, height: params.height, steps: params.steps, cfg: params.cfg, workflow: params.workflowFile, seed: params.seed 
     });
   } catch (error: any) {
