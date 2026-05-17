@@ -17,8 +17,17 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ noServer: true });
 
+process.on('uncaughtException', (err) => {
+  console.error('[Fatal] Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[Fatal] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 server.on('upgrade', (request, socket, head) => {
-  const pathname = new URL(request.url || '', `http://${request.headers.host}`).pathname;
+  const url = request.url || '';
+  const pathname = url.split('?')[0];
 
   if (pathname === '/api/ws' || pathname === '/ws') {
     wss.handleUpgrade(request, socket, head, (ws) => {
@@ -134,7 +143,7 @@ const AUTH_SECRET = process.env.AUTH_SECRET || 'fallback_secret';
 const APP_PASSWORD = process.env.APP_PASSWORD || 'comfy';
 
 app.use(cors({
-  origin: true, // Reflect any incoming origin to allow cross-subdomain credentials
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -142,10 +151,8 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser(AUTH_SECRET));
 
-// Create a router for all API endpoints
 const apiRouter = express.Router();
 
-// Auth Middleware
 const authenticate = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   if (req.signedCookies.authenticated === 'true') {
     return next();
@@ -153,94 +160,48 @@ const authenticate = (req: express.Request, res: express.Response, next: express
   res.status(401).json({ error: 'Unauthorized' });
 };
 
-// WebSocket logic
 const clients = new Map<string, WebSocket>();
 
 wss.on('connection', (ws) => {
   const clientId = uuidv4();
   clients.set(clientId, ws);
-  
-  // Send the assigned clientId to the frontend
   ws.send(JSON.stringify({ type: 'connected', clientId }));
-
-  // Get dynamic URL for this specific connection
   const currentCfg = getEffectiveComfyUrl();
   const currentComfyWsUrl = getComfyWsUrl(currentCfg.url);
-  
   const comfyWs = new WebSocket(`${currentComfyWsUrl}?clientId=${clientId}`);
-  
-  comfyWs.on('open', () => {
-    console.log(`[WS] Relay connected to ComfyUI at ${currentComfyWsUrl}`);
-  });
-
-  comfyWs.on('message', (data) => {
-    if (ws.readyState === WebSocket.OPEN) {
-      ws.send(data.toString());
-    }
-  });
-
-  comfyWs.on('error', (err) => { 
-    console.error(`[WS] ComfyUI Error (${currentComfyWsUrl}):`, err.message); 
-    ws.close(); 
-  });
-
+  comfyWs.on('open', () => { console.log(`[WS] Relay connected to ComfyUI at ${currentComfyWsUrl}`); });
+  comfyWs.on('message', (data) => { if (ws.readyState === WebSocket.OPEN) ws.send(data.toString()); });
+  comfyWs.on('error', (err) => { console.error(`[WS] ComfyUI Error (${currentComfyWsUrl}):`, err.message); ws.close(); });
   ws.on('close', () => {
     clients.delete(clientId);
-    if (comfyWs.readyState === WebSocket.OPEN || comfyWs.readyState === WebSocket.CONNECTING) {
-      comfyWs.close();
-    }
+    if (comfyWs.readyState === WebSocket.OPEN || comfyWs.readyState === WebSocket.CONNECTING) comfyWs.close();
   });
 });
 
 const broadcastToSession = (sessionId: string, data: any) => {
   const payload = JSON.stringify({ type: 'queue_update', sessionId, ...data });
-  wss.clients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(payload);
-    }
-  });
+  wss.clients.forEach(client => { if (client.readyState === WebSocket.OPEN) client.send(payload); });
 };
 
-// Custom handler for thumbnails to allow on-the-fly generation
-// Health check (keep at root of app)
 app.get('/', (req, res) => res.json({ status: 'online', service: 'ComfyRealism Backend' }));
 
-// Custom handler for thumbnails to allow on-the-fly generation
 apiRouter.get('/image-files/thumbnails/:filename', async (req, res, next) => {
   const filename = req.params.filename;
   const thumbPath = path.join(thumbnailsDir, filename);
-  
-  if (fs.existsSync(thumbPath)) {
-    return next(); // Let express.static handle it
-  }
-
+  if (fs.existsSync(thumbPath)) return next();
   try {
-    // Attempt to generate on the fly
     const originalName = filename.replace('_thumb.webp', '.webp');
     const originalPath = path.join(imagesDir, originalName);
-
     if (fs.existsSync(originalPath)) {
-      await sharp(originalPath)
-        .resize(400, 400, { fit: 'inside', withoutEnlargement: true })
-        .webp({ quality: 70 })
-        .toFile(thumbPath);
-      
+      await sharp(originalPath).resize(400, 400, { fit: 'inside', withoutEnlargement: true }).webp({ quality: 70 }).toFile(thumbPath);
       return res.sendFile(thumbPath);
     }
-  } catch (err) {
-    console.error('[Thumbnails] On-the-fly generation failed:', err);
-  }
-  
+  } catch (err) { console.error('[Thumbnails] On-the-fly generation failed:', err); }
   res.status(404).send('Not found');
 });
 
-apiRouter.use('/image-files', express.static(imagesDir, {
-  maxAge: '365d',
-  immutable: true,
-  index: false
-}));
+apiRouter.use('/image-files', express.static(imagesDir, { maxAge: '365d', immutable: true, index: false }));
 
-// Workflows Management
 apiRouter.get('/workflows', authenticate, (req, res) => {
   const workflowsDir = path.join(__dirname, 'workflows');
   if (!fs.existsSync(workflowsDir)) return res.json([]);
@@ -248,77 +209,177 @@ apiRouter.get('/workflows', authenticate, (req, res) => {
   res.json(files);
 });
 
-// ... (getWorkflow and parseComfyError stay outside or as helpers)
+const getWorkflow = (prompt: string, params?: any) => {
+  const workflowFile = params?.workflowFile || 'workflow_lcm.json';
+  const fullPath = path.join(__dirname, 'workflows', workflowFile);
+  const configPath = fullPath.replace('.json', '.config.json');
+  if (!fs.existsSync(fullPath)) throw new Error(`Fichier workflow introuvable : ${workflowFile}`);
+  const workflow = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+  let nodes = { checkpoint: "1", positive: "3", negative: "4", ksampler: "10", latent: "6", save: "99" };
+  if (fs.existsSync(configPath)) {
+    try {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      if (config.nodeMapping) nodes = { ...nodes, ...config.nodeMapping };
+    } catch (e) { console.warn(`[Workflow] Failed to parse config for ${workflowFile}`); }
+  }
+  if (workflow[nodes.checkpoint]?.inputs && params?.comfyModel) workflow[nodes.checkpoint].inputs.ckpt_name = params.comfyModel;
+  if (workflow[nodes.positive]?.inputs) workflow[nodes.positive].inputs.text = prompt;
+  if (workflow[nodes.negative]?.inputs && params?.negativePrompt) workflow[nodes.negative].inputs.text = params.negativePrompt;
+  if (workflow[nodes.ksampler]?.inputs) {
+    workflow[nodes.ksampler].inputs.seed = params?.seed || Math.floor(Math.random() * 1000000000000000);
+    if (params) {
+      if (params.steps) workflow[nodes.ksampler].inputs.steps = params.steps;
+      if (params.cfg) workflow[nodes.ksampler].inputs.cfg = params.cfg;
+    }
+  }
+  if (workflow[nodes.latent]?.inputs && params) {
+    if (workflow[nodes.latent].class_type !== 'SDXLEmptyLatentSizePicker+') {
+      if (params.width) workflow[nodes.latent].inputs.width = params.width;
+      if (params.height) workflow[nodes.latent].inputs.height = params.height;
+    }
+  }
+  if (workflow[nodes.save]?.inputs) workflow[nodes.save].inputs.filename_prefix = "ComfyRealism";
+  return workflow;
+};
 
-// ... (processQueue and setInterval stay as they are)
+const parseComfyError = (error: any) => {
+  if (error.response?.data?.error?.message) {
+    let msg = error.response.data.error.message;
+    if (error.response.data.error.details) msg += ` (${error.response.data.error.details})`;
+    return msg;
+  }
+  if (error.response?.data?.node_errors) {
+    const nodes = Object.keys(error.response.data.node_errors);
+    const node = nodes[0];
+    const err = error.response.data.node_errors[node].errors[0];
+    return `Node ${node} (${error.response.data.node_errors[node].class_type}): ${err.message}${err.details ? ' - ' + err.details : ''}`;
+  }
+  if (error.message?.includes('ECONNREFUSED')) return 'ComfyUI is unreachable. Please check settings.';
+  if (error.code === 'ETIMEDOUT' || error.message?.includes('timeout')) return 'ComfyUI request timed out (possible GPU overload or hang).';
+  return error.message || 'Unknown server error';
+};
 
-// Auth Endpoints
+let isProcessingQueue = false;
+const processQueue = async () => {
+  if (isProcessingQueue) return;
+  let task: any = null;
+  try {
+    task = db.prepare('SELECT * FROM queue WHERE status = ? ORDER BY createdAt ASC LIMIT 1').get('pending');
+    if (!task) return;
+    isProcessingQueue = true;
+    db.prepare('UPDATE queue SET status = ? WHERE id = ?').run('processing', task.id);
+    db.prepare('UPDATE messages SET status = ? WHERE id = ?').run('processing', task.messageId);
+    broadcastToSession(task.sessionId, { messageId: task.messageId, status: 'processing' });
+    const params = JSON.parse(task.params);
+    const workflow = getWorkflow(task.prompt, params);
+    const dynamicCfg = getEffectiveComfyUrl();
+    const targetComfyUrl = params?.comfyUrl || dynamicCfg.url;
+    const configPath = path.join(__dirname, 'workflows', (params?.workflowFile || 'workflow_lcm.json').replace('.json', '.config.json'));
+    let saveNodeId = "99";
+    if (fs.existsSync(configPath)) {
+      try {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        if (config.nodeMapping?.save) saveNodeId = config.nodeMapping.save;
+      } catch (e) { }
+    }
+    let promptId = '';
+    try {
+      const response = await axios.post(`${targetComfyUrl}/prompt`, { prompt: workflow, client_id: uuidv4() }, { timeout: 10000 });
+      promptId = response.data.prompt_id;
+    } catch (err: any) { throw new Error(`Submission failed: ${parseComfyError(err)}`); }
+    let finished = false, filename = '';
+    const startTime = Date.now();
+    const POLLING_TIMEOUT = 5 * 60 * 1000; 
+    while (!finished) {
+      if (Date.now() - startTime > POLLING_TIMEOUT) throw new Error('Generation timed out after 5 minutes.');
+      let hResp;
+      try { hResp = await axios.get(`${targetComfyUrl}/history/${promptId}`, { timeout: 5000 }); }
+      catch (err: any) { console.warn(`[Queue] Polling attempt failed: ${err.message}`); await new Promise(r => setTimeout(r, 2000)); continue; }
+      const history = hResp.data[promptId];
+      if (history) {
+        if (history.status?.status_str === 'error' || (history.status?.completed && !history.outputs)) {
+          const errMsg = history.status?.messages?.[0]?.[1]?.message || 'ComfyUI execution error';
+          throw new Error(`Execution failed: ${errMsg}`);
+        }
+        if (history.outputs?.[saveNodeId]?.images?.[0]) {
+          filename = history.outputs[saveNodeId].images[0].filename;
+          finished = true;
+        }
+      }
+      if (!finished) {
+        await new Promise(r => setTimeout(r, 1000));
+        const stillExists = db.prepare('SELECT id FROM queue WHERE id = ?').get(task.id);
+        if (!stillExists) { isProcessingQueue = false; setTimeout(processQueue, 100); return; }
+      }
+    }
+    let imgResp;
+    try {
+      imgResp = await axios.get(`${targetComfyUrl}/view`, { params: { filename }, responseType: 'arraybuffer', timeout: 15000 });
+    } catch (err: any) { throw new Error(`Failed to retrieve image: ${parseComfyError(err)}`); }
+    const baseName = `${Date.now()}-${filename.replace(/\.[^/.]+$/, "")}`;
+    const fullWebpName = `${baseName}.webp`;
+    const thumbWebpName = `${baseName}_thumb.webp`;
+    await sharp(imgResp.data).webp({ quality: 85 }).toFile(path.join(imagesDir, fullWebpName));
+    await sharp(imgResp.data).resize(400, 400, { fit: 'inside', withoutEnlargement: true }).webp({ quality: 70 }).toFile(path.join(thumbnailsDir, thumbWebpName));
+    const imageUrl = `/api/image-files/${fullWebpName}`;
+    const thumbnailUrl = `/api/image-files/thumbnails/${thumbWebpName}`;
+    db.prepare('UPDATE messages SET imageUrl = ?, thumbnailUrl = ?, status = ? WHERE id = ?').run(imageUrl, thumbnailUrl, 'completed', task.messageId);
+    db.prepare('DELETE FROM queue WHERE id = ?').run(task.id);
+    broadcastToSession(task.sessionId, { 
+      messageId: task.messageId, status: 'completed', imageUrl, thumbnailUrl, 
+      model: params.comfyModel, width: params.width, height: params.height, steps: params.steps, cfg: params.cfg, workflow: params.workflowFile, seed: params.seed 
+    });
+  } catch (error: any) {
+    const errorMsg = error.message || 'Unexpected error';
+    console.error(`[Queue] Fatal error for task ${task?.messageId}:`, errorMsg);
+    if (task) {
+      db.prepare('UPDATE messages SET status = ?, text = ? WHERE id = ?').run('failed', errorMsg, task.messageId);
+      db.prepare('DELETE FROM queue WHERE id = ?').run(task.id);
+      broadcastToSession(task.sessionId, { messageId: task.messageId, status: 'failed', error: errorMsg });
+    }
+  } finally { isProcessingQueue = false; setTimeout(processQueue, 500); }
+};
+
+setInterval(processQueue, 2000);
+
 apiRouter.post('/auth/login', (req, res) => {
   const { password } = req.body;
   const submitted = (password || '').trim();
   const expected = APP_PASSWORD.trim();
-  
   if (submitted === expected) {
     const isProd = process.env.NODE_ENV === 'production';
-    console.log(`[Auth] Successful login. Production mode: ${isProd}`);
-    
-    const cookieOptions: any = { 
-      httpOnly: true, 
-      signed: true, 
-      maxAge: 30 * 24 * 60 * 60 * 1000 
-    };
-
+    const cookieOptions: any = { httpOnly: true, signed: true, maxAge: 30 * 24 * 60 * 60 * 1000 };
     if (isProd) {
-      cookieOptions.sameSite = 'none';
-      cookieOptions.secure = true;
-      
-      // Support for cross-subdomain cookies (even behind proxies)
+      cookieOptions.sameSite = 'none'; cookieOptions.secure = true;
       const host = (req.headers['x-forwarded-host'] as string) || req.headers.host || '';
-      console.log(`[Auth] Detected host for cookie: ${host}`);
-      
-      // Dynamic parent domain detection (allows cookies to work across subdomains)
       const parts = host.split('.');
-      if (parts.length >= 2) {
-        const domain = `.${parts.slice(-2).join('.')}`;
-        cookieOptions.domain = domain;
-        console.log(`[Auth] Applying dynamic domain ${domain} to cookie`);
-      }
-    } else {
-      cookieOptions.sameSite = 'lax';
-    }
-
+      if (parts.length >= 2) { const domain = `.${parts.slice(-2).join('.')}`; cookieOptions.domain = domain; }
+    } else { cookieOptions.sameSite = 'lax'; }
     res.cookie('authenticated', 'true', cookieOptions);
     return res.json({ success: true });
   }
-  
-  console.warn(`[Auth] Failed login attempt. Received length: ${submitted.length}, Expected length: ${expected.length}`);
   res.status(401).json({ error: 'Incorrect password' });
 });
 
 apiRouter.get('/auth/check', (req, res) => res.json({ authenticated: req.signedCookies.authenticated === 'true' }));
 apiRouter.post('/auth/logout', (req, res) => { res.clearCookie('authenticated'); res.json({ success: true }); });
 
-// API Settings Endpoints
 apiRouter.get('/settings', authenticate, (req, res) => {
   const settings = db.prepare('SELECT data FROM settings WHERE id = 1').get() as any;
   res.json(settings ? JSON.parse(settings.data) : {});
 });
 
 apiRouter.post('/settings', authenticate, (req, res) => {
-  const data = JSON.stringify(req.body);
-  db.prepare('INSERT OR REPLACE INTO settings (id, data) VALUES (1, ?)').run(data);
+  db.prepare('INSERT OR REPLACE INTO settings (id, data) VALUES (1, ?)').run(JSON.stringify(req.body));
   res.json({ success: true });
 });
 
-// API History Endpoints (SQLite)
 apiRouter.get('/history', authenticate, (req, res) => {
-  const sessions = db.prepare('SELECT id, title, updatedAt, isArchived FROM sessions WHERE isArchived = 0 ORDER BY updatedAt DESC').all();
-  res.json(sessions);
+  res.json(db.prepare('SELECT id, title, updatedAt, isArchived FROM sessions WHERE isArchived = 0 ORDER BY updatedAt DESC').all());
 });
 
 apiRouter.get('/history/archives', authenticate, (req, res) => {
-  const sessions = db.prepare('SELECT id, title, updatedAt, isArchived FROM sessions WHERE isArchived = 1 ORDER BY updatedAt DESC').all();
-  res.json(sessions);
+  res.json(db.prepare('SELECT id, title, updatedAt, isArchived FROM sessions WHERE isArchived = 1 ORDER BY updatedAt DESC').all());
 });
 
 apiRouter.get('/gallery', authenticate, (req, res) => {
@@ -327,14 +388,11 @@ apiRouter.get('/gallery', authenticate, (req, res) => {
   const onlyArchived = req.query.includeArchived === 'true';
   const query = `
     SELECT m.sessionId, m.id as messageId, m.imageUrl, m.thumbnailUrl, m.prompt, m.text, m.timestamp, m.model, m.width, m.height, m.steps, m.cfg, m.workflow, m.seed 
-    FROM messages m
-    JOIN sessions s ON m.sessionId = s.id
+    FROM messages m JOIN sessions s ON m.sessionId = s.id
     WHERE m.imageUrl IS NOT NULL AND s.isArchived = ?
-    ORDER BY m.timestamp DESC
-    LIMIT ? OFFSET ?
+    ORDER BY m.timestamp DESC LIMIT ? OFFSET ?
   `;
-  const gallery = db.prepare(query).all(onlyArchived ? 1 : 0, limit, offset);
-  res.json(gallery);
+  res.json(db.prepare(query).all(onlyArchived ? 1 : 0, limit, offset));
 });
 
 apiRouter.get('/history/:id', authenticate, (req, res) => {
@@ -371,9 +429,8 @@ apiRouter.patch('/history/:id', authenticate, (req, res) => {
 });
 
 apiRouter.patch('/history/:id/archive', authenticate, (req, res) => {
-  const { isArchived } = req.body;
-  db.prepare('UPDATE sessions SET isArchived = ? WHERE id = ?').run(isArchived ? 1 : 0, req.params.id);
-  res.json({ success: true, isArchived });
+  db.prepare('UPDATE sessions SET isArchived = ? WHERE id = ?').run(req.body.isArchived ? 1 : 0, req.params.id);
+  res.json({ success: true, isArchived: req.body.isArchived });
 });
 
 apiRouter.delete('/history/:sessionId/message/:messageId', authenticate, (req, res) => {
@@ -391,7 +448,6 @@ apiRouter.post('/enhance-prompt', authenticate, async (req, res) => {
       messages: [{ role: "system", content: systemMessage || "You are a professional stable diffusion prompt engineer. Transform user's ideas into highly detailed English prompts. Output JSON with 'positive' and 'negative' keys." }, { role: "user", content: prompt }],
       temperature: 0.7
     }, { timeout: 25000 });
-
     let content = response.data.choices[0].message.content;
     let result = { positive: content, negative: "" };
     const jsonMatch = content.match(/\{[\s\S]*\}/);
@@ -404,47 +460,35 @@ apiRouter.post('/enhance-prompt', authenticate, async (req, res) => {
       } catch (e) {}
     }
     res.json({ enhancedPrompt: result.positive, negativePrompt: result.negative });
-  } catch (error: any) { 
-    res.status(500).json({ error: 'LLM Error: ' + (error.response?.data?.error?.message || error.message) }); 
-  }
+  } catch (error: any) { res.status(500).json({ error: 'LLM Error: ' + (error.response?.data?.error?.message || error.message) }); }
 });
 
 apiRouter.post('/llm-models', authenticate, async (req, res) => {
   try {
-    const { llmUrl } = req.body;
-    const response = await axios.get(`${llmUrl}/v1/models`, { timeout: 5000 });
+    const response = await axios.get(`${req.body.llmUrl}/v1/models`, { timeout: 5000 });
     res.json({ models: response.data.data.map((m: any) => m.id) });
   } catch (error: any) { res.status(500).json({ error: 'Failed to fetch models' }); }
 });
 
 apiRouter.post('/llm-check', authenticate, async (req, res) => {
   try {
-    const { llmUrl } = req.body;
-    if (!llmUrl) return res.status(400).json({ success: false, error: 'LLM URL is required' });
-    const response = await axios.get(`${llmUrl}/v1/models`, { timeout: 3000 });
+    const response = await axios.get(`${req.body.llmUrl}/v1/models`, { timeout: 3000 });
     res.json({ success: true, count: response.data.data?.length || 0 });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: 'LLM connection failed: ' + (error.response?.data?.error?.message || error.message) });
-  }
+  } catch (error: any) { res.status(500).json({ success: false, error: 'LLM connection failed: ' + (error.response?.data?.error?.message || error.message) }); }
 });
 
 apiRouter.post('/comfy-check', authenticate, async (req, res) => {
   try {
-    const { comfyUrl } = req.body;
     const currentCfg = getEffectiveComfyUrl();
-    const targetUrl = comfyUrl || currentCfg.url;
-    const response = await axios.get(`${targetUrl}/system_stats`, { timeout: 3000 });
+    const response = await axios.get(`${req.body.comfyUrl || currentCfg.url}/system_stats`, { timeout: 3000 });
     res.json({ success: true, stats: response.data });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: 'ComfyUI connection failed: ' + parseComfyError(error) });
-  }
+  } catch (error: any) { res.status(500).json({ success: false, error: 'ComfyUI connection failed: ' + parseComfyError(error) }); }
 });
 
 apiRouter.post('/comfy-models', authenticate, async (req, res) => {
   try {
-    const { comfyUrl } = req.body;
     const currentCfg = getEffectiveComfyUrl();
-    const targetUrl = comfyUrl || currentCfg.url;
+    const targetUrl = req.body.comfyUrl || currentCfg.url;
     const response = await axios.get(`${targetUrl}/models/checkpoints`, { timeout: 5000 });
     if (Array.isArray(response.data)) { res.json({ models: response.data.sort() }); } else {
       const infoResp = await axios.get(`${targetUrl}/object_info`, { timeout: 5000 });
@@ -485,7 +529,6 @@ apiRouter.post('/generate', authenticate, async (req, res) => {
   } catch (error: any) { res.status(500).json({ success: false, error: error.message }); }
 });
 
-// Mount the router at both root and /api for maximum proxy compatibility
 app.use('/api', apiRouter);
 app.use('/', apiRouter);
 
