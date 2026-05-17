@@ -1,0 +1,27 @@
+services:
+  backend:
+    image: ghcr.io/leguigou/comfyrealism-backend:latest
+    container_name: comfy-realism-backend
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./data:/app/data
+      - ./workflows:/app/workflows
+      - ./images:/images
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - COMFY_URL=http://host.docker.internal:8188
+      - APP_PASSWORD=comfy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  frontend:
+    image: ghcr.io/leguigou/comfyrealism-frontend:latest
+    container_name: comfy-realism-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
