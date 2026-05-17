@@ -173,6 +173,8 @@ function App() {
   const [loginPassword, setLoginPassword] = useState('');
   const [currentUser, setCurrentUser] = useState<{username: string, isAdmin: boolean} | null>(null);
   const [loginError, setLoginError] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [activeTab, setActiveTab] = useState<'images' | 'comfy' | 'llm' | 'archives' | 'logs' | 'admin'>('images');
   
   const [sessions, setSessions] = useState<Session[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -261,9 +263,8 @@ function App() {
     };
   });
 
-  const [showSettings, setShowSettings] = useState(false);
-  const [activeTab, setActiveTab] = useState<'images' | 'comfy' | 'llm' | 'archives' | 'logs'>('images');
-  const [comfyModels, setComfyModels] = useState<string[]>([]);  const [isFetchingComfyModels, setIsFetchingComfyModels] = useState(false);
+  const [comfyModels, setComfyModels] = useState<string[]>([]);
+  const [isFetchingComfyModels, setIsFetchingComfyModels] = useState(false);
   const [comfyStatus, setComfyStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
   const [llmModels, setLlmModels] = useState<string[]>([]);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
@@ -531,14 +532,18 @@ function App() {
 
   useEffect(() => {
     const checkAuth = async () => {
+      console.log('[Auth] Checking current authentication status...');
       try {
         const res = await fetch(`${API_BASE}/api/auth/check`, { credentials: 'include' });
+        console.log(`[Auth] Check response status: ${res.status}`);
         const data = await res.json();
+        console.log('[Auth] Check response data:', data);
         setIsAuthenticated(data.authenticated);
         if (data.authenticated && data.user) {
           setCurrentUser(data.user);
         }
-      } catch {
+      } catch (err) {
+        console.error('[Auth] Check failed:', err);
         setIsAuthenticated(false);
       }
     };
@@ -1120,7 +1125,30 @@ function App() {
     link.click();
   };
 
-  if (isAuthenticated === null) return <div className="loading-screen">...</div>;
+  if (isAuthenticated === null) {
+    return (
+      <div style={{ 
+        height: '100vh', 
+        width: '100vw', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        background: '#0b0e11', 
+        color: '#10a37f',
+        fontSize: '1.2rem',
+        fontWeight: 'bold',
+        flexDirection: 'column',
+        gap: '1rem'
+      }}>
+        <div className="bounced-loader">
+          <div className="bounce1"></div>
+          <div className="bounce2"></div>
+          <div className="bounce3"></div>
+        </div>
+        <div>Chargement...</div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (
