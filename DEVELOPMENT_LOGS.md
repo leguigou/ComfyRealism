@@ -1,6 +1,12 @@
 # Development Logs
 
-## Current Version: 1.2.48
+## Current Version: 1.2.49-beta
+
+---
+
+### v1.2.49-beta (2026-05-17)
+- **Dynamic Docker Environment**: Refactored `docker-compose.yml` and `docker-compose.production.yml` to use variable placeholders (`${VAR}`). This ensures that environment variables set in Dokploy's UI correctly override the default values.
+- **Beta Branch Initiation**: First update on the new `beta` development branch.
 
 ---
 
