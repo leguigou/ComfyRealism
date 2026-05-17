@@ -1096,7 +1096,7 @@ function App() {
                 <div className="settings-grid">
                   <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                     <label>{t.currentVersion}</label>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.20</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.21</div>
                     
                     <label>{t.devLogs}</label>
                     <div className="logs-container" style={{ 
@@ -1110,14 +1110,13 @@ function App() {
                       fontFamily: 'monospace'
                     }}>
                       <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.20 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Refonte du design de la barre latérale en style "gélule".' : 'Redesigned sidebar with "pill" style.'}</div>
-                        <div>• {lang === 'fr' ? 'Standardisation des hauteurs des titres de discussion (46px).' : 'Standardized discussion title heights (46px).'}</div>
-                        <div>• {lang === 'fr' ? 'Amélioration de la barre de défilement pour un look plus épuré.' : 'Improved scrollbar for a cleaner look.'}</div>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.21 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Suppression des espaces entre les titres de discussion.' : 'Removed vertical gaps between discussion titles.'}</div>
+                        <div>• {lang === 'fr' ? 'Design de la barre latérale plus compact et dense.' : 'More compact and dense sidebar design.'}</div>
                       </div>
                       <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
-                        <div style={{ fontWeight: 'bold' }}>v1.2.19 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Ajout d\'un bouton "Tester la connexion" pour l\'API LLM.' : 'Added "Test Connection" button for LLM API.'}</div>
+                        <div style={{ fontWeight: 'bold' }}>v1.2.20 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Refonte du design de la barre latérale en style "gélule".' : 'Redesigned sidebar with "pill" style.'}</div>
                       </div>
                       <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
                         <div style={{ fontWeight: 'bold' }}>v1.2.15 (2026-05-16)</div>

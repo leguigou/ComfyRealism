@@ -103,8 +103,8 @@ body {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  padding: 0.8rem 0.5rem;
+  gap: 0;
+  padding: 0.5rem;
 }
 
 /* Custom Scrollbar for Sidebar */
