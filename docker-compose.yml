@@ -9,10 +9,11 @@ services:
       - ./backend/workflows:/app/workflows
       - ./images:/images
     environment:
-      - NODE_ENV=production
-      - PORT=3001
-      - COMFY_URL=http://host.docker.internal:8188
-      - APP_PASSWORD=comfy
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-3001}
+      - COMFY_URL=${COMFY_URL:-http://host.docker.internal:8188}
+      - APP_PASSWORD=${APP_PASSWORD:-comfy}
+      - AUTH_SECRET=${AUTH_SECRET:-fallback_secret}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
