@@ -952,6 +952,21 @@ body {
   transform: translateY(-1px);
 }
 
+.llm-status-msg {
+  margin: 0.5rem 0 0 0.2rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.llm-status-msg.success {
+  color: #10a37f;
+}
+
+.llm-status-msg.error {
+  color: #ff4d4d;
+}
+
 .generation-placeholder {
   display: flex;
   flex-direction: column;
