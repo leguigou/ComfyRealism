@@ -1,10 +1,18 @@
 # Development Logs
 
-## Current Version: 1.2.19
+## Current Version: 1.2.20
 
 ---
 
-### v1.2.19 (2026-05-16)
+### v1.2.20 (2026-05-16)
+- **UI Redesign**: Overhauled the sidebar session list with a modern "pill" style (capsule design).
+- **Improved Ergonomics**: Standardized item heights (46px) and added smooth hover/active transitions.
+- **Scrollbar Polish**: Refined the sidebar scrollbar for a cleaner look.
+- **Visual Consistency**: Removed the legacy side indicator line in favor of a full-pill active state.
+
+---
+
+### v1.2.18 (2026-05-16)
 - **LLM Configuration**: Added a "Test Connection" button for the LLM API URL in Settings. Works with OpenAI and Ollama compatible APIs.
 - **Robustness**: Integrated the same non-JSON response handling for LLM tests as used for ComfyUI.
 - **New API Endpoint**: Created `/api/llm-check` in the backend for secure health checking of the configured LLM service.

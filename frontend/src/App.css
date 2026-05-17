@@ -103,13 +103,13 @@ body {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
-  padding-right: 4px;
+  gap: 0.4rem;
+  padding: 0.8rem 0.5rem;
 }
 
 /* Custom Scrollbar for Sidebar */
 .sessions-list::-webkit-scrollbar {
-  width: 4px;
+  width: 5px;
 }
 .sessions-list::-webkit-scrollbar-track {
   background: transparent;
@@ -119,55 +119,53 @@ body {
   border-radius: 10px;
 }
 .sessions-list:hover::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(128, 128, 128, 0.3);
 }
 
 .session-item {
   display: flex;
   align-items: center;
-  padding: 0.7rem 0.8rem;
-  border-radius: 0.5rem;
+  padding: 0 1rem;
+  min-height: 46px;
+  height: 46px;
+  border-radius: 999px;
   cursor: pointer;
   gap: 0.8rem;
   color: var(--sidebar-text);
   font-size: 0.9rem;
   white-space: nowrap;
   overflow: hidden;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   border: 1px solid transparent;
+  flex-shrink: 0;
 }
 
 .session-item:hover {
   background-color: var(--sidebar-hover);
   color: var(--text-h);
-  transform: translateX(2px);
 }
 
 .session-item.active {
   background-color: var(--accent-bg);
-  border-color: var(--accent-border);
   color: var(--accent);
+  font-weight: 600;
 }
 
-.session-item.active::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 20%;
-  height: 60%;
-  width: 3px;
-  background-color: var(--accent);
-  border-radius: 0 4px 4px 0;
+.session-title { 
+  flex: 1; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+  line-height: 1.2;
 }
-
-.session-title { flex: 1; overflow: hidden; text-overflow: ellipsis; }
 
 .session-actions { 
   display: none; 
   gap: 0.2rem; 
   transition: opacity 0.2s; 
   pointer-events: none;
+  background: transparent;
+  padding-left: 0.5rem;
 }
 .session-item:hover .session-actions { 
   display: flex; 
@@ -188,7 +186,7 @@ body {
     display: none;
   }
 }
-.edit-session, .delete-session { background: transparent !important; border: none !important; color: var(--sidebar-text); opacity: 0.5; cursor: pointer; padding: 0.2rem; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+.edit-session, .delete-session { background: transparent !important; border: none !important; color: var(--sidebar-text); opacity: 0.5; cursor: pointer; padding: 0.2rem; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
 .edit-session:hover { color: var(--accent); opacity: 1; }
 .delete-session:hover { color: #ff4d4d; opacity: 1; }
 
