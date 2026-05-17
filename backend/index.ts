@@ -15,7 +15,7 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({ server, path: '/api/ws' });
 
 const PORT = Number(process.env.PORT) || 3001;
 
