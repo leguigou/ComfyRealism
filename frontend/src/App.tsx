@@ -757,6 +757,13 @@ function App() {
   const handleLogout = async () => {
     await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST', credentials: 'include' });
     setIsAuthenticated(false);
+    setCurrentUser(null);
+    setSessions([]);
+    setCurrentSessionId(null);
+    setMessages([]);
+    setGalleryItems([]);
+    setAdminUsers([]);
+    setView('chat');
   };
 
   const renameSession = async (id: string, newTitle: string) => {
