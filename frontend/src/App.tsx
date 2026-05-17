@@ -1096,7 +1096,7 @@ function App() {
                 <div className="settings-grid">
                   <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                     <label>{t.currentVersion}</label>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.26</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.27</div>
                     
                     <label>{t.devLogs}</label>
                     <div className="logs-container" style={{ 
@@ -1109,6 +1109,11 @@ function App() {
                       lineHeight: '1.4',
                       fontFamily: 'monospace'
                     }}>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.27 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Configuration Docker de production (images GHCR).' : 'Production Docker configuration (GHCR images).'}</div>
+                        <div>• {lang === 'fr' ? 'Mise à jour du README avec badge de statut de build.' : 'Updated README with build status badge.'}</div>
+                      </div>
                       <div style={{ marginBottom: '1rem' }}>
                         <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.26 (2026-05-16)</div>
                         <div>• {lang === 'fr' ? 'Correction d\'une erreur de build (référence obsolète à comfyModelsPath).' : 'Fixed build error (stale reference to comfyModelsPath).'}</div>

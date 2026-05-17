@@ -1,6 +1,13 @@
 # Development Logs
 
-## Current Version: 1.2.26
+## Current Version: 1.2.27
+
+---
+
+### v1.2.27 (2026-05-16)
+- **Production Readiness**: Added `docker-compose.production.yml` specifically for deployment on VPS or Dokploy, using pre-built images from GHCR.
+- **Documentation**: Updated `README.md` with the GitHub Actions build status badge and refined installation instructions for Docker Production mode.
+- **Branding**: Integrated the project's official build status into the repository homepage.
 
 ---
 
