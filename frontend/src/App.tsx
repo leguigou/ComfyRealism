@@ -181,7 +181,38 @@ function App() {
   const [llmStatus, setLlmStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
   const [comfyCheckStatus, setComfyCheckStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
   const [isCheckingComfy, setIsCheckingComfy] = useState(false);
+  const [llmCheckStatus, setLlmCheckStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
+  const [isCheckingLLM, setIsCheckingLLM] = useState(false);
   const [availableWorkflows, setAvailableWorkflows] = useState<string[]>([]);
+
+  const testLLMConnection = async () => {
+    setIsCheckingLLM(true);
+    setLlmCheckStatus(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/llm-check`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ llmUrl: params.llmUrl }),
+        credentials: 'include'
+      });
+
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+        const data = await res.json();
+        if (data.success) {
+          setLlmCheckStatus({ type: 'success', msg: t.connectionSuccess });
+        } else {
+          setLlmCheckStatus({ type: 'error', msg: data.error || t.connectionFailed });
+        }
+      } else {
+        setLlmCheckStatus({ type: 'error', msg: `${t.connectionFailed} (Server error: ${res.status})` });
+      }
+    } catch (err: any) {
+      setLlmCheckStatus({ type: 'error', msg: t.connectionFailed + ': ' + err.message });
+    } finally {
+      setIsCheckingLLM(false);
+    }
+  };
 
   const testComfyConnection = async () => {
     setIsCheckingComfy(true);
@@ -193,11 +224,19 @@ function App() {
         body: JSON.stringify({ comfyUrl: params.comfyUrl }),
         credentials: 'include'
       });
-      const data = await res.json();
-      if (data.success) {
-        setComfyCheckStatus({ type: 'success', msg: t.connectionSuccess });
+
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+        const data = await res.json();
+        if (data.success) {
+          setComfyCheckStatus({ type: 'success', msg: t.connectionSuccess });
+        } else {
+          setComfyCheckStatus({ type: 'error', msg: data.error || t.connectionFailed });
+        }
       } else {
-        setComfyCheckStatus({ type: 'error', msg: data.error || t.connectionFailed });
+        const text = await res.text();
+        console.error('Server returned non-JSON response:', text);
+        setComfyCheckStatus({ type: 'error', msg: `${t.connectionFailed} (Server error: ${res.status})` });
       }
     } catch (err: any) {
       setComfyCheckStatus({ type: 'error', msg: t.connectionFailed + ': ' + err.message });
@@ -1057,7 +1096,7 @@ function App() {
                 <div className="settings-grid">
                   <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                     <label>{t.currentVersion}</label>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.17</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.19</div>
                     
                     <label>{t.devLogs}</label>
                     <div className="logs-container" style={{ 
@@ -1071,13 +1110,13 @@ function App() {
                       fontFamily: 'monospace'
                     }}>
                       <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.17 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Amélioration de l\'accessibilité mobile (bouton de test plus grand).' : 'Improved mobile accessibility (larger test button).'}</div>
-                        <div>• {lang === 'fr' ? 'Standardisation des hauteurs de bouton sur mobile (min 44px).' : 'Standardized button heights on mobile (min 44px).'}</div>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.19 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Ajout d\'un bouton "Tester la connexion" pour l\'API LLM.' : 'Added "Test Connection" button for LLM API.'}</div>
+                        <div>• {lang === 'fr' ? 'Support des APIs compatibles OpenAI et Ollama.' : 'Support for OpenAI and Ollama compatible APIs.'}</div>
                       </div>
                       <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.16 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Messages de statut en couleur (Vert pour succès, Rouge pour erreur).' : 'Color-coded status messages (Green for success, Red for error).'}</div>
+                        <div style={{ fontWeight: 'bold' }}>v1.2.18 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Correction de l\'erreur "Unexpected token <" lors du test de connexion.' : 'Fixed "Unexpected token <" error during connection test.'}</div>
                       </div>
                       <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
                         <div style={{ fontWeight: 'bold' }}>v1.2.15 (2026-05-16)</div>
@@ -1253,10 +1292,26 @@ function App() {
                       </div>
                       </div>
                       <div className="setting-item" style={{ gridColumn: 'span 2' }}>
-                      <label>{t.llmUrl}</label>
-                      <input type="text" value={params.llmUrl} onChange={(e) => setParams({ ...params, llmUrl: e.target.value })} placeholder="http://localhost:11434" />
-                      </div>
-                      <div className="setting-item" style={{ gridColumn: 'span 2' }}>
+                        <label>{t.llmUrl}</label>
+                        <div className="model-select-group">
+                          <input 
+                            type="text" 
+                            value={params.llmUrl} 
+                            onChange={(e) => setParams({ ...params, llmUrl: e.target.value })} 
+                            placeholder="http://localhost:11434" 
+                            style={{ flex: 1 }}
+                          />
+                          <button
+                            className="refresh-models-btn test-conn-btn"
+                            onClick={testLLMConnection}
+                            disabled={isCheckingLLM || !params.llmUrl}
+                            title={t.testConnection}
+                          >
+                            {isCheckingLLM ? '...' : t.testConnection}
+                          </button>
+                        </div>
+                        {llmCheckStatus && <p className={`llm-status-msg ${llmCheckStatus.type}`}>{llmCheckStatus.msg}</p>}
+                      </div>                      <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                       <label>{t.llmModel}</label>
                       <div className="model-select-group">
                       {llmModels.length > 0 ? (

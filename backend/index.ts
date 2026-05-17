@@ -563,6 +563,17 @@ app.post('/api/llm-models', authenticate, async (req, res) => {
   } catch (error: any) { res.status(500).json({ error: 'Failed to fetch models' }); }
 });
 
+app.post('/api/llm-check', authenticate, async (req, res) => {
+  try {
+    const { llmUrl } = req.body;
+    if (!llmUrl) return res.status(400).json({ success: false, error: 'LLM URL is required' });
+    const response = await axios.get(`${llmUrl}/v1/models`, { timeout: 3000 });
+    res.json({ success: true, count: response.data.data?.length || 0 });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: 'LLM connection failed: ' + (error.response?.data?.error?.message || error.message) });
+  }
+});
+
 app.post('/api/comfy-check', authenticate, async (req, res) => {
   try {
     const { comfyUrl } = req.body;

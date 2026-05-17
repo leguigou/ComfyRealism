@@ -1,6 +1,19 @@
 # Development Logs
 
-## Current Version: 1.2.17
+## Current Version: 1.2.19
+
+---
+
+### v1.2.19 (2026-05-16)
+- **LLM Configuration**: Added a "Test Connection" button for the LLM API URL in Settings. Works with OpenAI and Ollama compatible APIs.
+- **Robustness**: Integrated the same non-JSON response handling for LLM tests as used for ComfyUI.
+- **New API Endpoint**: Created `/api/llm-check` in the backend for secure health checking of the configured LLM service.
+
+---
+
+### v1.2.18 (2026-05-16)
+- **Bug Fix**: Resolved the "Unexpected token <" error in the connection tester. The frontend now gracefully handles non-JSON responses (like HTML error pages from proxies or Nginx) and provides a clear error message.
+- **Improved Resilience**: Added Content-Type validation before parsing API responses in the settings panel.
 
 ---
 
