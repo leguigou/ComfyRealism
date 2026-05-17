@@ -101,18 +101,18 @@ db.exec(`
 `);
 
 // Migration to add missing columns
-const columns = ['model', 'width', 'height', 'steps', 'cfg', 'workflow', 'status', 'thumbnailUrl', 'seed'];
-columns.forEach(col => {
+const columnsToCheck = ['model', 'width', 'height', 'steps', 'cfg', 'workflow', 'status', 'thumbnailUrl', 'seed', 'duration'];
+columnsToCheck.forEach(col => {
   try {
-    db.prepare('SELECT duration FROM messages LIMIT 1').get();
+    db.prepare(`SELECT ${col} FROM messages LIMIT 1`).get();
   } catch (e) {
-    db.exec('ALTER TABLE messages ADD COLUMN duration INTEGER');
+    let type = 'TEXT';
+    if (col === 'cfg') type = 'REAL';
+    else if (['width', 'height', 'steps', 'seed', 'duration'].includes(col)) type = 'INTEGER';
+    db.exec(`ALTER TABLE messages ADD COLUMN ${col} ${type}`);
+    console.log(`[Migration] Added column ${col} to messages table`);
   }
-  try {
-    db.prepare('SELECT seed FROM messages LIMIT 1').get();
-  } catch (e) {
-    db.exec('ALTER TABLE messages ADD COLUMN seed INTEGER');
-  }
+});
 
 // Helper to get WS URL from HTTP URL
 const getComfyWsUrl = (httpUrl: string) => {
