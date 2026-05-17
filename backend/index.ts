@@ -458,9 +458,12 @@ app.post('/api/auth/login', (req, res) => {
       const host = (req.headers['x-forwarded-host'] as string) || req.headers.host || '';
       console.log(`[Auth] Detected host for cookie: ${host}`);
       
-      if (host.includes('deloffre.fr')) {
-        cookieOptions.domain = '.deloffre.fr';
-        console.log('[Auth] Applying domain .deloffre.fr to cookie');
+      // Dynamic parent domain detection (allows cookies to work across subdomains)
+      const parts = host.split('.');
+      if (parts.length >= 2) {
+        const domain = `.${parts.slice(-2).join('.')}`;
+        cookieOptions.domain = domain;
+        console.log(`[Auth] Applying dynamic domain ${domain} to cookie`);
       }
     } else {
       cookieOptions.sameSite = 'lax';

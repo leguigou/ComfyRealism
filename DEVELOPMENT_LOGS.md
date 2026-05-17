@@ -1,11 +1,18 @@
 # Development Logs
 
-## Current Version: 1.2.39
+## Current Version: 1.2.40
+
+---
+
+### v1.2.40 (2026-05-16)
+- **Privacy & Anonymization**: Removed all hardcoded personal domains from the source code, logs, and configuration.
+- **Dynamic Domain Logic**: Implemented dynamic parent domain detection for cookies and domain-agnostic path routing for the API.
+- **Security**: The project is now fully anonymized and ready for public hosting or deployment on any domain without leaking personal infrastructure details.
 
 ---
 
 ### v1.2.39 (2026-05-16)
-- **Infrastructure Overhaul (Solution B)**: Switched to a single domain model using path-based routing. Both frontend and backend now run under `comfyui.deloffre.fr`.
+- **Infrastructure Overhaul (Solution B)**: Switched to a single domain model using path-based routing. Both frontend and backend now run under the same host.
 - **WebSocket Refactoring**: Moved the backend WebSocket server to the `/api/ws` path and updated the frontend to connect via the unified production domain.
 - **Port-less Architecture**: Eliminated the need for explicit port numbers (like `:3001`) in production, resolving SSL protocol conflicts.
 - **CORS Elimination**: By using a single domain for all services, cross-origin issues and cookie sharing restrictions are completely bypassed.
@@ -20,7 +27,7 @@
 
 ### v1.2.37 (2026-05-16)
 - **Production SSL Fix**: Prevented the frontend from appending port `:3001` when running on HTTPS custom domains, resolving `ERR_SSL_PROTOCOL_ERROR`.
-- **Advanced Domain Discovery**: Improved automatic API detection for `deloffre.fr` infrastructure to ensure seamless connectivity between UI and API subdomains.
+- **Advanced Domain Discovery**: Improved automatic API detection for custom infrastructure to ensure seamless connectivity between UI and API subdomains.
 
 ---
 
