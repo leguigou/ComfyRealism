@@ -505,6 +505,7 @@ function App() {
         const data = JSON.parse(event.data);
         if (data.type === 'connected') {
           console.log('Backend acknowledged connection:', data.clientId);
+          clientId.current = data.clientId;
         } else if (data.type === 'queue_update') {
           console.log('Queue update received:', data);
           if (data.sessionId === currentSessionIdRef.current) {
@@ -557,7 +558,6 @@ function App() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      clientId.current = Math.random().toString(36).substring(7);
       connectWebSocket();
 
       // Gestion de la visibilité pour mobile (réveil du téléphone)
