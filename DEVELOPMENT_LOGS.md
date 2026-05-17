@@ -1,6 +1,17 @@
 # Development Logs
 
-## Current Version: 1.2.28
+## Current Version: 1.2.30
+
+---
+
+### v1.2.30 (2026-05-16)
+- **Transparency**: Added explicit logging of configured ComfyUI HTTP and WebSocket URLs on startup to aid in environment debugging.
+- **Maintenance**: Verified environment variable priority for `COMFY_URL`.
+
+---
+
+### v1.2.29 (2026-05-16)
+- **Git Security**: Added `.gemini/agents/` to `.gitignore` to prevent agent configuration files from being committed.
 
 ---
 

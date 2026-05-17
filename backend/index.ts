@@ -27,6 +27,9 @@ const getComfyWsUrl = (httpUrl: string) => {
 
 const COMFY_WS_URL = getComfyWsUrl(COMFY_URL);
 
+console.log(`[Config] ComfyUI URL: ${COMFY_URL}`);
+console.log(`[Config] ComfyUI WS: ${COMFY_WS_URL}`);
+
 const AUTH_SECRET = process.env.AUTH_SECRET || 'fallback_secret';
 const APP_PASSWORD = process.env.APP_PASSWORD || 'comfy';
 

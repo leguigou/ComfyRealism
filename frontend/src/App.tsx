@@ -1096,7 +1096,7 @@ function App() {
                 <div className="settings-grid">
                   <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                     <label>{t.currentVersion}</label>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.28</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.30</div>
                     
                     <label>{t.devLogs}</label>
                     <div className="logs-container" style={{ 
@@ -1110,10 +1110,12 @@ function App() {
                       fontFamily: 'monospace'
                     }}>
                       <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.29 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Sécurité : Ajout de .gemini/agents dans .gitignore.' : 'Security: Added .gemini/agents to .gitignore.'}</div>
+                      </div>
+                      <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
                         <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.28 (2026-05-16)</div>
                         <div>• {lang === 'fr' ? 'Correction de l\'erreur ECONNREFUSED sur Raspberry Pi/Docker.' : 'Fixed ECONNREFUSED error on Raspberry Pi/Docker.'}</div>
-                        <div>• {lang === 'fr' ? 'WebSocket dynamique utilisant l\'URL configurée au lieu de 127.0.0.1.' : 'Dynamic WebSocket using configured URL instead of 127.0.0.1.'}</div>
-                        <div>• {lang === 'fr' ? 'Support de la variable d\'environnement PORT.' : 'Support for PORT environment variable.'}</div>
                       </div>
                       <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
                         <div style={{ fontWeight: 'bold' }}>v1.2.27 (2026-05-16)</div>
