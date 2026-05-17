@@ -10,6 +10,7 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import Database from 'better-sqlite3';
 import sharp from 'sharp';
+import bcrypt from 'bcryptjs';
 
 dotenv.config();
 
@@ -56,11 +57,21 @@ db.pragma('journal_mode = WAL');
 
 // Create tables
 db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    isAdmin INTEGER DEFAULT 0,
+    createdAt INTEGER NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS sessions (
     id TEXT PRIMARY KEY,
+    userId TEXT,
     title TEXT NOT NULL,
     updatedAt INTEGER NOT NULL,
-    isArchived INTEGER DEFAULT 0
+    isArchived INTEGER DEFAULT 0,
+    FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
   );
   
   CREATE TABLE IF NOT EXISTS messages (
@@ -114,6 +125,30 @@ columnsToCheck.forEach(col => {
   }
 });
 
+// Session migration: add userId column if missing
+try {
+  db.prepare('SELECT userId FROM sessions LIMIT 1').get();
+} catch (e) {
+  db.exec('ALTER TABLE sessions ADD COLUMN userId TEXT');
+  console.log('[Migration] Added userId column to sessions table');
+}
+
+// Default Admin User Migration
+const APP_PASSWORD = process.env.APP_PASSWORD || 'comfy';
+const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as any;
+
+if (userCount.count === 0) {
+  console.log('[Migration] Creating default admin user...');
+  const adminId = uuidv4();
+  const passwordHash = bcrypt.hashSync(APP_PASSWORD.trim(), 10);
+  db.prepare('INSERT INTO users (id, username, password, isAdmin, createdAt) VALUES (?, ?, ?, ?, ?)')
+    .run(adminId, 'admin', passwordHash, 1, Date.now());
+  
+  // Assign all existing sessions to the new admin
+  db.prepare('UPDATE sessions SET userId = ? WHERE userId IS NULL').run(adminId);
+  console.log('[Migration] Default admin user created and existing sessions migrated.');
+}
+
 // Helper to get WS URL from HTTP URL
 const getComfyWsUrl = (httpUrl: string) => {
   return httpUrl.replace(/^http/, 'ws') + '/ws';
@@ -157,10 +192,28 @@ app.use(cookieParser(AUTH_SECRET));
 const apiRouter = express.Router();
 
 const authenticate = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if (req.signedCookies.authenticated === 'true') {
-    return next();
+  const userId = req.signedCookies.userId;
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
-  res.status(401).json({ error: 'Unauthorized' });
+
+  const user = db.prepare('SELECT id, username, isAdmin FROM users WHERE id = ?').get(userId) as any;
+  if (!user) {
+    res.clearCookie('userId');
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  (req as any).user = user;
+  next();
+};
+
+const requireAdmin = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  authenticate(req, res, () => {
+    if ((req as any).user?.isAdmin) {
+      return next();
+    }
+    res.status(403).json({ error: 'Forbidden: Admin access required' });
+  });
 };
 
 const clients = new Map<string, WebSocket>();
@@ -356,26 +409,95 @@ const processQueue = async () => {
 setInterval(processQueue, 2000);
 
 apiRouter.post('/auth/login', (req, res) => {
-  const { password } = req.body;
-  const submitted = (password || '').trim();
-  const expected = APP_PASSWORD.trim();
-  if (submitted === expected) {
-    const isProd = process.env.NODE_ENV === 'production';
-    const cookieOptions: any = { httpOnly: true, signed: true, maxAge: 30 * 24 * 60 * 60 * 1000 };
-    if (isProd) {
-      cookieOptions.sameSite = 'none'; cookieOptions.secure = true;
-      const host = (req.headers['x-forwarded-host'] as string) || req.headers.host || '';
-      const parts = host.split('.');
-      if (parts.length >= 2) { const domain = `.${parts.slice(-2).join('.')}`; cookieOptions.domain = domain; }
-    } else { cookieOptions.sameSite = 'lax'; }
-    res.cookie('authenticated', 'true', cookieOptions);
-    return res.json({ success: true });
+  const { username, password } = req.body;
+  const submittedUsername = (username || '').trim().toLowerCase();
+  const submittedPassword = (password || '').trim();
+  
+  if (!submittedUsername || !submittedPassword) {
+    return res.status(400).json({ error: 'Username and password required' });
   }
-  res.status(401).json({ error: 'Incorrect password' });
+
+  const user = db.prepare('SELECT * FROM users WHERE username = ?').get(submittedUsername) as any;
+  if (!user || !bcrypt.compareSync(submittedPassword, user.password)) {
+    return res.status(401).json({ error: 'Invalid username or password' });
+  }
+
+  const isProd = process.env.NODE_ENV === 'production';
+  const cookieOptions: any = { 
+    httpOnly: true, 
+    signed: true, 
+    maxAge: 30 * 24 * 60 * 60 * 1000 
+  };
+
+  if (isProd) {
+    cookieOptions.sameSite = 'none';
+    cookieOptions.secure = true;
+    const host = (req.headers['x-forwarded-host'] as string) || req.headers.host || '';
+    const parts = host.split('.');
+    if (parts.length >= 2) {
+      const domain = `.${parts.slice(-2).join('.')}`;
+      cookieOptions.domain = domain;
+    }
+  } else {
+    cookieOptions.sameSite = 'lax';
+  }
+
+  res.cookie('userId', user.id, cookieOptions);
+  return res.json({ success: true, user: { username: user.username, isAdmin: user.isAdmin === 1 } });
 });
 
-apiRouter.get('/auth/check', (req, res) => res.json({ authenticated: req.signedCookies.authenticated === 'true' }));
-apiRouter.post('/auth/logout', (req, res) => { res.clearCookie('authenticated'); res.json({ success: true }); });
+apiRouter.get('/auth/me', authenticate, (req, res) => {
+  const user = (req as any).user;
+  res.json({ username: user.username, isAdmin: user.isAdmin === 1 });
+});
+
+apiRouter.get('/auth/check', (req, res) => {
+  const userId = req.signedCookies.userId;
+  if (!userId) return res.json({ authenticated: false });
+  const user = db.prepare('SELECT username, isAdmin FROM users WHERE id = ?').get(userId) as any;
+  if (!user) return res.json({ authenticated: false });
+  res.json({ authenticated: true, user: { username: user.username, isAdmin: user.isAdmin === 1 } });
+});
+
+apiRouter.post('/auth/logout', (req, res) => { res.clearCookie('userId'); res.json({ success: true }); });
+
+// Admin User Management Endpoints
+apiRouter.get('/users', requireAdmin, (req, res) => {
+  const users = db.prepare('SELECT id, username, isAdmin, createdAt FROM users ORDER BY createdAt DESC').all();
+  res.json(users);
+});
+
+apiRouter.post('/users', requireAdmin, (req, res) => {
+  const { username, password, isAdmin } = req.body;
+  if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
+  
+  const id = uuidv4();
+  const passwordHash = bcrypt.hashSync(password.trim(), 10);
+  
+  try {
+    db.prepare('INSERT INTO users (id, username, password, isAdmin, createdAt) VALUES (?, ?, ?, ?, ?)')
+      .run(id, username.trim().toLowerCase(), passwordHash, isAdmin ? 1 : 0, Date.now());
+    res.json({ success: true, id });
+  } catch (err: any) {
+    res.status(400).json({ error: 'Username already exists' });
+  }
+});
+
+apiRouter.delete('/users/:id', requireAdmin, (req, res) => {
+  if (req.params.id === (req as any).user.id) {
+    return res.status(400).json({ error: 'Cannot delete yourself' });
+  }
+  db.prepare('DELETE FROM users WHERE id = ?').run(req.params.id);
+  res.json({ success: true });
+});
+
+apiRouter.patch('/users/:id/password', requireAdmin, (req, res) => {
+  const { password } = req.body;
+  if (!password) return res.status(400).json({ error: 'New password required' });
+  const passwordHash = bcrypt.hashSync(password.trim(), 10);
+  db.prepare('UPDATE users SET password = ? WHERE id = ?').run(passwordHash, req.params.id);
+  res.json({ success: true });
+});
 
 apiRouter.get('/settings', authenticate, (req, res) => {
   const settings = db.prepare('SELECT data FROM settings WHERE id = 1').get() as any;
@@ -388,65 +510,81 @@ apiRouter.post('/settings', authenticate, (req, res) => {
 });
 
 apiRouter.get('/history', authenticate, (req, res) => {
-  res.json(db.prepare('SELECT id, title, updatedAt, isArchived FROM sessions WHERE isArchived = 0 ORDER BY updatedAt DESC').all());
+  const user = (req as any).user;
+  res.json(db.prepare('SELECT id, title, updatedAt, isArchived FROM sessions WHERE isArchived = 0 AND userId = ? ORDER BY updatedAt DESC').all(user.id));
 });
 
 apiRouter.get('/history/archives', authenticate, (req, res) => {
-  res.json(db.prepare('SELECT id, title, updatedAt, isArchived FROM sessions WHERE isArchived = 1 ORDER BY updatedAt DESC').all());
+  const user = (req as any).user;
+  res.json(db.prepare('SELECT id, title, updatedAt, isArchived FROM sessions WHERE isArchived = 1 AND userId = ? ORDER BY updatedAt DESC').all(user.id));
 });
 
 apiRouter.get('/gallery', authenticate, (req, res) => {
+  const user = (req as any).user;
   const limit = parseInt(req.query.limit as string) || 25;
   const offset = parseInt(req.query.offset as string) || 0;
   const onlyArchived = req.query.includeArchived === 'true';
   const query = `
     SELECT m.sessionId, m.id as messageId, m.imageUrl, m.thumbnailUrl, m.prompt, m.text, m.timestamp, m.model, m.width, m.height, m.steps, m.cfg, m.workflow, m.seed 
     FROM messages m JOIN sessions s ON m.sessionId = s.id
-    WHERE m.imageUrl IS NOT NULL AND s.isArchived = ?
+    WHERE m.imageUrl IS NOT NULL AND s.isArchived = ? AND s.userId = ?
     ORDER BY m.timestamp DESC LIMIT ? OFFSET ?
   `;
-  res.json(db.prepare(query).all(onlyArchived ? 1 : 0, limit, offset));
+  res.json(db.prepare(query).all(onlyArchived ? 1 : 0, user.id, limit, offset));
 });
 
 apiRouter.get('/history/:id', authenticate, (req, res) => {
-  const session = db.prepare('SELECT * FROM sessions WHERE id = ?').get(req.params.id) as any;
+  const user = (req as any).user;
+  const session = db.prepare('SELECT * FROM sessions WHERE id = ? AND userId = ?').get(req.params.id, user.id) as any;
   if (!session) return res.json({ error: 'Not found' });
   const messages = db.prepare('SELECT id, role, text, prompt, imageUrl, thumbnailUrl, model, width, height, steps, cfg, workflow, status, timestamp, seed FROM messages WHERE sessionId = ? ORDER BY timestamp ASC').all(req.params.id);
   res.json({ ...session, messages });
 });
 
 apiRouter.post('/history', authenticate, (req, res) => {
-  const newSession = { id: uuidv4(), title: 'New Chat', updatedAt: Date.now(), isArchived: 0 };
-  db.prepare('INSERT INTO sessions (id, title, updatedAt, isArchived) VALUES (?, ?, ?, ?)').run(newSession.id, newSession.title, newSession.updatedAt, 0);
+  const user = (req as any).user;
+  const newSession = { id: uuidv4(), userId: user.id, title: 'New Chat', updatedAt: Date.now(), isArchived: 0 };
+  db.prepare('INSERT INTO sessions (id, userId, title, updatedAt, isArchived) VALUES (?, ?, ?, ?, ?)')
+    .run(newSession.id, newSession.userId, newSession.title, newSession.updatedAt, 0);
   res.json(newSession);
 });
 
 apiRouter.delete('/history/:id', authenticate, (req, res) => {
-  db.prepare('DELETE FROM sessions WHERE id = ?').run(req.params.id);
+  const user = (req as any).user;
+  db.prepare('DELETE FROM sessions WHERE id = ? AND userId = ?').run(req.params.id, user.id);
   res.json({ success: true });
 });
 
 apiRouter.delete('/history/all/active', authenticate, (req, res) => {
-  db.prepare('DELETE FROM sessions WHERE isArchived = 0').run();
+  const user = (req as any).user;
+  db.prepare('DELETE FROM sessions WHERE isArchived = 0 AND userId = ?').run(user.id);
   res.json({ success: true });
 });
 
 apiRouter.post('/history/archive-all', authenticate, (req, res) => {
-  db.prepare('UPDATE sessions SET isArchived = 1 WHERE isArchived = 0').run();
+  const user = (req as any).user;
+  db.prepare('UPDATE sessions SET isArchived = 1 WHERE isArchived = 0 AND userId = ?').run(user.id);
   res.json({ success: true });
 });
 
 apiRouter.patch('/history/:id', authenticate, (req, res) => {
-  db.prepare('UPDATE sessions SET title = ? WHERE id = ?').run(req.body.title, req.params.id);
+  const user = (req as any).user;
+  db.prepare('UPDATE sessions SET title = ? WHERE id = ? AND userId = ?').run(req.body.title, req.params.id, user.id);
   res.json({ success: true, title: req.body.title });
 });
 
 apiRouter.patch('/history/:id/archive', authenticate, (req, res) => {
-  db.prepare('UPDATE sessions SET isArchived = ? WHERE id = ?').run(req.body.isArchived ? 1 : 0, req.params.id);
+  const user = (req as any).user;
+  db.prepare('UPDATE sessions SET isArchived = ? WHERE id = ? AND userId = ?').run(req.body.isArchived ? 1 : 0, req.params.id, user.id);
   res.json({ success: true, isArchived: req.body.isArchived });
 });
 
 apiRouter.delete('/history/:sessionId/message/:messageId', authenticate, (req, res) => {
+  const user = (req as any).user;
+  // Verify session belongs to user first
+  const session = db.prepare('SELECT id FROM sessions WHERE id = ? AND userId = ?').get(req.params.sessionId, user.id);
+  if (!session) return res.status(403).json({ error: 'Unauthorized' });
+
   db.prepare('DELETE FROM messages WHERE id = ? AND sessionId = ?').run(req.params.messageId, req.params.sessionId);
   db.prepare('DELETE FROM queue WHERE messageId = ?').run(req.params.messageId);
   res.json({ success: true });

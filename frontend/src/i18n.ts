@@ -84,7 +84,17 @@ export const translations = {
     genFailed: 'La génération a échoué',
     testConnection: 'Tester la connexion',
     connectionSuccess: 'Connexion réussie !',
-    connectionFailed: 'Échec de la connexion'
+    connectionFailed: 'Échec de la connexion',
+    username: 'Nom d\'utilisateur',
+    incorrectLogin: 'Identifiants incorrects',
+    tabAdmin: 'Administration',
+    userList: 'Utilisateurs',
+    addUser: 'Ajouter un utilisateur',
+    role: 'Rôle',
+    admin: 'Admin',
+    user: 'Utilisateur',
+    actions: 'Actions',
+    confirmDeleteUser: 'Supprimer cet utilisateur ?'
   },
   en: {
     title: 'ComfyRealism',
@@ -169,6 +179,16 @@ export const translations = {
     genFailed: 'Generation failed',
     testConnection: 'Test Connection',
     connectionSuccess: 'Connection successful!',
-    connectionFailed: 'Connection failed'
+    connectionFailed: 'Connection failed',
+    username: 'Username',
+    incorrectLogin: 'Invalid credentials',
+    tabAdmin: 'Administration',
+    userList: 'Users',
+    addUser: 'Add User',
+    role: 'Role',
+    admin: 'Admin',
+    user: 'User',
+    actions: 'Actions',
+    confirmDeleteUser: 'Delete this user?'
   }
 };
