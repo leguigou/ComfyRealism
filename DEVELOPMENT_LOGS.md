@@ -1,6 +1,11 @@
 # Development Logs
 
-## Current Version: 1.2.57-beta
+## Current Version: 1.2.58-beta
+
+---
+
+### v1.2.58-beta (2026-05-17)
+- **Message Rendering Fix**: Resolved an issue where user prompts could be hidden when AI interpretation was enabled. The UI now correctly falls back to the original prompt if the optimized text is missing, and the duplicate detection logic has been improved to ensure visibility of all unique content.
 
 ---
 
