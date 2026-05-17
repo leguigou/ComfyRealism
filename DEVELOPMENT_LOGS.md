@@ -1,6 +1,14 @@
 # Development Logs
 
-## Current Version: 1.2.38
+## Current Version: 1.2.39
+
+---
+
+### v1.2.39 (2026-05-16)
+- **Infrastructure Overhaul (Solution B)**: Switched to a single domain model using path-based routing. Both frontend and backend now run under `comfyui.deloffre.fr`.
+- **WebSocket Refactoring**: Moved the backend WebSocket server to the `/api/ws` path and updated the frontend to connect via the unified production domain.
+- **Port-less Architecture**: Eliminated the need for explicit port numbers (like `:3001`) in production, resolving SSL protocol conflicts.
+- **CORS Elimination**: By using a single domain for all services, cross-origin issues and cookie sharing restrictions are completely bypassed.
 
 ---
 

@@ -72,23 +72,24 @@ interface Session {
 type Theme = 'light' | 'dark';
 
 const getApiBase = () => {
-  // 1. Priority: Environment variable (set during build or via Dokploy)
+  // 1. Priority: Environment variable
   if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
 
   const { protocol, hostname, port } = window.location;
 
-  // 2. Specific Port Mappings (Legacy support)
-  if (port === '55200') return `${protocol}//${hostname}:55201`;
-  
-  // 3. Smart Fallback: 
-  // If we are on standard ports (80/443), we assume the API is on the same host but port 3001
-  // OR we expect the user to have set VITE_API_URL for subdomains.
-  if (!port || port === '80' || port === '443') {
-     return `${protocol}//${hostname}:3001`;
+  // 2. Production Path Routing (Solution B)
+  // If we are on deloffre.fr, we use the same domain but with /api
+  if (hostname.includes('deloffre.fr')) {
+    return `${protocol}//${hostname}/api`;
   }
 
-  // 4. Default: same host, port 3001
-  return `${protocol}//${hostname}:3001`;
+  // 3. Fallback for local development
+  if (port === '5173' || port === '5174' || !port) {
+    return `${protocol}//${hostname}:3001`;
+  }
+  
+  const targetPort = (port === '55200') ? '55201' : '3001';
+  return `${protocol}//${hostname}:${targetPort}`;
 };
 
 const API_BASE = getApiBase();
@@ -482,9 +483,12 @@ function App() {
     if (wsRef.current) wsRef.current.close();
     if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
 
-    const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.hostname}:3001`;
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsBase = API_BASE.startsWith('http') ? API_BASE.replace(/^http/, 'ws') : `${wsProtocol}//${window.location.host}/api`;
+    const wsUrl = `${wsBase}/ws`;
+
+    console.log(`[WS] Connecting to: ${wsUrl}`);
+    const ws = new WebSocket(wsUrl);    wsRef.current = ws;
 
     ws.onopen = () => {
       console.log('WebSocket connected');
