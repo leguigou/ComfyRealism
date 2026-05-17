@@ -1096,7 +1096,7 @@ function App() {
                 <div className="settings-grid">
                   <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                     <label>{t.currentVersion}</label>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.23</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.24</div>
                     
                     <label>{t.devLogs}</label>
                     <div className="logs-container" style={{ 
@@ -1110,13 +1110,13 @@ function App() {
                       fontFamily: 'monospace'
                     }}>
                       <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.23 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Mise en place de l\'automatisation Docker (GitHub Actions).' : 'Implemented Docker automation (GitHub Actions).'}</div>
-                        <div>• {lang === 'fr' ? 'Construction automatique des images lors de chaque push.' : 'Automatic image builds on every push.'}</div>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.24 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Correction de la lisibilité en mode clair (texte gris sur gris).' : 'Fixed readability in light mode (gray on gray text).'}</div>
+                        <div>• {lang === 'fr' ? 'Renforcement du contraste pour les messages et les titres.' : 'Increased contrast for messages and headings.'}</div>
                       </div>
                       <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
-                        <div style={{ fontWeight: 'bold' }}>v1.2.22 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Affinement des gélules de la barre latérale (hauteur 40px).' : 'Refined sidebar pills (height 40px).'}</div>
+                        <div style={{ fontWeight: 'bold' }}>v1.2.23 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Mise en place de l\'automatisation Docker (GitHub Actions).' : 'Implemented Docker automation (GitHub Actions).'}</div>
                       </div>
                       <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
                         <div style={{ fontWeight: 'bold' }}>v1.2.15 (2026-05-16)</div>
