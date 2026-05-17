@@ -1,6 +1,12 @@
 # Development Logs
 
-## Current Version: 1.2.43
+## Current Version: 1.2.44
+
+---
+
+### v1.2.44 (2026-05-16)
+- **WebSocket Synchronization**: Fixed a bug where the `clientId` used for generation was not correctly synchronized with the backend's WebSocket relay.
+- **Improved Tracking**: The frontend now uses the `clientId` assigned by the backend upon connection, ensuring that generation progress updates are correctly received.
 
 ---
 
