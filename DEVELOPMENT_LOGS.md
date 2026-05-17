@@ -1,6 +1,12 @@
 # Development Logs
 
-## Current Version: 1.2.32
+## Current Version: 1.2.33
+
+---
+
+### v1.2.33 (2026-05-16)
+- **Auth Security Fix**: Updated cookie configuration for production environments. Added `secure: true` and `sameSite: 'none'` support to ensure login works across different subdomains (e.g., UI on one domain, API on another).
+- **Environment Awareness**: The authentication system now automatically adapts cookie security settings based on the `NODE_ENV` variable.
 
 ---
 
