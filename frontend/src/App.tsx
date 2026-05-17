@@ -1619,15 +1619,17 @@ function App() {
                 view === 'chat' ? <WelcomeScreen lang={lang} /> : <div className="empty-state"><p>{t.noArchives}</p></div>
               )}
               {messages.map((msg, index) => {
-                const isRedundant = index > 0 && msg.text === messages[index - 1].text;
+                const messageText = msg.text || msg.prompt;
+                const isRedundant = index > 0 && messageText === (messages[index - 1].text || messages[index - 1].prompt);
+                
                 return (
                   <div key={msg.id} id={`msg-${msg.id}`} className={`message-row ${msg.role}`}>
                     <div className="avatar">{msg.role === 'user' ? 'U' : 'C'}</div>
                     <div className="message-content">
-                      {msg.text && !isRedundant && (
+                      {messageText && !isRedundant && (
                         <div className="message-text-wrapper">
-                          {msg.text !== msg.prompt && msg.role === 'bot' && <span className="ai-badge" title="Optimisé par l'IA">✨</span>}
-                          <MessageText text={msg.text} lang={lang} />
+                          {msg.text && msg.text !== msg.prompt && msg.role === 'bot' && <span className="ai-badge" title="Optimisé par l'IA">✨</span>}
+                          <MessageText text={messageText} lang={lang} />
                         </div>
                       )}
                     {msg.role === 'bot' && !msg.imageUrl && msg.status !== 'failed' && (
