@@ -179,7 +179,32 @@ function App() {
   const [llmModels, setLlmModels] = useState<string[]>([]);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [llmStatus, setLlmStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
+  const [comfyCheckStatus, setComfyCheckStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
+  const [isCheckingComfy, setIsCheckingComfy] = useState(false);
   const [availableWorkflows, setAvailableWorkflows] = useState<string[]>([]);
+
+  const testComfyConnection = async () => {
+    setIsCheckingComfy(true);
+    setComfyCheckStatus(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/comfy-check`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comfyUrl: params.comfyUrl }),
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (data.success) {
+        setComfyCheckStatus({ type: 'success', msg: t.connectionSuccess });
+      } else {
+        setComfyCheckStatus({ type: 'error', msg: data.error || t.connectionFailed });
+      }
+    } catch (err: any) {
+      setComfyCheckStatus({ type: 'error', msg: t.connectionFailed + ': ' + err.message });
+    } finally {
+      setIsCheckingComfy(false);
+    }
+  };
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
   const [backendError, setBackendError] = useState(false);
   const [showHeader, setShowHeader] = useState(true);
@@ -1032,7 +1057,7 @@ function App() {
                 <div className="settings-grid">
                   <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                     <label>{t.currentVersion}</label>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.14</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.16</div>
                     
                     <label>{t.devLogs}</label>
                     <div className="logs-container" style={{ 
@@ -1046,15 +1071,18 @@ function App() {
                       fontFamily: 'monospace'
                     }}>
                       <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.14 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Dockerisation complète du projet (Docker Compose).' : 'Full project dockerization (Docker Compose).'}</div>
-                        <div>• {lang === 'fr' ? 'Configuration des volumes pour la persistance des données et images.' : 'Configured volumes for data and image persistence.'}</div>
-                        <div>• {lang === 'fr' ? 'Optimisation pour le déploiement multi-plateforme.' : 'Optimized for multi-platform deployment.'}</div>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.16 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Messages de statut en couleur (Vert pour succès, Rouge pour erreur).' : 'Color-coded status messages (Green for success, Red for error).'}</div>
+                        <div>• {lang === 'fr' ? 'Amélioration de la visibilité des retours dans les paramètres.' : 'Improved feedback visibility in settings.'}</div>
                       </div>
                       <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
-                        <div style={{ fontWeight: 'bold' }}>v1.2.13 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Gestion robuste des erreurs ComfyUI (VRAM, modèles manquants).' : 'Robust ComfyUI error handling (VRAM, missing models).'}</div>
-                        <div>• {lang === 'fr' ? 'Ajout d\'un bouton "Réessayer" et de messages d\'erreur détaillés.' : 'Added "Retry" button and detailed error messages.'}</div>
+                        <div style={{ fontWeight: 'bold' }}>v1.2.15 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Ajout d\'un bouton "Tester la connexion" pour l\'URL ComfyUI.' : 'Added "Test Connection" button for ComfyUI URL.'}</div>
+                      </div>
+                      <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
+                        <div style={{ fontWeight: 'bold' }}>v1.2.14 (2026-05-16)</div>
+                        <div>• {lang === 'fr' ? 'Dockerisation complète du projet (Docker Compose).' : 'Full project dockerization (Docker Compose).'}</div>
+                        <div>• {lang === 'fr' ? 'Configuration des volumes pour la persistance des données et images.' : 'Configured volumes for data and image persistence.'}</div>
                       </div>
                       <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
                         <div style={{ fontWeight: 'bold' }}>v1.2.9 (2026-05-16)</div>
@@ -1153,9 +1181,26 @@ function App() {
                 <div className="settings-grid">
                   <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                     <label>{t.comfyUrl}</label>
-                    <input type="text" value={params.comfyUrl} onChange={(e) => setParams({ ...params, comfyUrl: e.target.value })} placeholder="http://127.0.0.1:8188" />
-                  </div>
-                  <div className="setting-item" style={{ gridColumn: 'span 2' }}>
+                    <div className="model-select-group">
+                      <input 
+                        type="text" 
+                        value={params.comfyUrl} 
+                        onChange={(e) => setParams({ ...params, comfyUrl: e.target.value })} 
+                        placeholder="http://127.0.0.1:8188" 
+                        style={{ flex: 1 }}
+                      />
+                      <button
+                        className="refresh-models-btn"
+                        onClick={testComfyConnection}
+                        disabled={isCheckingComfy || !params.comfyUrl}
+                        title={t.testConnection}
+                        style={{ width: 'auto', padding: '0 1rem' }}
+                      >
+                        {isCheckingComfy ? '...' : t.testConnection}
+                      </button>
+                    </div>
+                    {comfyCheckStatus && <p className={`llm-status-msg ${comfyCheckStatus.type}`}>{comfyCheckStatus.msg}</p>}
+                  </div>                  <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                     <label>{t.checkpointModel}</label>
                     <div className="model-select-group">
                       <select

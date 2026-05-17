@@ -1,6 +1,18 @@
 # Development Logs
 
-## Current Version: 1.2.14
+## Current Version: 1.2.16
+
+---
+
+### v1.2.16 (2026-05-16)
+- **UI Polish**: Added color-coded status messages (Green for success, Red for error) for ComfyUI and LLM connection tests.
+- **Improved Visibility**: Enhanced the visibility of status feedback in the settings panel with dedicated CSS styles.
+
+---
+
+### v1.2.15 (2026-05-16)
+- **Configuration UX**: Added a "Test Connection" button next to the ComfyUI URL in Settings. Users can now instantly verify if their backend is reachable.
+- **Backend Validation**: Implemented a new `/api/comfy-check` endpoint to securely proxy health checks to ComfyUI.
 
 ---
 

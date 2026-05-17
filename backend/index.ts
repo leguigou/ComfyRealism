@@ -563,6 +563,17 @@ app.post('/api/llm-models', authenticate, async (req, res) => {
   } catch (error: any) { res.status(500).json({ error: 'Failed to fetch models' }); }
 });
 
+app.post('/api/comfy-check', authenticate, async (req, res) => {
+  try {
+    const { comfyUrl } = req.body;
+    const targetUrl = comfyUrl || COMFY_URL;
+    const response = await axios.get(`${targetUrl}/system_stats`, { timeout: 3000 });
+    res.json({ success: true, stats: response.data });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: 'ComfyUI connection failed: ' + parseComfyError(error) });
+  }
+});
+
 app.post('/api/comfy-models', authenticate, async (req, res) => {
   try {
     const { comfyUrl } = req.body;

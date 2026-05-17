@@ -81,7 +81,10 @@ export const translations = {
     active: 'Actifs',
     archived: 'Archives',
     retry: 'Réessayer',
-    genFailed: 'La génération a échoué'
+    genFailed: 'La génération a échoué',
+    testConnection: 'Tester la connexion',
+    connectionSuccess: 'Connexion réussie !',
+    connectionFailed: 'Échec de la connexion'
   },
   en: {
     title: 'ComfyRealism',
@@ -163,6 +166,9 @@ export const translations = {
     active: 'Active',
     archived: 'Archived',
     retry: 'Retry',
-    genFailed: 'Generation failed'
+    genFailed: 'Generation failed',
+    testConnection: 'Test Connection',
+    connectionSuccess: 'Connection successful!',
+    connectionFailed: 'Connection failed'
   }
 };
