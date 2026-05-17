@@ -1,10 +1,16 @@
 # Development Logs
 
-## Current Version: 1.2.34
+## Current Version: 1.2.37
 
 ---
 
-### v1.2.34 (2026-05-16)
+### v1.2.37 (2026-05-16)
+- **Production SSL Fix**: Prevented the frontend from appending port `:3001` when running on HTTPS custom domains, resolving `ERR_SSL_PROTOCOL_ERROR`.
+- **Advanced Domain Discovery**: Improved automatic API detection for `deloffre.fr` infrastructure to ensure seamless connectivity between UI and API subdomains.
+
+---
+
+### v1.2.36 (2026-05-16)
 - **Production UX Fix**: Implemented automatic API subdomain detection. If the app runs on `comfyui.*`, it now automatically tries to reach the API on `api-comfy.*`.
 - **Debug Improvement**: Added explicit error reporting on login failure, displaying the attempted API URL to help users diagnose connectivity issues.
 - **Resilience**: The frontend is now more capable of running on custom domains without requiring manual environment variable configuration at build time.
