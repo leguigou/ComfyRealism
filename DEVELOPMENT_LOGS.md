@@ -1,6 +1,12 @@
 # Development Logs
 
-## Current Version: 1.2.16
+## Current Version: 1.2.17
+
+---
+
+### v1.2.17 (2026-05-16)
+- **Accessibility Fix**: Improved the touch target of the "Test Connection" button on mobile by increasing its height and padding.
+- **Responsive UI**: Standardized button heights (min 44px) on mobile devices for better ergonomics and usability.
 
 ---
 
