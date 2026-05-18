@@ -241,14 +241,33 @@ const broadcastToSession = (sessionId: string, data: any) => {
 
 app.get('/', (req, res) => res.json({ status: 'online', service: 'ComfyRealism Backend' }));
 
+apiRouter.get('/image-files/thumbnails/:userId/:filename', async (req, res, next) => {
+  const { userId, filename } = req.params;
+  const thumbPath = path.join(thumbnailsDir, userId, filename);
+  if (fs.existsSync(thumbPath)) return next();
+  try {
+    const originalName = filename.replace('_thumb.webp', '.webp');
+    const originalPath = path.join(imagesDir, userId, originalName);
+    if (fs.existsSync(originalPath)) {
+      const userThumbDir = path.join(thumbnailsDir, userId);
+      if (!fs.existsSync(userThumbDir)) fs.mkdirSync(userThumbDir, { recursive: true });
+      await sharp(originalPath).resize(400, 400, { fit: 'inside', withoutEnlargement: true }).webp({ quality: 70 }).toFile(thumbPath);
+      return res.sendFile(thumbPath);
+    }
+  } catch (err) { console.error('[Thumbnails] On-the-fly generation failed:', err); }
+  res.status(404).send('Not found');
+});
+
 apiRouter.get('/image-files/thumbnails/:filename', async (req, res, next) => {
   const filename = req.params.filename;
-  const thumbPath = path.join(thumbnailsDir, filename);
+  const thumbPath = path.join(imagesDir, 'thumbnails', filename);
   if (fs.existsSync(thumbPath)) return next();
   try {
     const originalName = filename.replace('_thumb.webp', '.webp');
     const originalPath = path.join(imagesDir, originalName);
     if (fs.existsSync(originalPath)) {
+      const legacyThumbDir = path.join(imagesDir, 'thumbnails');
+      if (!fs.existsSync(legacyThumbDir)) fs.mkdirSync(legacyThumbDir, { recursive: true });
       await sharp(originalPath).resize(400, 400, { fit: 'inside', withoutEnlargement: true }).webp({ quality: 70 }).toFile(thumbPath);
       return res.sendFile(thumbPath);
     }
@@ -382,13 +401,24 @@ const processQueue = async () => {
     try {
       imgResp = await axios.get(`${targetComfyUrl}/view`, { params: { filename }, responseType: 'arraybuffer', timeout: 15000 });
     } catch (err: any) { throw new Error(`Failed to retrieve image: ${parseComfyError(err)}`); }
+    
+    const sessionRecord = db.prepare('SELECT userId FROM sessions WHERE id = ?').get(task.sessionId) as any;
+    const userId = sessionRecord?.userId || 'unknown';
+    const userImagesDir = path.join(imagesDir, userId);
+    const userThumbnailsDir = path.join(thumbnailsDir, userId);
+    
+    if (!fs.existsSync(userImagesDir)) fs.mkdirSync(userImagesDir, { recursive: true });
+    if (!fs.existsSync(userThumbnailsDir)) fs.mkdirSync(userThumbnailsDir, { recursive: true });
+
     const baseName = `${Date.now()}-${filename.replace(/\.[^/.]+$/, "")}`;
     const fullWebpName = `${baseName}.webp`;
     const thumbWebpName = `${baseName}_thumb.webp`;
-    await sharp(imgResp.data).webp({ quality: 85 }).toFile(path.join(imagesDir, fullWebpName));
-    await sharp(imgResp.data).resize(400, 400, { fit: 'inside', withoutEnlargement: true }).webp({ quality: 70 }).toFile(path.join(thumbnailsDir, thumbWebpName));
-    const imageUrl = `/api/image-files/${fullWebpName}`;
-    const thumbnailUrl = `/api/image-files/thumbnails/${thumbWebpName}`;
+    
+    await sharp(imgResp.data).webp({ quality: 85 }).toFile(path.join(userImagesDir, fullWebpName));
+    await sharp(imgResp.data).resize(400, 400, { fit: 'inside', withoutEnlargement: true }).webp({ quality: 70 }).toFile(path.join(userThumbnailsDir, thumbWebpName));
+    
+    const imageUrl = `/api/image-files/${userId}/${fullWebpName}`;
+    const thumbnailUrl = `/api/image-files/thumbnails/${userId}/${thumbWebpName}`;
     db.prepare('UPDATE messages SET imageUrl = ?, thumbnailUrl = ?, status = ?, duration = ? WHERE id = ?').run(imageUrl, thumbnailUrl, 'completed', finalDuration, task.messageId);
     db.prepare('DELETE FROM queue WHERE id = ?').run(task.id);
     broadcastToSession(task.sessionId, { 
@@ -479,13 +509,14 @@ apiRouter.get('/users', requireAdmin, (req, res) => {
 
     userImages.forEach(img => {
       try {
-        // Resolve absolute paths for main image and thumbnail
-        if (img.imageUrl) {
-          const imgPath = path.join(imagesDir, path.basename(img.imageUrl));
+        if (img.imageUrl && img.imageUrl.startsWith('/api/image-files/')) {
+          const relativePath = decodeURIComponent(img.imageUrl.replace('/api/image-files/', '').split('?')[0]);
+          const imgPath = path.join(imagesDir, relativePath);
           if (fs.existsSync(imgPath)) totalBytes += fs.statSync(imgPath).size;
         }
-        if (img.thumbnailUrl) {
-          const thumbPath = path.join(thumbnailsDir, path.basename(img.thumbnailUrl));
+        if (img.thumbnailUrl && img.thumbnailUrl.startsWith('/api/image-files/')) {
+          const relativePath = decodeURIComponent(img.thumbnailUrl.replace('/api/image-files/', '').split('?')[0]);
+          const thumbPath = path.join(imagesDir, relativePath);
           if (fs.existsSync(thumbPath)) totalBytes += fs.statSync(thumbPath).size;
         }
       } catch (err) {
@@ -585,14 +616,44 @@ apiRouter.post('/history', authenticate, (req, res) => {
   res.json(newSession);
 });
 
+const deleteMessageFiles = (messages: any[]) => {
+  messages.forEach(msg => {
+    try {
+      if (msg.imageUrl && msg.imageUrl.startsWith('/api/image-files/')) {
+        const relativePath = decodeURIComponent(msg.imageUrl.replace('/api/image-files/', '').split('?')[0]);
+        const imgPath = path.join(imagesDir, relativePath);
+        if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
+      }
+      if (msg.thumbnailUrl && msg.thumbnailUrl.startsWith('/api/image-files/')) {
+        const relativePath = decodeURIComponent(msg.thumbnailUrl.replace('/api/image-files/', '').split('?')[0]);
+        const thumbPath = path.join(imagesDir, relativePath);
+        if (fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
+      }
+    } catch (err) {
+      console.error(`Failed to delete files for message ${msg.id}:`, err);
+    }
+  });
+};
+
 apiRouter.delete('/history/:id', authenticate, (req, res) => {
   const user = (req as any).user;
+  const messages = db.prepare('SELECT imageUrl, thumbnailUrl FROM messages WHERE sessionId = ? AND imageUrl IS NOT NULL').all(req.params.id);
+  deleteMessageFiles(messages);
+  
   db.prepare('DELETE FROM sessions WHERE id = ? AND userId = ?').run(req.params.id, user.id);
   res.json({ success: true });
 });
 
 apiRouter.delete('/history/all/active', authenticate, (req, res) => {
   const user = (req as any).user;
+  const messages = db.prepare(`
+    SELECT m.imageUrl, m.thumbnailUrl 
+    FROM messages m 
+    JOIN sessions s ON m.sessionId = s.id 
+    WHERE s.isArchived = 0 AND s.userId = ? AND m.imageUrl IS NOT NULL
+  `).all(user.id);
+  deleteMessageFiles(messages);
+
   db.prepare('DELETE FROM sessions WHERE isArchived = 0 AND userId = ?').run(user.id);
   res.json({ success: true });
 });
@@ -620,6 +681,9 @@ apiRouter.delete('/history/:sessionId/message/:messageId', authenticate, (req, r
   // Verify session belongs to user first
   const session = db.prepare('SELECT id FROM sessions WHERE id = ? AND userId = ?').get(req.params.sessionId, user.id);
   if (!session) return res.status(403).json({ error: 'Unauthorized' });
+
+  const message = db.prepare('SELECT imageUrl, thumbnailUrl FROM messages WHERE id = ? AND sessionId = ?').get(req.params.messageId, req.params.sessionId);
+  if (message) deleteMessageFiles([message]);
 
   db.prepare('DELETE FROM messages WHERE id = ? AND sessionId = ?').run(req.params.messageId, req.params.sessionId);
   db.prepare('DELETE FROM queue WHERE messageId = ?').run(req.params.messageId);

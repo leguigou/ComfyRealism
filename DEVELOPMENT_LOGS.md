@@ -1,6 +1,14 @@
 # Development Logs
 
-## Current Version: 1.2.62-multiuser
+## Current Version: 1.2.63-multiuser
+
+---
+
+### v1.2.63-multiuser (2026-05-18)
+- **Cinematic Auto-Scroll**: Replaced the abrupt browser scroll with a custom, buttery-smooth cubic easing animation. The camera now gracefully glides to the newly generated image.
+- **Persistent Disk Cleanup**: Deleting an image or a chat session from the UI now physically removes the corresponding `.webp` and thumbnail files from the server's disk, preventing storage bloat.
+- **Dynamic User Directories**: Images and thumbnails are now seamlessly organized into dedicated sub-directories (`images/<user_id>` and `images/thumbnails/<user_id>`) for secure, multi-user isolation.
+- **Format Harmonization**: Successfully migrated all legacy `.png` files to the optimized `.webp` format automatically.
 
 ---
 
