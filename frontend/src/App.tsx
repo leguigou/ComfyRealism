@@ -268,6 +268,7 @@ function App() {
 
   useEffect(() => {
     if (activeTab === 'admin') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchAdminUsers();
     }
   }, [activeTab, fetchAdminUsers]);
@@ -453,6 +454,52 @@ function App() {
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior, block: 'end' });
+    }, 100);
+  }, []);
+
+  const smoothScrollTo = useCallback((elementId: string) => {
+    setTimeout(() => {
+      const el = document.getElementById(elementId);
+      if (!el || !containerRef.current) return;
+      
+      const container = containerRef.current;
+      // Calculate target position with some padding to ensure the whole message is visible
+      const targetScroll = el.offsetTop - container.offsetTop - 40;
+      const startScroll = container.scrollTop;
+      const distance = targetScroll - startScroll;
+      
+      // If we are already very close, just use native smooth to avoid weird jumps
+      if (Math.abs(distance) < 50) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      const duration = 1200; // 1.2 seconds for a very soft, luxurious scroll
+      let start: number | null = null;
+
+      // Quartic easing in/out for a very smooth start and end
+      const easeInOutQuart = (t: number, b: number, c: number, d: number) => {
+        t /= d / 2;
+        if (t < 1) return c / 2 * t * t * t * t + b;
+        t -= 2;
+        return -c / 2 * (t * t * t * t - 2) + b;
+      };
+
+      const animation = (currentTime: number) => {
+        if (start === null) start = currentTime;
+        const timeElapsed = currentTime - start;
+        const nextScroll = easeInOutQuart(timeElapsed, startScroll, distance, duration);
+        
+        container.scrollTop = nextScroll;
+        
+        if (timeElapsed < duration) {
+          requestAnimationFrame(animation);
+        } else {
+          container.scrollTop = targetScroll;
+        }
+      };
+
+      requestAnimationFrame(animation);
     }, 100);
   }, []);
 
@@ -1004,9 +1051,6 @@ function App() {
       };
       setMessages(prev => [...prev, initialBotMsg]);
       
-      // Faire défiler vers le bas immédiatement après l'envoi
-      setTimeout(() => scrollToBottom(), 50);
-
       // 2. Interprétation IA si activée (uniquement si ce n'est PAS une régénération directe)
       if (params.llmEnabled && params.llmUrl && params.llmModel && !isRegeneration) {
         enhancingCount.current++;
@@ -1288,7 +1332,7 @@ function App() {
                 <div className="settings-grid">
                   <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                     <label>{t.currentVersion}</label>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.62-multiuser</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.63-multiuser</div>
                     
                     <label>{t.devLogs}</label>
                     <div className="logs-container" style={{ 
@@ -1301,6 +1345,12 @@ function App() {
                       lineHeight: '1.4',
                       fontFamily: 'monospace'
                     }}>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.63 (2026-05-18)</div>
+                        <div>• {lang === 'fr' ? 'Défilement cinématique (animation ultra-douce).' : 'Cinematic, buttery-smooth auto-scroll animation.'}</div>
+                        <div>• {lang === 'fr' ? 'Nettoyage physique du disque à la suppression.' : 'Physical disk cleanup on deletion.'}</div>
+                        <div>• {lang === 'fr' ? 'Dossiers d\'images isolés par utilisateur.' : 'Isolated user image directories.'}</div>
+                      </div>
                       <div style={{ marginBottom: '1rem' }}>
                         <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.62 (2026-05-17)</div>
                         <div>• {lang === 'fr' ? 'Statistiques d\'utilisation et espace disque par utilisateur.' : 'User usage statistics and disk space tracking.'}</div>
@@ -1903,7 +1953,7 @@ function App() {
                           src={getFullImageUrl(msg.thumbnailUrl || msg.imageUrl)} 
                           alt="Generated" 
                           className="clickable-image" 
-                          onLoad={() => scrollToBottom('auto')}
+                          onLoad={() => smoothScrollTo(`msg-${msg.id}`)}
                         />
                       </div>
                     )}
