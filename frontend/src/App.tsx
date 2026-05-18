@@ -1050,6 +1050,7 @@ function App() {
         cfg: params.cfg
       };
       setMessages(prev => [...prev, initialBotMsg]);
+      setTimeout(() => smoothScrollTo(`msg-${botMsgId}`), 50);
       
       // 2. Interprétation IA si activée (uniquement si ce n'est PAS une régénération directe)
       if (params.llmEnabled && params.llmUrl && params.llmModel && !isRegeneration) {
@@ -1121,7 +1122,6 @@ function App() {
   const handleEdit = useCallback((text: string) => {
     setInput(text);
     textareaRef.current?.focus();
-    textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, []);
 
   const interruptGeneration = async () => {
