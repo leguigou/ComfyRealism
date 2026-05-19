@@ -618,7 +618,7 @@ apiRouter.get('/history/:id', authenticate, (req, res) => {
   const user = (req as any).user;
   const session = db.prepare('SELECT * FROM sessions WHERE id = ? AND userId = ?').get(req.params.id, user.id) as any;
   if (!session) return res.json({ error: 'Not found' });
-  const messages = db.prepare('SELECT id, role, text, prompt, imageUrl, thumbnailUrl, model, width, height, steps, cfg, workflow, status, timestamp, seed, isFavorite FROM messages WHERE sessionId = ? ORDER BY timestamp ASC').all(req.params.id);
+  const messages = db.prepare('SELECT id, role, text, prompt, imageUrl, thumbnailUrl, model, width, height, steps, cfg, workflow, status, timestamp, seed, isFavorite, duration FROM messages WHERE sessionId = ? ORDER BY timestamp ASC').all(req.params.id);
   res.json({ ...session, messages });
 });
 
@@ -811,3 +811,4 @@ app.use('/api', apiRouter);
 app.use('/', apiRouter);
 
 server.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+
