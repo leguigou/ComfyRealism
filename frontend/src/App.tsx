@@ -282,6 +282,47 @@ function App() {
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
   const [favoritedId, setFavoritedId] = useState<string | null>(null);
+  const clickTimeoutRef = useRef<any>(null);
+
+  const handleImageClick = (item: { url: string, sessionId: string, messageId: string, isFavorite?: number, source: 'chat' | 'gallery' }) => {
+    if (clickTimeoutRef.current) {
+      // Double click detected
+      clearTimeout(clickTimeoutRef.current);
+      clickTimeoutRef.current = null;
+      
+      // Toggle favorite behavior for double tap
+      toggleFavorite(item.sessionId, item.messageId, item.isFavorite);
+    } else {
+      // Potential single click
+      clickTimeoutRef.current = setTimeout(() => {
+        setActiveLightbox({ url: item.url, sessionId: item.sessionId, messageId: item.messageId, source: item.source });
+        clickTimeoutRef.current = null;
+      }, 300);
+    }
+  };
+
+  const handleLightboxClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!activeLightbox) return;
+
+    if (clickTimeoutRef.current) {
+      // Double click detected in lightbox
+      clearTimeout(clickTimeoutRef.current);
+      clickTimeoutRef.current = null;
+      
+      const currentItem = activeLightbox.source === 'chat' 
+        ? messages.find(m => m.id === activeLightbox.messageId)
+        : galleryItems.find(m => m.messageId === activeLightbox.messageId);
+        
+      toggleFavorite(activeLightbox.sessionId, activeLightbox.messageId, currentItem?.isFavorite);
+    } else {
+      // Potential single click (to close)
+      clickTimeoutRef.current = setTimeout(() => {
+        setActiveLightbox(null);
+        clickTimeoutRef.current = null;
+      }, 300);
+    }
+  };
 
   const toggleFavorite = async (sessionId: string, messageId: string, currentStatus: number | undefined) => {
     const newStatus = currentStatus === 1 ? 0 : 1;
@@ -1287,52 +1328,52 @@ function App() {
     );
   }
 
+  const currentLightboxItem = activeLightbox ? (
+    activeLightbox.source === 'chat' 
+      ? messages.find(m => m.id === activeLightbox.messageId)
+      : galleryItems.find(m => m.messageId === activeLightbox.messageId)
+  ) : null;
+
   return (
     <div className={`app-layout ${theme}`}>
-      {activeLightbox && (() => {
-        const currentItem = activeLightbox.source === 'chat' 
-          ? messages.find(m => m.id === activeLightbox.messageId)
-          : galleryItems.find(m => m.messageId === activeLightbox.messageId);
-        
-        return (
-          <div 
-            className="lightbox" 
-            onClick={() => setActiveLightbox(null)}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-          >
-            <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
-              <img src={getFullImageUrl(activeLightbox.url)} alt="Fullscreen" />
-              {favoritedId === activeLightbox.messageId && <div className="image-overlay-heart" style={{ fontSize: '8rem' }}>❤️</div>}
-            </div>
-            <div className="lightbox-actions" onClick={(e) => e.stopPropagation()}>
-              <button className="lightbox-btn go-to-chat" onClick={() => { goToImage(activeLightbox.sessionId, activeLightbox.messageId); setActiveLightbox(null); }} title="Voir dans le chat">
-                💬
-              </button>
-              <button 
-                className={`lightbox-btn favorite ${currentItem?.isFavorite ? 'active' : ''}`} 
-                onClick={(e) => { e.stopPropagation(); toggleFavorite(activeLightbox.sessionId, activeLightbox.messageId, currentItem?.isFavorite); }}
-                title={t.favorites}
-              >
-                {currentItem?.isFavorite ? '❤️' : '🤍'}
-              </button>
-              <button className="lightbox-btn edit" onClick={() => { 
-                if (currentItem) {
-                  handleEdit(currentItem.text || currentItem.prompt || '');
-                  setActiveLightbox(null);
-                }
-              }} title={t.edit}>
-                ✎
-              </button>
-              <button className="lightbox-btn download" onClick={() => downloadImage(getFullImageUrl(activeLightbox.url), `img-${activeLightbox.messageId}.png`)} title="Télécharger">
-                💾
-              </button>
-              <button className="lightbox-btn close" onClick={() => setActiveLightbox(null)}>×</button>
-            </div>
+      {activeLightbox && (
+        <div 
+          className="lightbox" 
+          onClick={handleLightboxClick}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
+            <img src={getFullImageUrl(activeLightbox.url)} alt="Fullscreen" />
+            {favoritedId === activeLightbox.messageId && <div className="image-overlay-heart" style={{ fontSize: '8rem' }}>❤️</div>}
           </div>
-        );
-      })()}
+          <div className="lightbox-actions" onClick={(e) => e.stopPropagation()}>
+            <button className="lightbox-btn go-to-chat" onClick={() => { goToImage(activeLightbox.sessionId, activeLightbox.messageId); setActiveLightbox(null); }} title={t.viewInChat}>
+              💬
+            </button>
+            <button 
+              className={`lightbox-btn favorite ${currentLightboxItem?.isFavorite ? 'active' : ''}`} 
+              onClick={(e) => { e.stopPropagation(); toggleFavorite(activeLightbox.sessionId, activeLightbox.messageId, currentLightboxItem?.isFavorite); }}
+              title={t.favorites}
+            >
+              {currentLightboxItem?.isFavorite ? '❤️' : '🤍'}
+            </button>
+            <button className="lightbox-btn edit" onClick={() => { 
+              if (currentLightboxItem) {
+                handleEdit(currentLightboxItem.text || currentLightboxItem.prompt || '');
+                setActiveLightbox(null);
+              }
+            }} title={t.edit}>
+              ✎
+            </button>
+            <button className="lightbox-btn download" onClick={() => downloadImage(getFullImageUrl(activeLightbox.url), `img-${activeLightbox.messageId}.png`)} title="Télécharger">
+              💾
+            </button>
+            <button className="lightbox-btn close" onClick={() => setActiveLightbox(null)}>×</button>
+          </div>
+        </div>
+      )}
 
       {messageToDelete && (
         <div className="settings-modal-overlay" onClick={() => setMessageToDelete(null)}>
@@ -2067,14 +2108,14 @@ function App() {
               <div className="gallery-header">
                 <h2>{t.myContent}</h2>
                 <div className="gallery-filters">
-                  <button className={`gallery-filter-fav ${favoritesOnly ? 'active' : ''}`} onClick={() => { setFavoritesOnly(!favoritesOnly); setGalleryOffset(0); setHasMoreGallery(true); }}>
+                  <button className={`gallery-filter-fav ${favoritesOnly ? 'active' : ''}`} onClick={() => { setFavoritesOnly(!favoritesOnly); setGalleryOffset(0); setHasMoreGallery(true); setTimeout(() => fetchGallery(true), 0); }}>
                     {favoritesOnly ? '❤️' : '🤍'} {t.favorites}
                   </button>
                   <div className="control-group">
-                    <button className={`control-pill ${!showArchivedInGallery ? 'active' : ''}`} onClick={() => { setShowArchivedInGallery(false); setFavoritesOnly(false); setGalleryOffset(0); setHasMoreGallery(true); }}>
+                    <button className={`control-pill ${!showArchivedInGallery ? 'active' : ''}`} onClick={() => { setShowArchivedInGallery(false); setFavoritesOnly(false); setGalleryOffset(0); setHasMoreGallery(true); setTimeout(() => fetchGallery(true), 0); }}>
                       {t.active}
                     </button>
-                    <button className={`control-pill ${showArchivedInGallery ? 'active' : ''}`} onClick={() => { setShowArchivedInGallery(true); setFavoritesOnly(false); setGalleryOffset(0); setHasMoreGallery(true); }}>
+                    <button className={`control-pill ${showArchivedInGallery ? 'active' : ''}`} onClick={() => { setShowArchivedInGallery(true); setFavoritesOnly(false); setGalleryOffset(0); setHasMoreGallery(true); setTimeout(() => fetchGallery(true), 0); }}>
                       {t.archived}
                     </button>
                   </div>
@@ -2086,7 +2127,7 @@ function App() {
                   ref={galleryItems.length === index + 1 ? lastImageElementRef : undefined}
                   key={item.messageId} 
                   className="gallery-item" 
-                  onClick={() => setActiveLightbox({ url: item.imageUrl, sessionId: item.sessionId, messageId: item.messageId, source: 'gallery' })}
+                  onClick={() => handleImageClick({ url: item.imageUrl, sessionId: item.sessionId, messageId: item.messageId, isFavorite: item.isFavorite, source: 'gallery' })}
                   >
                     <img src={getFullImageUrl(item.thumbnailUrl || item.imageUrl)} alt={item.prompt} loading="lazy" />
                     {item.isFavorite === 1 && <div className="gallery-item-favorite">❤️</div>}
