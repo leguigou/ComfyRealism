@@ -112,14 +112,14 @@ db.exec(`
 `);
 
 // Migration to add missing columns
-const columnsToCheck = ['model', 'width', 'height', 'steps', 'cfg', 'workflow', 'status', 'thumbnailUrl', 'seed', 'duration'];
+const columnsToCheck = ['model', 'width', 'height', 'steps', 'cfg', 'workflow', 'status', 'thumbnailUrl', 'seed', 'duration', 'isFavorite'];
 columnsToCheck.forEach(col => {
   try {
     db.prepare(`SELECT ${col} FROM messages LIMIT 1`).get();
   } catch (e) {
     let type = 'TEXT';
     if (col === 'cfg') type = 'REAL';
-    else if (['width', 'height', 'steps', 'seed', 'duration'].includes(col)) type = 'INTEGER';
+    else if (['width', 'height', 'steps', 'seed', 'duration', 'isFavorite'].includes(col)) type = 'INTEGER';
     db.exec(`ALTER TABLE messages ADD COLUMN ${col} ${type}`);
     console.log(`[Migration] Added column ${col} to messages table`);
   }
@@ -591,21 +591,48 @@ apiRouter.get('/gallery', authenticate, (req, res) => {
   const limit = parseInt(req.query.limit as string) || 25;
   const offset = parseInt(req.query.offset as string) || 0;
   const onlyArchived = req.query.includeArchived === 'true';
-  const query = `
-    SELECT m.sessionId, m.id as messageId, m.imageUrl, m.thumbnailUrl, m.prompt, m.text, m.timestamp, m.model, m.width, m.height, m.steps, m.cfg, m.workflow, m.seed 
+  const favoritesOnly = req.query.favoritesOnly === 'true';
+  
+  let query = `
+    SELECT m.sessionId, m.id as messageId, m.imageUrl, m.thumbnailUrl, m.prompt, m.text, m.timestamp, m.model, m.width, m.height, m.steps, m.cfg, m.workflow, m.seed, m.isFavorite
     FROM messages m JOIN sessions s ON m.sessionId = s.id
-    WHERE m.imageUrl IS NOT NULL AND s.isArchived = ? AND s.userId = ?
-    ORDER BY m.timestamp DESC LIMIT ? OFFSET ?
+    WHERE m.imageUrl IS NOT NULL AND s.userId = ?
   `;
-  res.json(db.prepare(query).all(onlyArchived ? 1 : 0, user.id, limit, offset));
+  
+  const params: any[] = [user.id];
+  
+  if (favoritesOnly) {
+    query += ` AND m.isFavorite = 1`;
+  } else {
+    query += ` AND s.isArchived = ?`;
+    params.push(onlyArchived ? 1 : 0);
+  }
+  
+  query += ` ORDER BY m.timestamp DESC LIMIT ? OFFSET ?`;
+  params.push(limit, offset);
+  
+  res.json(db.prepare(query).all(...params));
 });
 
 apiRouter.get('/history/:id', authenticate, (req, res) => {
   const user = (req as any).user;
   const session = db.prepare('SELECT * FROM sessions WHERE id = ? AND userId = ?').get(req.params.id, user.id) as any;
   if (!session) return res.json({ error: 'Not found' });
-  const messages = db.prepare('SELECT id, role, text, prompt, imageUrl, thumbnailUrl, model, width, height, steps, cfg, workflow, status, timestamp, seed FROM messages WHERE sessionId = ? ORDER BY timestamp ASC').all(req.params.id);
+  const messages = db.prepare('SELECT id, role, text, prompt, imageUrl, thumbnailUrl, model, width, height, steps, cfg, workflow, status, timestamp, seed, isFavorite FROM messages WHERE sessionId = ? ORDER BY timestamp ASC').all(req.params.id);
   res.json({ ...session, messages });
+});
+
+apiRouter.patch('/history/:sessionId/message/:messageId/favorite', authenticate, (req, res) => {
+  const user = (req as any).user;
+  const { sessionId, messageId } = req.params;
+  const { isFavorite } = req.body;
+
+  // Verify ownership
+  const session = db.prepare('SELECT id FROM sessions WHERE id = ? AND userId = ?').get(sessionId, user.id);
+  if (!session) return res.status(403).json({ error: 'Unauthorized' });
+
+  db.prepare('UPDATE messages SET isFavorite = ? WHERE id = ? AND sessionId = ?').run(isFavorite ? 1 : 0, messageId, sessionId);
+  res.json({ success: true, isFavorite });
 });
 
 apiRouter.post('/history', authenticate, (req, res) => {

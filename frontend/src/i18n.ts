@@ -96,7 +96,9 @@ export const translations = {
     actions: 'Actions',
     images: 'Images',
     diskUsage: 'Espace disque',
-    confirmDeleteUser: 'Supprimer cet utilisateur ?'
+    confirmDeleteUser: 'Supprimer cet utilisateur ?',
+    favorites: 'Favoris',
+    favoritesOnly: 'Favoris uniquement'
   },
   en: {
     title: 'ComfyRealism',
@@ -193,6 +195,8 @@ export const translations = {
     actions: 'Actions',
     images: 'Images',
     diskUsage: 'Disk Usage',
-    confirmDeleteUser: 'Delete this user?'
+    confirmDeleteUser: 'Delete this user?',
+    favorites: 'Favorites',
+    favoritesOnly: 'Favorites only'
   }
 };

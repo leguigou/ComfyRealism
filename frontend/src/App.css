@@ -1557,3 +1557,57 @@ body {
 .confirm-reset-btn:hover { background: rgba(46, 204, 113, 0.2); }
 .cancel-reset-btn:hover { background: rgba(231, 76, 60, 0.2); }
 
+
+/* Favorites */
+.action-btn.favorite.active .btn-icon {
+  color: #ff4b4b !important;
+  transform: scale(1.2);
+}
+
+.gallery-filters {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.gallery-filter-fav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.4rem 0.8rem;
+  border-radius: 2rem;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.gallery-filter-fav.active {
+  border-color: #ff4b4b;
+  color: #ff4b4b;
+  background: rgba(255, 75, 75, 0.1);
+}
+
+.gallery-item {
+  position: relative;
+}
+
+.gallery-item-favorite {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: #ff4b4b;
+  font-size: 1.1rem;
+  text-shadow: 0 0 4px rgba(0,0,0,0.8);
+  pointer-events: none;
+  filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));
+}
+
+@media (max-width: 768px) {
+  .gallery-filters {
+    gap: 0.5rem;
+  }
+}
