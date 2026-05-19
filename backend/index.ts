@@ -594,7 +594,7 @@ apiRouter.get('/gallery', authenticate, (req, res) => {
   const favoritesOnly = req.query.favoritesOnly === 'true';
   
   let query = `
-    SELECT m.sessionId, m.id as messageId, m.imageUrl, m.thumbnailUrl, m.prompt, m.text, m.timestamp, m.model, m.width, m.height, m.steps, m.cfg, m.workflow, m.seed, m.isFavorite
+    SELECT m.sessionId, m.id as messageId, m.imageUrl, m.thumbnailUrl, m.prompt, m.text, m.timestamp, m.model, m.width, m.height, m.steps, m.cfg, m.workflow, m.seed, m.isFavorite, m.duration
     FROM messages m JOIN sessions s ON m.sessionId = s.id
     WHERE m.imageUrl IS NOT NULL AND s.userId = ?
   `;
@@ -611,7 +611,8 @@ apiRouter.get('/gallery', authenticate, (req, res) => {
   query += ` ORDER BY m.timestamp DESC LIMIT ? OFFSET ?`;
   params.push(limit, offset);
   
-  res.json(db.prepare(query).all(...params));
+  const results = db.prepare(query).all(...params);
+  res.json(results);
 });
 
 apiRouter.get('/history/:id', authenticate, (req, res) => {
