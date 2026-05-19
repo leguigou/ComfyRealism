@@ -1,6 +1,23 @@
 # Development Logs
 
-## Current Version: 1.2.60-beta
+## Current Version: 1.2.63-multiuser
+
+---
+
+### v1.2.63-multiuser (2026-05-18)
+- **Cinematic Auto-Scroll**: Replaced the abrupt browser scroll with a custom, buttery-smooth cubic easing animation. The camera now gracefully glides to the newly generated image.
+- **Persistent Disk Cleanup**: Deleting an image or a chat session from the UI now physically removes the corresponding `.webp` and thumbnail files from the server's disk, preventing storage bloat.
+- **Dynamic User Directories**: Images and thumbnails are now seamlessly organized into dedicated sub-directories (`images/<user_id>` and `images/thumbnails/<user_id>`) for secure, multi-user isolation.
+- **Format Harmonization**: Successfully migrated all legacy `.png` files to the optimized `.webp` format automatically.
+
+---
+
+### v1.2.62-multiuser (2026-05-17)
+- **User Usage Statistics**: Administrators can now see the total number of images and disk space used by each user in the Administration panel.
+- **Admin Password Reset**: Added the ability for administrators to reset any user's password directly from the UI.
+- **Enhanced Admin UI**: Improved the user management layout with better visibility on mobile, a modern toggle for admin rights, and a clearer "Add User" button.
+- **Multi-User Isolation**: Implemented a complete authentication system with bcrypt hashing. Users now have isolated sessions, messages, and galleries.
+- **Admin CLI Tool**: Added a terminal-based utility (`cli.ts`) for managing users via SSH.
 
 ---
 
