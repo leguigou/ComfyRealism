@@ -83,7 +83,9 @@ export const translations = {
     confirmDeleteUser: 'Supprimer cet utilisateur ?',
     favorites: 'Favoris',
     favoritesOnly: 'Favoris uniquement',
-    viewInChat: 'Voir dans le chat'
+    viewInChat: 'Voir dans le chat',
+    readMore: 'Voir plus',
+    readLess: 'Voir moins'
   },
   en: {
     title: 'ComfyRealism',
@@ -167,6 +169,9 @@ export const translations = {
     confirmDeleteUser: 'Delete this user?',
     favorites: 'Favorites',
     favoritesOnly: 'Favorites only',
-    viewInChat: 'View in chat'
+    viewInChat: 'View in chat',
+    readMore: 'Read more',
+    readLess: 'Read less'
   }
 };
+
