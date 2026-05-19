@@ -451,12 +451,6 @@ function App() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const clientId = useRef<string>('');
 
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior, block: 'end' });
-    }, 100);
-  }, []);
-
   const smoothScrollTo = useCallback((elementId: string) => {
     setTimeout(() => {
       const el = document.getElementById(elementId);
