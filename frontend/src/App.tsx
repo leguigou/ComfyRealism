@@ -1281,37 +1281,47 @@ function App() {
 
   return (
     <div className={`app-layout ${theme}`}>
-      {activeLightbox && (
-        <div 
-          className="lightbox" 
-          onClick={() => setActiveLightbox(null)}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          <img src={getFullImageUrl(activeLightbox.url)} alt="Fullscreen" />
-          <div className="lightbox-actions" onClick={(e) => e.stopPropagation()}>
-            <button className="lightbox-btn go-to-chat" onClick={() => { goToImage(activeLightbox.sessionId, activeLightbox.messageId); setActiveLightbox(null); }} title="Voir dans le chat">
-              💬 <span className="btn-label">Voir dans le chat</span>
-            </button>
-            <button className="lightbox-btn edit" onClick={() => { 
-              const item = activeLightbox.source === 'chat' 
-                ? messages.find(m => m.id === activeLightbox.messageId) 
-                : galleryItems.find(m => m.messageId === activeLightbox.messageId);
-              if (item) {
-                handleEdit(item.text || item.prompt || '');
-                setActiveLightbox(null);
-              }
-            }} title={t.edit}>
-              ✎
-            </button>
-            <button className="lightbox-btn download" onClick={() => downloadImage(getFullImageUrl(activeLightbox.url), `img-${activeLightbox.messageId}.png`)} title="Télécharger">
-              💾
-            </button>
-            <button className="lightbox-btn close" onClick={() => setActiveLightbox(null)}>×</button>
+      {activeLightbox && (() => {
+        const currentItem = activeLightbox.source === 'chat' 
+          ? messages.find(m => m.id === activeLightbox.messageId)
+          : galleryItems.find(m => m.messageId === activeLightbox.messageId);
+        
+        return (
+          <div 
+            className="lightbox" 
+            onClick={() => setActiveLightbox(null)}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            <img src={getFullImageUrl(activeLightbox.url)} alt="Fullscreen" />
+            <div className="lightbox-actions" onClick={(e) => e.stopPropagation()}>
+              <button className="lightbox-btn go-to-chat" onClick={() => { goToImage(activeLightbox.sessionId, activeLightbox.messageId); setActiveLightbox(null); }} title="Voir dans le chat">
+                💬
+              </button>
+              <button 
+                className={`lightbox-btn favorite ${currentItem?.isFavorite ? 'active' : ''}`} 
+                onClick={(e) => { e.stopPropagation(); toggleFavorite(activeLightbox.sessionId, activeLightbox.messageId, currentItem?.isFavorite); }}
+                title={t.favorites}
+              >
+                {currentItem?.isFavorite ? '❤️' : '🤍'}
+              </button>
+              <button className="lightbox-btn edit" onClick={() => { 
+                if (currentItem) {
+                  handleEdit(currentItem.text || currentItem.prompt || '');
+                  setActiveLightbox(null);
+                }
+              }} title={t.edit}>
+                ✎
+              </button>
+              <button className="lightbox-btn download" onClick={() => downloadImage(getFullImageUrl(activeLightbox.url), `img-${activeLightbox.messageId}.png`)} title="Télécharger">
+                💾
+              </button>
+              <button className="lightbox-btn close" onClick={() => setActiveLightbox(null)}>×</button>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {messageToDelete && (
         <div className="settings-modal-overlay" onClick={() => setMessageToDelete(null)}>
@@ -1976,28 +1986,26 @@ function App() {
                     )}
                     <div className="message-actions">
                       <button 
-                        className={`action-btn favorite ${msg.isFavorite ? 'active' : ''}`} 
+                        className={`action-btn-icon favorite ${msg.isFavorite ? 'active' : ''}`} 
                         onClick={(e) => { e.stopPropagation(); toggleFavorite(currentSessionId!, msg.id, msg.isFavorite); }}
                         title={t.favorites}
                       >
-                        <span className="btn-text">{t.favorites}</span>
-                        <span className="btn-icon">{msg.isFavorite ? '❤️' : '🤍'}</span>
+                        {msg.isFavorite ? '❤️' : '🤍'}
                       </button>
-                      <button className="action-btn edit" onClick={() => { 
+                      <button className="action-btn-icon edit" onClick={() => { 
                         const textToEdit = msg.role === 'user' ? (msg.text || '') : (msg.text || msg.prompt || '');
                         handleEdit(textToEdit); 
-                      }}><span className="btn-text">{t.edit}</span><span className="btn-icon">✎</span></button>
+                      }} title={t.edit}>✎</button>
                       {msg.imageUrl && (
                         <>
-                          <button className="action-btn info" onClick={(e) => { e.stopPropagation(); setActiveInfoId(activeInfoId === msg.id ? null : msg.id); }}>
-                            <span className="btn-text">Info</span>
-                            <span className="btn-icon">ℹ️</span>
+                          <button className="action-btn-icon info" onClick={(e) => { e.stopPropagation(); setActiveInfoId(activeInfoId === msg.id ? null : msg.id); }} title="Info">
+                            ℹ️
                           </button>
-                          <button className="action-btn download" onClick={(e) => { e.stopPropagation(); downloadImage(getFullImageUrl(msg.imageUrl!), `img-${msg.id}.png`); }}><span className="btn-text">{t.download}</span><span className="btn-icon">💾</span></button>
-                          <button className="action-btn regenerate" onClick={(e) => { e.stopPropagation(); handleSend(msg.text || msg.prompt || '', true); }}><span className="btn-text">{t.regenerate}</span><span className="btn-icon">🔄</span></button>
+                          <button className="action-btn-icon download" onClick={(e) => { e.stopPropagation(); downloadImage(getFullImageUrl(msg.imageUrl!), `img-${msg.id}.png`); }} title={t.download}>💾</button>
+                          <button className="action-btn-icon regenerate" onClick={(e) => { e.stopPropagation(); handleSend(msg.text || msg.prompt || '', true); }} title={t.regenerate}>🔄</button>
                         </>
                       )}
-                      <button className="action-btn delete" onClick={(e) => { e.stopPropagation(); setMessageToDelete(msg.id); }}><span className="btn-text">{t.delete}</span><span className="btn-icon">🗑️</span></button>
+                      <button className="action-btn-icon delete" onClick={(e) => { e.stopPropagation(); setMessageToDelete(msg.id); }} title={t.delete}>🗑️</button>
                     </div>
                     {activeInfoId === msg.id && msg.role === 'bot' && (
                       <div className="generation-info-panel">

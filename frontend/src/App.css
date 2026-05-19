@@ -550,16 +550,19 @@ body {
   background: var(--lightbox-btn-bg);
   border: 1px solid var(--border);
   color: var(--lightbox-btn-text);
-  padding: 0.8rem 1.2rem;
+  width: 46px;
+  height: 46px;
+  padding: 0;
   border-radius: 0.8rem;
   cursor: pointer;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 1.2rem;
   transition: all 0.2s;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  justify-content: center;
   backdrop-filter: blur(10px);
+  flex-shrink: 0;
 }
 
 .lightbox-btn:hover {
@@ -569,13 +572,9 @@ body {
   transform: translateY(-2px);
 }
 
-.lightbox-btn.close, .lightbox-btn.download, .lightbox-btn.edit {
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  justify-content: center;
-  font-size: 1.4rem;
-  line-height: 1;
+.lightbox-btn.favorite.active {
+  border-color: #ff4b4b;
+  background: rgba(255, 75, 75, 0.15);
 }
 
 .lightbox-btn.close {
@@ -597,15 +596,11 @@ body {
   to { opacity: 1; transform: scale(1); }
 }
 
-@media (max-width: 600px) {
-  .lightbox-btn .btn-label {
-    display: none;
-  }
-  .lightbox-btn.go-to-chat {
+@media (max-width: 768px) {
+  .lightbox-btn {
     width: 44px;
     height: 44px;
-    padding: 0;
-    justify-content: center;
+    font-size: 1.1rem;
   }
 }
 
@@ -1609,5 +1604,48 @@ body {
 @media (max-width: 768px) {
   .gallery-filters {
     gap: 0.5rem;
+  }
+}
+
+/* Icon-only action button */
+.action-btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--social-bg);
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 1.1rem;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  color: var(--text-h);
+}
+
+.action-btn-icon:hover {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.action-btn-icon.favorite:hover {
+  transform: none;
+}
+
+.action-btn-icon.delete:hover {
+  background-color: rgba(255, 77, 77, 0.1);
+  border-color: #ff4d4d;
+  color: #ff4d4d;
+}
+
+@media (max-width: 768px) {
+  .action-btn-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 1.2rem;
   }
 }
