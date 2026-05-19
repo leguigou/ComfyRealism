@@ -479,7 +479,13 @@ body {
   color: var(--text-h);
 }
 
-.image-wrapper { max-width: 100%; display: flex; justify-content: flex-start; }
+.image-wrapper { 
+  max-width: 100%; 
+  display: flex; 
+  justify-content: flex-start; 
+  position: relative;
+  width: fit-content;
+}
 .image-wrapper img {
   max-width: 100%; height: auto; border-radius: 0.5rem;
   box-shadow: var(--shadow); cursor: zoom-in; display: block;
@@ -1671,4 +1677,13 @@ body {
   30% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
   80% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
   100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+}
+
+.lightbox-content {
+  position: relative;
+  max-width: 95%;
+  max-height: 95%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
