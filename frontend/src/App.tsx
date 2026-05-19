@@ -108,6 +108,14 @@ const formatDuration = (seconds: number | undefined) => {
   return `${m}m${s.toString().padStart(2, '0')}s`;
 };
 
+const formatBytes = (bytes: number) => {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
 const API_BASE = getApiBase();
 console.log(`[App] API Base URL: ${API_BASE}`);
 
@@ -169,8 +177,12 @@ function App() {
   }, []);
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [currentUser, setCurrentUser] = useState<{username: string, isAdmin: boolean} | null>(null);
   const [loginError, setLoginError] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [activeTab, setActiveTab] = useState<'images' | 'comfy' | 'llm' | 'archives' | 'logs' | 'admin'>('images');
   
   const [sessions, setSessions] = useState<Session[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -187,8 +199,79 @@ function App() {
     messageId: string;
     source: 'chat' | 'gallery';
   } | null>(null);
+
+  const [adminUsers, setAdminUsers] = useState<any[]>([]);
+  const [newUser, setNewUser] = useState({ username: '', password: '', isAdmin: false });
+  const [isAdminLoading, setIsAdminLoading] = useState(false);
+  const [resetPasswordId, setResetPasswordId] = useState<string | null>(null);
+  const [newPasswordValue, setNewPasswordValue] = useState('');
   
   const [view, setView] = useState<'chat' | 'gallery' | 'archives'>('chat');
+
+  const fetchAdminUsers = useCallback(async () => {
+    if (!currentUser?.isAdmin) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/users`, { credentials: 'include' });
+      const data = await res.json();
+      setAdminUsers(data);
+    } catch (err) { console.error('Error fetching users:', err); }
+  }, [currentUser]);
+
+  const handleAddUser = async () => {
+    if (!newUser.username || !newUser.password) return;
+    setIsAdminLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newUser),
+        credentials: 'include'
+      });
+      if (res.ok) {
+        setNewUser({ username: '', password: '', isAdmin: false });
+        fetchAdminUsers();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to add user');
+      }
+    } catch (err) { console.error('Error adding user:', err); }
+    finally { setIsAdminLoading(false); }
+  };
+
+  const deleteUser = async (id: string) => {
+    if (!confirm(t.confirmDeleteUser)) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/users/${id}`, { method: 'DELETE', credentials: 'include' });
+      if (res.ok) fetchAdminUsers();
+    } catch (err) { console.error('Error deleting user:', err); }
+  };
+
+  const handleResetPassword = async (id: string) => {
+    if (!newPasswordValue.trim()) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/users/${id}/password`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: newPasswordValue.trim() }),
+        credentials: 'include'
+      });
+      if (res.ok) {
+        alert(lang === 'fr' ? 'Mot de passe mis à jour !' : 'Password updated successfully!');
+        setResetPasswordId(null);
+        setNewPasswordValue('');
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to update password');
+      }
+    } catch (err) { console.error('Error resetting password:', err); }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'admin') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchAdminUsers();
+    }
+  }, [activeTab, fetchAdminUsers]);
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
   const [galleryOffset, setGalleryOffset] = useState(0);
   const [hasMoreGallery, setHasMoreGallery] = useState(true);
@@ -213,9 +296,8 @@ function App() {
     };
   });
 
-  const [showSettings, setShowSettings] = useState(false);
-  const [activeTab, setActiveTab] = useState<'images' | 'comfy' | 'llm' | 'archives' | 'logs'>('images');
-  const [comfyModels, setComfyModels] = useState<string[]>([]);  const [isFetchingComfyModels, setIsFetchingComfyModels] = useState(false);
+  const [comfyModels, setComfyModels] = useState<string[]>([]);
+  const [isFetchingComfyModels, setIsFetchingComfyModels] = useState(false);
   const [comfyStatus, setComfyStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
   const [llmModels, setLlmModels] = useState<string[]>([]);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
@@ -369,9 +451,49 @@ function App() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const clientId = useRef<string>('');
 
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+  const smoothScrollTo = useCallback((elementId: string) => {
     setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior, block: 'end' });
+      const el = document.getElementById(elementId);
+      if (!el || !containerRef.current) return;
+      
+      const container = containerRef.current;
+      // Calculate target position with some padding to ensure the whole message is visible
+      const targetScroll = el.offsetTop - container.offsetTop - 40;
+      const startScroll = container.scrollTop;
+      const distance = targetScroll - startScroll;
+      
+      // If we are already very close, just use native smooth to avoid weird jumps
+      if (Math.abs(distance) < 50) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      const duration = 1200; // 1.2 seconds for a very soft, luxurious scroll
+      let start: number | null = null;
+
+      // Quartic easing in/out for a very smooth start and end
+      const easeInOutQuart = (t: number, b: number, c: number, d: number) => {
+        t /= d / 2;
+        if (t < 1) return c / 2 * t * t * t * t + b;
+        t -= 2;
+        return -c / 2 * (t * t * t * t - 2) + b;
+      };
+
+      const animation = (currentTime: number) => {
+        if (start === null) start = currentTime;
+        const timeElapsed = currentTime - start;
+        const nextScroll = easeInOutQuart(timeElapsed, startScroll, distance, duration);
+        
+        container.scrollTop = nextScroll;
+        
+        if (timeElapsed < duration) {
+          requestAnimationFrame(animation);
+        } else {
+          container.scrollTop = targetScroll;
+        }
+      };
+
+      requestAnimationFrame(animation);
     }, 100);
   }, []);
 
@@ -483,11 +605,18 @@ function App() {
 
   useEffect(() => {
     const checkAuth = async () => {
+      console.log('[Auth] Checking current authentication status...');
       try {
         const res = await fetch(`${API_BASE}/api/auth/check`, { credentials: 'include' });
+        console.log(`[Auth] Check response status: ${res.status}`);
         const data = await res.json();
+        console.log('[Auth] Check response data:', data);
         setIsAuthenticated(data.authenticated);
-      } catch {
+        if (data.authenticated && data.user) {
+          setCurrentUser(data.user);
+        }
+      } catch (err) {
+        console.error('[Auth] Check failed:', err);
         setIsAuthenticated(false);
       }
     };
@@ -663,27 +792,32 @@ function App() {
   const handleLogin = async (e?: React.FormEvent) => {
     e?.preventDefault();
     setLoginError(false);
+    const trimmedUsername = loginUsername.trim();
     const trimmedPassword = loginPassword.trim();
     const loginUrl = `${API_BASE}/api/auth/login`;
-    
-    console.log(`[Auth] Attempting login at: ${loginUrl}`);
-    
+
+    if (!trimmedUsername || !trimmedPassword) return;
+
+    console.log(`[Auth] Attempting login for ${trimmedUsername} at: ${loginUrl}`);
+
     try {
       const res = await fetch(loginUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: trimmedPassword }),
+        body: JSON.stringify({ username: trimmedUsername, password: trimmedPassword }),
         credentials: 'include'
       });
-      
-      if (res.ok) {
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && data.success) {
         console.log('[Auth] Login successful');
+        setCurrentUser(data.user);
         setIsAuthenticated(true);
       } else {
         setLoginError(true);
-        const data = await res.json().catch(() => ({}));
         console.error(`[Auth] Login rejected. Status: ${res.status}`, data);
-        alert(`Échec de connexion (Code: ${res.status}).\nMot de passe incorrect ou erreur serveur.`);
+        alert(data.error || `Échec de connexion (Code: ${res.status}).\nIdentifiants incorrects.`);
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
@@ -691,10 +825,16 @@ function App() {
       alert(`Erreur Réseau : Impossible de joindre l'API.\n\nURL tentée : ${loginUrl}\n\nDétails : ${message}\n\nAssurez-vous que le domaine de l'API est correct et que le certificat HTTPS est valide.`);
     }
   };
-
   const handleLogout = async () => {
     await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST', credentials: 'include' });
     setIsAuthenticated(false);
+    setCurrentUser(null);
+    setSessions([]);
+    setCurrentSessionId(null);
+    setMessages([]);
+    setGalleryItems([]);
+    setAdminUsers([]);
+    setView('chat');
   };
 
   const renameSession = async (id: string, newTitle: string) => {
@@ -904,10 +1044,8 @@ function App() {
         cfg: params.cfg
       };
       setMessages(prev => [...prev, initialBotMsg]);
+      setTimeout(() => smoothScrollTo(`msg-${botMsgId}`), 50);
       
-      // Faire défiler vers le bas immédiatement après l'envoi
-      setTimeout(() => scrollToBottom(), 50);
-
       // 2. Interprétation IA si activée (uniquement si ce n'est PAS une régénération directe)
       if (params.llmEnabled && params.llmUrl && params.llmModel && !isRegeneration) {
         enhancingCount.current++;
@@ -978,7 +1116,6 @@ function App() {
   const handleEdit = useCallback((text: string) => {
     setInput(text);
     textareaRef.current?.focus();
-    textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, []);
 
   const interruptGeneration = async () => {
@@ -1065,7 +1202,30 @@ function App() {
     link.click();
   };
 
-  if (isAuthenticated === null) return <div className="loading-screen">...</div>;
+  if (isAuthenticated === null) {
+    return (
+      <div style={{ 
+        height: '100vh', 
+        width: '100vw', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        background: '#0b0e11', 
+        color: '#10a37f',
+        fontSize: '1.2rem',
+        fontWeight: 'bold',
+        flexDirection: 'column',
+        gap: '1rem'
+      }}>
+        <div className="bounced-loader">
+          <div className="bounce1"></div>
+          <div className="bounce2"></div>
+          <div className="bounce3"></div>
+        </div>
+        <div>Chargement...</div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (
@@ -1082,9 +1242,13 @@ function App() {
             <p className="login-subtitle">Connectez-vous pour commencer à créer</p>
           </div>
           <div className="input-group">
+            <label>{t.username}</label>
+            <input type="text" autoFocus value={loginUsername} onChange={(e) => setLoginUsername(e.target.value)} className={loginError ? 'error' : ''} placeholder="admin" />
+          </div>
+          <div className="input-group">
             <label>{t.password}</label>
-            <input type="password" autoFocus value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className={loginError ? 'error' : ''} placeholder="••••••••" />
-            {loginError && <p className="error-msg">{t.incorrectPassword}</p>}
+            <input type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className={loginError ? 'error' : ''} placeholder="••••••••" />
+            {loginError && <p className="error-msg">{t.incorrectLogin}</p>}
           </div>
           <button type="submit">{t.login}</button>
         </form>
@@ -1151,6 +1315,10 @@ function App() {
               <button className={`tab-btn ${activeTab === 'llm' ? 'active' : ''}`} onClick={() => setActiveTab('llm')}>{t.tabLLM}</button>
               <button className={`tab-btn ${activeTab === 'archives' ? 'active' : ''}`} onClick={() => setActiveTab('archives')}>{t.tabArchives}</button>
               <button className={`tab-btn ${activeTab === 'logs' ? 'active' : ''}`} onClick={() => setActiveTab('logs')}>{t.tabLogs}</button>
+              {currentUser?.isAdmin && (
+                <button className={`tab-btn ${activeTab === 'admin' ? 'active' : ''}`} onClick={() => setActiveTab('admin')}>{t.tabAdmin}</button>
+              )}
+
             </div>
 
             <div className="tab-content">
@@ -1158,7 +1326,7 @@ function App() {
                 <div className="settings-grid">
                   <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                     <label>{t.currentVersion}</label>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.60</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.63-multiuser</div>
                     
                     <label>{t.devLogs}</label>
                     <div className="logs-container" style={{ 
@@ -1171,6 +1339,23 @@ function App() {
                       lineHeight: '1.4',
                       fontFamily: 'monospace'
                     }}>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.63 (2026-05-18)</div>
+                        <div>• {lang === 'fr' ? 'Défilement cinématique (animation ultra-douce).' : 'Cinematic, buttery-smooth auto-scroll animation.'}</div>
+                        <div>• {lang === 'fr' ? 'Nettoyage physique du disque à la suppression.' : 'Physical disk cleanup on deletion.'}</div>
+                        <div>• {lang === 'fr' ? 'Dossiers d\'images isolés par utilisateur.' : 'Isolated user image directories.'}</div>
+                      </div>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.62 (2026-05-17)</div>
+                        <div>• {lang === 'fr' ? 'Statistiques d\'utilisation et espace disque par utilisateur.' : 'User usage statistics and disk space tracking.'}</div>
+                        <div>• {lang === 'fr' ? 'Réinitialisation des mots de passe via l\'interface admin.' : 'Admin password reset from UI.'}</div>
+                      </div>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.61 (2026-05-17)</div>
+                        <div>• {lang === 'fr' ? 'Système multi-utilisateur complet (bcrypt).' : 'Full multi-user system (bcrypt).'}</div>
+                        <div>• {lang === 'fr' ? 'Panneau d\'administration UI.' : 'Administrative UI panel.'}</div>
+                        <div>• {lang === 'fr' ? 'Outil CLI pour gestion SSH.' : 'CLI tool for SSH management.'}</div>
+                      </div>
                       <div style={{ marginBottom: '1rem' }}>
                         <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.60 (2026-05-17)</div>
                         <div>• {lang === 'fr' ? 'Billes rebondissantes sélectives (uniquement si actif).' : 'Selective bouncing balls (active only).'}</div>
@@ -1484,6 +1669,92 @@ function App() {
                       </div>
                       )}
 
+                      {activeTab === 'admin' && (
+                        <div className="settings-grid admin-panel">
+                          <div className="setting-item" style={{ gridColumn: 'span 2' }}>
+                            <h3>{t.addUser}</h3>
+                            <div className="add-user-form">
+                              <input type="text" placeholder={t.username} value={newUser.username} onChange={(e) => setNewUser({ ...newUser, username: e.target.value })} />
+                              <input type="password" placeholder={t.password} value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} />
+                              <div className="admin-checkbox-wrapper">
+                                <label className="admin-toggle-label">
+                                  <span>{t.admin}</span>
+                                  <div 
+                                    className={`toggle-container ${newUser.isAdmin ? 'active' : ''}`} 
+                                    onClick={() => setNewUser({ ...newUser, isAdmin: !newUser.isAdmin })}
+                                  >
+                                    <div className={`toggle-switch ${newUser.isAdmin ? 'on' : ''}`}></div>
+                                  </div>
+                                </label>
+                              </div>
+                              <button className="add-user-submit-btn" onClick={handleAddUser} disabled={isAdminLoading || !newUser.username || !newUser.password}>
+                                {isAdminLoading ? '...' : t.addUser}
+                              </button>
+                            </div>
+                          </div>
+                          
+                          <div className="setting-item" style={{ gridColumn: 'span 2' }}>
+                            <h3>{t.userList}</h3>
+                            <div className="user-table-wrapper">
+                              <table className="user-table">
+                                <thead>
+                                  <tr>
+                                    <th>{t.username}</th>
+                                    <th>{t.role}</th>
+                                    <th>{t.images}</th>
+                                    <th>{t.diskUsage}</th>
+                                    <th>{t.actions}</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {adminUsers.map(u => (
+                                    <tr key={u.id}>
+                                      <td>{u.username}</td>
+                                      <td>{u.isAdmin ? t.admin : t.user}</td>
+                                      <td>{u.imageCount || 0}</td>
+                                      <td>{formatBytes(u.diskUsage || 0)}</td>
+                                      <td className="user-actions-cell">
+                                        {resetPasswordId === u.id ? (
+                                          <div className="reset-password-inline">
+                                            <input 
+                                              type="password" 
+                                              placeholder="Nouveau mdp" 
+                                              value={newPasswordValue} 
+                                              onChange={(e) => setNewPasswordValue(e.target.value)} 
+                                              autoFocus
+                                            />
+                                            <button className="confirm-reset-btn" onClick={() => handleResetPassword(u.id)}>✅</button>
+                                            <button className="cancel-reset-btn" onClick={() => setResetPasswordId(null)}>❌</button>
+                                          </div>
+                                        ) : (
+                                          <div className="action-buttons-wrapper">
+                                            <button 
+                                              className="reset-user-btn" 
+                                              onClick={() => setResetPasswordId(u.id)}
+                                              title="Modifier le mot de passe"
+                                            >
+                                              🔑
+                                            </button>
+                                            <button 
+                                              className="delete-user-btn" 
+                                              onClick={() => deleteUser(u.id)}
+                                              disabled={u.username === currentUser?.username}
+                                              title="Supprimer l'utilisateur"
+                                            >
+                                              🗑️
+                                            </button>
+                                          </div>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
                       {activeTab === 'archives' && (
                       <div className="settings-grid">
                       <div className="setting-item" style={{ gridColumn: 'span 2' }}>
@@ -1676,7 +1947,7 @@ function App() {
                           src={getFullImageUrl(msg.thumbnailUrl || msg.imageUrl)} 
                           alt="Generated" 
                           className="clickable-image" 
-                          onLoad={() => scrollToBottom('auto')}
+                          onLoad={() => smoothScrollTo(`msg-${msg.id}`)}
                         />
                       </div>
                     )}
