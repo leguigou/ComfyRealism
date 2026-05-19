@@ -5,6 +5,7 @@
 ---
 
 ### v1.2.63-multiuser (2026-05-18)
+- **Favorites System**: Added the ability to mark images as favorites with a heart icon. Favorited images can be easily filtered in the gallery.
 - **Cinematic Auto-Scroll**: Replaced the abrupt browser scroll with a custom, buttery-smooth cubic easing animation. The camera now gracefully glides to the newly generated image.
 - **Persistent Disk Cleanup**: Deleting an image or a chat session from the UI now physically removes the corresponding `.webp` and thumbnail files from the server's disk, preventing storage bloat.
 - **Dynamic User Directories**: Images and thumbnails are now seamlessly organized into dedicated sub-directories (`images/<user_id>` and `images/thumbnails/<user_id>`) for secure, multi-user isolation.

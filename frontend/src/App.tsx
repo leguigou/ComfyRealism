@@ -21,6 +21,7 @@ interface Message {
   status?: 'pending' | 'processing' | 'completed' | 'failed';
   isEnhancing?: boolean;
   duration?: number;
+  isFavorite?: number;
 }
 
 interface GalleryItem {
@@ -38,6 +39,7 @@ interface GalleryItem {
   steps?: number;
   cfg?: number;
   duration?: number;
+  isFavorite?: number;
 }
 
 interface NodeMapping {
@@ -277,7 +279,28 @@ function App() {
   const [hasMoreGallery, setHasMoreGallery] = useState(true);
   const [isFetchingGallery, setIsFetchingGallery] = useState(false);
   const [showArchivedInGallery, setShowArchivedInGallery] = useState(false);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
+
+  const toggleFavorite = async (sessionId: string, messageId: string, currentStatus: number | undefined) => {
+    const newStatus = currentStatus === 1 ? 0 : 1;
+    try {
+      const res = await fetch(`${API_BASE}/api/history/${sessionId}/message/${messageId}/favorite`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isFavorite: newStatus }),
+        credentials: 'include'
+      });
+      if (res.ok) {
+        // Update messages state if we are in chat view
+        setMessages(prev => prev.map(m => m.id === messageId ? { ...m, isFavorite: newStatus } : m));
+        // Update galleryItems state
+        setGalleryItems(prev => prev.map(m => m.messageId === messageId ? { ...m, isFavorite: newStatus } : m));
+      }
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+    }
+  };
   
   const [params, setParams] = useState<GenParameters>(() => {
     return { 
@@ -921,7 +944,7 @@ function App() {
     
     try {
       // Use parameter explicitly to ensure fresh state access or handle via useEffect safely
-      const res = await fetch(`${API_BASE}/api/gallery?limit=25&offset=${currentOffset}&includeArchived=${showArchivedInGallery}`, { credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/gallery?limit=25&offset=${currentOffset}&includeArchived=${showArchivedInGallery}&favoritesOnly=${favoritesOnly}`, { credentials: 'include' });
       const data: GalleryItem[] = await res.json();
       
       if (isInitial) {
@@ -1952,6 +1975,14 @@ function App() {
                       </div>
                     )}
                     <div className="message-actions">
+                      <button 
+                        className={`action-btn favorite ${msg.isFavorite ? 'active' : ''}`} 
+                        onClick={(e) => { e.stopPropagation(); toggleFavorite(currentSessionId!, msg.id, msg.isFavorite); }}
+                        title={t.favorites}
+                      >
+                        <span className="btn-text">{t.favorites}</span>
+                        <span className="btn-icon">{msg.isFavorite ? '❤️' : '🤍'}</span>
+                      </button>
                       <button className="action-btn edit" onClick={() => { 
                         const textToEdit = msg.role === 'user' ? (msg.text || '') : (msg.text || msg.prompt || '');
                         handleEdit(textToEdit); 
@@ -2009,13 +2040,18 @@ function App() {
             <div className="gallery-view">
               <div className="gallery-header">
                 <h2>{t.myContent}</h2>
-                <div className="control-group">
-                  <button className={`control-pill ${!showArchivedInGallery ? 'active' : ''}`} onClick={() => { setShowArchivedInGallery(false); setGalleryOffset(0); setHasMoreGallery(true); }}>
-                    {t.active}
+                <div className="gallery-filters">
+                  <button className={`gallery-filter-fav ${favoritesOnly ? 'active' : ''}`} onClick={() => { setFavoritesOnly(!favoritesOnly); setGalleryOffset(0); setHasMoreGallery(true); }}>
+                    {favoritesOnly ? '❤️' : '🤍'} {t.favorites}
                   </button>
-                  <button className={`control-pill ${showArchivedInGallery ? 'active' : ''}`} onClick={() => { setShowArchivedInGallery(true); setGalleryOffset(0); setHasMoreGallery(true); }}>
-                    {t.archived}
-                  </button>
+                  <div className="control-group">
+                    <button className={`control-pill ${!showArchivedInGallery ? 'active' : ''}`} onClick={() => { setShowArchivedInGallery(false); setFavoritesOnly(false); setGalleryOffset(0); setHasMoreGallery(true); }}>
+                      {t.active}
+                    </button>
+                    <button className={`control-pill ${showArchivedInGallery ? 'active' : ''}`} onClick={() => { setShowArchivedInGallery(true); setFavoritesOnly(false); setGalleryOffset(0); setHasMoreGallery(true); }}>
+                      {t.archived}
+                    </button>
+                  </div>
                 </div>
               </div>
               <div className="gallery-grid">
@@ -2025,7 +2061,9 @@ function App() {
                   key={item.messageId} 
                   className="gallery-item" 
                   onClick={() => setActiveLightbox({ url: item.imageUrl, sessionId: item.sessionId, messageId: item.messageId, source: 'gallery' })}
-                  >                    <img src={getFullImageUrl(item.thumbnailUrl || item.imageUrl)} alt={item.prompt} loading="lazy" />
+                  >
+                    <img src={getFullImageUrl(item.thumbnailUrl || item.imageUrl)} alt={item.prompt} loading="lazy" />
+                    {item.isFavorite === 1 && <div className="gallery-item-favorite">❤️</div>}
                   </div>
                 ))}
               </div>
