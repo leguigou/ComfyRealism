@@ -281,9 +281,17 @@ function App() {
   const [showArchivedInGallery, setShowArchivedInGallery] = useState(false);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
+  const [favoritedId, setFavoritedId] = useState<string | null>(null);
 
   const toggleFavorite = async (sessionId: string, messageId: string, currentStatus: number | undefined) => {
     const newStatus = currentStatus === 1 ? 0 : 1;
+    
+    // Trigger animation if becoming favorite
+    if (newStatus === 1) {
+      setFavoritedId(messageId);
+      setTimeout(() => setFavoritedId(null), 800);
+    }
+
     try {
       const res = await fetch(`${API_BASE}/api/history/${sessionId}/message/${messageId}/favorite`, {
         method: 'PATCH',
@@ -961,7 +969,7 @@ function App() {
     } finally {
       setIsFetchingGallery(false);
     }
-  }, [galleryOffset, hasMoreGallery, isFetchingGallery, showArchivedInGallery]);
+  }, [galleryOffset, hasMoreGallery, isFetchingGallery, showArchivedInGallery, favoritesOnly, getFullImageUrl]);
 
   const observer = useRef<IntersectionObserver | null>(null);
   const lastImageElementRef = useCallback((node: HTMLDivElement) => {
@@ -1295,6 +1303,7 @@ function App() {
             onTouchEnd={handleTouchEnd}
           >
             <img src={getFullImageUrl(activeLightbox.url)} alt="Fullscreen" />
+            {favoritedId === activeLightbox.messageId && <div className="image-overlay-heart" style={{ fontSize: '8rem' }}>❤️</div>}
             <div className="lightbox-actions" onClick={(e) => e.stopPropagation()}>
               <button className="lightbox-btn go-to-chat" onClick={() => { goToImage(activeLightbox.sessionId, activeLightbox.messageId); setActiveLightbox(null); }} title="Voir dans le chat">
                 💬
@@ -1982,6 +1991,7 @@ function App() {
                           className="clickable-image" 
                           onLoad={() => smoothScrollTo(`msg-${msg.id}`)}
                         />
+                        {favoritedId === msg.id && <div className="image-overlay-heart">❤️</div>}
                       </div>
                     )}
                     <div className="message-actions">
