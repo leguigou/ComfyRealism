@@ -6,33 +6,35 @@ Une application full-stack moderne et élégante pour générer des images via u
 
 ## ✨ Fonctionnalités
 
-- **💬 Interface de Chat Intuitive** : Une expérience fluide type ChatGPT pour interagir avec vos modèles d'image.
-- **🎨 Génération Dynamique** : Support complet pour ComfyUI avec polling en temps réel.
-- **🖼️ Gestion Intelligente des Médias** :
-  - Stockage centralisé à la racine du projet.
-  - **Miniatures à la volée** : Recréation automatique des miniatures si elles manquent.
-  - Galerie "Mes contenus" pour parcourir vos créations.
-- **🛠️ Paramètres Avancés** :
-  - Sélection des Checkpoints via l'API ComfyUI.
-  - Contrôle précis : Dimensions, Steps, CFG, Seed, Negative Prompt.
-  - Gestion des Workflows JSON personnalisés.
-- **🤖 Optimisation IA (LLM)** : Option pour reformuler vos prompts via une API LLM compatible OpenAI/Ollama.
-- **🌍 Multi-langue** : Support complet **Français** et **Anglais**.
-- **🌙 Thèmes** : Modes Sombre et Clair avec contrastes optimisés.
-- **🛡️ Sécurité & Robustesse** :
-  - Protection par mot de passe et cookies signés.
-  - Base de données **SQLite** performante via `better-sqlite3`.
-  - Gestion d'erreurs détaillée (VRAM, modèles manquants, timeouts).
-- **⚙️ CI/CD & Docker** : Builds automatiques sur GitHub Actions et stockage sur GHCR.
+### 👤 Système Multi-Utilisateur
+- **Isolément des Données** : Chaque utilisateur dispose de son propre répertoire d'images (`images/<user_id>`) et de miniatures.
+- **Sécurité** : Authentification robuste avec mots de passe hachés (Bcrypt).
+- **Administration** : Panneau dédié pour gérer les utilisateurs, réinitialiser les mots de passe et surveiller l'utilisation de l'espace disque.
+
+### 💬 Expérience Chat & UI
+- **Interface Intuitive** : Une expérience fluide type ChatGPT pour interagir avec vos modèles d'image.
+- **Défilement Cinématique** : Animation de défilement ultra-douce (Cubic Easing) qui suit intelligemment l'apparition des nouvelles images.
+- **Auto-Nettoyage** : La suppression d'un message ou d'une session dans l'interface efface physiquement les fichiers `.webp` et miniatures du disque.
+- **Thèmes & Responsive** : Modes Sombre et Clair avec contrastes optimisés, parfaitement adapté aux mobiles.
+
+### 🎨 Génération & Médias
+- **Format Optimisé** : Toutes les images et miniatures sont converties automatiquement au format **WebP** pour un chargement rapide et un gain de place.
+- **Miniatures à la volée** : Recréation automatique des miniatures si elles manquent.
+- **Génération Dynamique** : Support complet pour ComfyUI avec polling en temps réel et minuteur de génération.
+- **Galerie "Mes contenus"** : Parcourez l'historique complet de vos créations avec filtres (Actif/Archivé).
+
+### 🛠️ Paramètres Avancés
+- **Contrôle Précis** : Sélection des Checkpoints, Dimensions, Steps, CFG, Seed, Negative Prompt.
+- **Workflows Flexibles** : Gestion et sélection de fichiers Workflows JSON personnalisés directement depuis l'interface.
+- **🤖 Optimisation IA (LLM)** : Option pour reformuler vos prompts via une API LLM compatible OpenAI/Ollama (le "Prompt Enhancement").
 
 ## 🚀 Installation & Lancement
 
-### Méthode 1 : Docker Production (Recommandé / Dokploy)
-Utilise les images pré-construites sur GitHub pour un déploiement ultra-rapide.
+### Méthode 1 : Docker Production (Recommandé)
+Utilise les images pré-construites pour un déploiement ultra-rapide.
 ```bash
 docker-compose -f docker-compose.production.yml up -d
 ```
-*L'interface sera accessible sur `http://localhost:5173`.*
 
 ### Méthode 2 : Docker Développement (Local)
 Construit les images localement à partir du code source.
@@ -40,30 +42,16 @@ Construit les images localement à partir du code source.
 docker-compose up --build -d
 ```
 
-### Méthode 3 : Lancement Sans Docker (Windows)
+### Méthode 3 : Lancement Manuel (Windows)
 1. **Prérequis** : Node.js (v22+) et ComfyUI (port 8188).
-2. **Configuration** : Créez un fichier `backend/.env`.
-3. **Lancement** : Double-cliquez sur `run.bat`.
-
-### Méthode 4 : Lancement Sans Docker (Linux/Raspberry Pi)
-```bash
-chmod +x run.sh
-./run.sh
-```
+2. **Lancement** : Double-cliquez sur `run.bat`.
 
 ## 📂 Structure du Projet
 
 - `/frontend` : Interface React + Vite + TypeScript.
-- `/backend` : Serveur Express + Node.js 22.
-- `/images` : Stockage des générations (exclu des sauvegardes).
-- `DEVELOPMENT_LOGS.md` : Historique détaillé des modifications.
-
-## 🛠️ Accès Externe
-
-| Service | Port Interne | Port Externe (Suggéré) |
-| :--- | :--- | :--- |
-| **Interface Web** | 80 (Docker) / 5173 | 55200 |
-| **API Backend** | 3001 | 55201 |
+- `/backend` : Serveur Express + SQLite (better-sqlite3).
+- `/images` : Stockage des générations (isolé par utilisateur).
+- `DEVELOPMENT_LOGS.md` : Historique détaillé des versions.
 
 ## 📝 Crédits
-Développé pour offrir une interface simplifiée et puissante à la puissance de ComfyUI.
+Développé pour offrir une interface simplifiée et puissante exploitant toute la flexibilité de ComfyUI.
