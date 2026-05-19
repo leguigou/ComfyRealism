@@ -1,4 +1,4 @@
-const CACHE_NAME = 'comfyrealism-v1';
+const CACHE_NAME = 'comfyrealism-v1.2.63';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',

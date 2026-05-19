@@ -297,11 +297,11 @@ function App() {
       clickTimeoutRef.current = setTimeout(() => {
         setActiveLightbox({ url: item.url, sessionId: item.sessionId, messageId: item.messageId, source: item.source });
         clickTimeoutRef.current = null;
-      }, 300);
+      }, 350);
     }
   };
 
-  const handleLightboxClick = (e: React.MouseEvent) => {
+  const handleLightboxImageClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!activeLightbox) return;
 
@@ -316,11 +316,10 @@ function App() {
         
       toggleFavorite(activeLightbox.sessionId, activeLightbox.messageId, currentItem?.isFavorite);
     } else {
-      // Potential single click (to close)
+      // Potential single click (do nothing but wait for potential double click)
       clickTimeoutRef.current = setTimeout(() => {
-        setActiveLightbox(null);
         clickTimeoutRef.current = null;
-      }, 300);
+      }, 350);
     }
   };
 
@@ -1029,7 +1028,7 @@ function App() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchGallery(true);
     }
-  }, [view, showArchivedInGallery]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [view, showArchivedInGallery, favoritesOnly]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchLLMModels = async () => {
     if (!params.llmUrl) return;
@@ -1339,12 +1338,12 @@ function App() {
       {activeLightbox && (
         <div 
           className="lightbox" 
-          onClick={handleLightboxClick}
+          onClick={() => setActiveLightbox(null)}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
+          <div className="lightbox-content" onClick={handleLightboxImageClick}>
             <img src={getFullImageUrl(activeLightbox.url)} alt="Fullscreen" />
             {favoritedId === activeLightbox.messageId && <div className="image-overlay-heart" style={{ fontSize: '8rem' }}>❤️</div>}
           </div>
@@ -1904,17 +1903,14 @@ function App() {
               key={s.id} 
               className={`session-item ${currentSessionId === s.id && (view === 'chat' || view === 'archives') ? 'active' : ''}`} 
               onClick={() => { 
-                if (currentSessionId === s.id && window.innerWidth <= 768) {
-                  // Sur mobile, ne rien faire si on clique sur la session déjà active
-                  // pour éviter d'entrer en mode renommage sans boutons visibles
+                if (currentSessionId === s.id && view === 'chat') {
                   if (window.innerWidth <= 768) setSidebarOpen(false);
                   return;
                 }
                 setCurrentSessionId(s.id); 
-                if (view === 'gallery') setView('chat'); 
+                setView('chat'); 
                 if (window.innerWidth <= 768) setSidebarOpen(false); 
-              }}
-            >
+              }}            >
               {renamingId === s.id ? (
                 <input autoFocus className="rename-input" value={renameValue} onChange={(e) => setRenameValue(e.target.value)} onBlur={() => renameSession(s.id, renameValue)} onKeyDown={(e) => { if (e.key === 'Enter') renameSession(s.id, renameValue); if (e.key === 'Escape') setRenamingId(null); }} onClick={(e) => e.stopPropagation()} />
               ) : (
@@ -2027,24 +2023,24 @@ function App() {
                         </div>
                       </div>
                     )}                    {msg.imageUrl && (
-                      <div className="image-wrapper" onClick={() => setActiveLightbox({ url: msg.imageUrl!, sessionId: currentSessionId!, messageId: msg.id, source: 'chat' })}>
+                      <div className="image-wrapper" onClick={() => handleImageClick({ url: msg.imageUrl!, sessionId: currentSessionId!, messageId: msg.id, isFavorite: msg.isFavorite, source: 'chat' })}>
                         <img 
                           src={getFullImageUrl(msg.thumbnailUrl || msg.imageUrl)} 
                           alt="Generated" 
                           className="clickable-image" 
                           onLoad={() => smoothScrollTo(`msg-${msg.id}`)}
                         />
+                        <button 
+                          className={`image-fav-btn ${msg.isFavorite ? 'active' : ''}`}
+                          onClick={(e) => { e.stopPropagation(); toggleFavorite(currentSessionId!, msg.id, msg.isFavorite); }}
+                          title={t.favorites}
+                        >
+                          {msg.isFavorite ? '❤️' : '🤍'}
+                        </button>
                         {favoritedId === msg.id && <div className="image-overlay-heart">❤️</div>}
                       </div>
                     )}
                     <div className="message-actions">
-                      <button 
-                        className={`action-btn-icon favorite ${msg.isFavorite ? 'active' : ''}`} 
-                        onClick={(e) => { e.stopPropagation(); toggleFavorite(currentSessionId!, msg.id, msg.isFavorite); }}
-                        title={t.favorites}
-                      >
-                        {msg.isFavorite ? '❤️' : '🤍'}
-                      </button>
                       <button className="action-btn-icon edit" onClick={() => { 
                         const textToEdit = msg.role === 'user' ? (msg.text || '') : (msg.text || msg.prompt || '');
                         handleEdit(textToEdit); 
@@ -2108,14 +2104,14 @@ function App() {
               <div className="gallery-header">
                 <h2>{t.myContent}</h2>
                 <div className="gallery-filters">
-                  <button className={`gallery-filter-fav ${favoritesOnly ? 'active' : ''}`} onClick={() => { setFavoritesOnly(!favoritesOnly); setGalleryOffset(0); setHasMoreGallery(true); setTimeout(() => fetchGallery(true), 0); }}>
+                  <button className={`gallery-filter-fav ${favoritesOnly ? 'active' : ''}`} onClick={() => { setFavoritesOnly(!favoritesOnly); setGalleryOffset(0); setHasMoreGallery(true); }}>
                     {favoritesOnly ? '❤️' : '🤍'} {t.favorites}
                   </button>
                   <div className="control-group">
-                    <button className={`control-pill ${!showArchivedInGallery ? 'active' : ''}`} onClick={() => { setShowArchivedInGallery(false); setFavoritesOnly(false); setGalleryOffset(0); setHasMoreGallery(true); setTimeout(() => fetchGallery(true), 0); }}>
+                    <button className={`control-pill ${!showArchivedInGallery ? 'active' : ''}`} onClick={() => { setShowArchivedInGallery(false); setFavoritesOnly(false); setGalleryOffset(0); setHasMoreGallery(true); }}>
                       {t.active}
                     </button>
-                    <button className={`control-pill ${showArchivedInGallery ? 'active' : ''}`} onClick={() => { setShowArchivedInGallery(true); setFavoritesOnly(false); setGalleryOffset(0); setHasMoreGallery(true); setTimeout(() => fetchGallery(true), 0); }}>
+                    <button className={`control-pill ${showArchivedInGallery ? 'active' : ''}`} onClick={() => { setShowArchivedInGallery(true); setFavoritesOnly(false); setGalleryOffset(0); setHasMoreGallery(true); }}>
                       {t.archived}
                     </button>
                   </div>
