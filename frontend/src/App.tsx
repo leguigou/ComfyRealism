@@ -1302,8 +1302,10 @@ function App() {
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
-            <img src={getFullImageUrl(activeLightbox.url)} alt="Fullscreen" />
-            {favoritedId === activeLightbox.messageId && <div className="image-overlay-heart" style={{ fontSize: '8rem' }}>❤️</div>}
+            <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
+              <img src={getFullImageUrl(activeLightbox.url)} alt="Fullscreen" />
+              {favoritedId === activeLightbox.messageId && <div className="image-overlay-heart" style={{ fontSize: '8rem' }}>❤️</div>}
+            </div>
             <div className="lightbox-actions" onClick={(e) => e.stopPropagation()}>
               <button className="lightbox-btn go-to-chat" onClick={() => { goToImage(activeLightbox.sessionId, activeLightbox.messageId); setActiveLightbox(null); }} title="Voir dans le chat">
                 💬
