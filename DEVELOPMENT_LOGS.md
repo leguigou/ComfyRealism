@@ -1,6 +1,11 @@
 # Development Logs
 
-## Current Version: v.1.2.65
+## Current Version: v.1.2.66
+
+---
+
+### v.1.2.66 (2026-05-20)
+- **Info Panel Layout Fix**: Added missing CSS for the `generation-info-panel` and implemented robust word-wrapping (`overflow-wrap: anywhere`) to prevent long model or workflow names from breaking the chat layout.
 
 ---
 

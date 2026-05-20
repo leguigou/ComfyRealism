@@ -1420,7 +1420,7 @@ function App() {
                <div className="settings-grid">
                  <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                    <label>{t.currentVersion}</label>
-                   <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v.1.2.65</div>                   <label>{t.devLogs}</label>
+                   <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v.1.2.66</div>                   <label>{t.devLogs}</label>
                    <div className="logs-container" style={{
                      background: 'rgba(0,0,0,0.2)',
                      padding: '1rem',
