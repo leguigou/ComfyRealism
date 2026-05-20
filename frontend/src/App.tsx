@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect, useCallback, memo } from 'react';
+import ReactMarkdown from 'react-markdown';
+import devLogsUrl from '../../DEVELOPMENT_LOGS.md?url';
 import './App.css';
 import { translations } from './i18n';
 import type { Language } from './i18n';
@@ -140,6 +142,14 @@ const MessageText = memo(({ text, lang }: { text: string, lang: Language }) => {
     </div>
   );
 });
+
+const MarkdownLoader = ({ url }: { url: string }) => {
+  const [content, setContent] = useState('');
+  useEffect(() => {
+    fetch(url).then(res => res.text()).then(setContent).catch(err => console.error('Error loading markdown:', err));
+  }, [url]);
+  return <ReactMarkdown>{content}</ReactMarkdown>;
+};
 
 const WelcomeScreen = ({ lang }: { lang: Language }) => {
   const t = translations[lang];
@@ -1407,214 +1417,29 @@ function App() {
 
             <div className="tab-content">
               {activeTab === 'logs' && (
-                <div className="settings-grid">
-                  <div className="setting-item" style={{ gridColumn: 'span 2' }}>
-                    <label>{t.currentVersion}</label>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.64-multiuser</div>
+               <div className="settings-grid">
+                 <div className="setting-item" style={{ gridColumn: 'span 2' }}>
+                   <label>{t.currentVersion}</label>
+                   <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.64-multiuser</div>
 
-                    <label>{t.devLogs}</label>
-                    <div className="logs-container" style={{
-                      background: 'rgba(0,0,0,0.2)',
-                      padding: '1rem',
-                      borderRadius: '8px',
-                      maxHeight: '300px',
-                      overflowY: 'auto',
-                      fontSize: '0.85rem',
-                      lineHeight: '1.4',
-                      fontFamily: 'monospace'
-                    }}>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.64 (2026-05-20)</div>
-                        <div>• {lang === 'fr' ? 'Nettoyage robuste des ports (3001/5173) au lancement.' : 'Robust port cleanup (3001/5173) on startup.'}</div>
-                        <div>• {lang === 'fr' ? 'Double-clic sur mobile pour les favoris (350ms).' : 'Mobile double-tap for favorites (350ms).'}</div>
-                        <div>• {lang === 'fr' ? 'Nouveau bouton favoris discret directement sur l\'image.' : 'New discreet favorite button directly on images.'}</div>
-                        <div>• {lang === 'fr' ? 'Correction de la navigation Galerie vers Chat.' : 'Fixed Gallery to Chat navigation bug.'}</div>
-                        <div>• {lang === 'fr' ? 'Correction du bug de superposition de la barre latérale.' : 'Fixed sidebar overlay blocking bug.'}</div>
-                        <div>• {lang === 'fr' ? 'Correction des erreurs de build TypeScript.' : 'Fixed TypeScript build errors.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.63 (2026-05-18)</div>                        <div>• {lang === 'fr' ? 'Défilement cinématique (animation ultra-douce).' : 'Cinematic, buttery-smooth auto-scroll animation.'}</div>
-                        <div>• {lang === 'fr' ? 'Nettoyage physique du disque à la suppression.' : 'Physical disk cleanup on deletion.'}</div>
-                        <div>• {lang === 'fr' ? 'Dossiers d\'images isolés par utilisateur.' : 'Isolated user image directories.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.62 (2026-05-17)</div>
-                        <div>• {lang === 'fr' ? 'Statistiques d\'utilisation et espace disque par utilisateur.' : 'User usage statistics and disk space tracking.'}</div>
-                        <div>• {lang === 'fr' ? 'Réinitialisation des mots de passe via l\'interface admin.' : 'Admin password reset from UI.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.61 (2026-05-17)</div>
-                        <div>• {lang === 'fr' ? 'Système multi-utilisateur complet (bcrypt).' : 'Full multi-user system (bcrypt).'}</div>
-                        <div>• {lang === 'fr' ? 'Panneau d\'administration UI.' : 'Administrative UI panel.'}</div>
-                        <div>• {lang === 'fr' ? 'Outil CLI pour gestion SSH.' : 'CLI tool for SSH management.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.60 (2026-05-17)</div>
-                        <div>• {lang === 'fr' ? 'Billes rebondissantes sélectives (uniquement si actif).' : 'Selective bouncing balls (active only).'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.59 (2026-05-17)</div>
-                        <div>• {lang === 'fr' ? 'Inversion du sens de l\'animation de statut (droite à gauche).' : 'Reversed status animation flow (right-to-left).'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.55 (2026-05-17)</div>
-                        <div>• {lang === 'fr' ? 'Effet de texte animé (shimmer) pour les statuts.' : 'Animated status text (shimmer effect).'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.54 (2026-05-17)</div>
-                        <div>• {lang === 'fr' ? 'Indicateur visuel IA (contour animé).' : 'AI visual feedback (glowing border).'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.53 (2026-05-17)</div>
-                        <div>• {lang === 'fr' ? 'Formatage du minuteur (1m05s).' : 'Timer formatting (1m05s).'}</div>
-                        <div>• {lang === 'fr' ? 'Suppression du clignotement du timer.' : 'Flicker-free timer updates.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.52 (2026-05-17)</div>
-                        <div>• {lang === 'fr' ? 'Auto-scroll intelligent.' : 'Smart auto-scroll behavior.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.51 (2026-05-17)</div>
-                        <div>• {lang === 'fr' ? 'Minuteur de génération en direct.' : 'Live generation timer.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.48 (2026-05-17)</div>
-                        <div>• {lang === 'fr' ? 'Restauration critique du backend.' : 'Critical backend restoration.'}</div>
-                        <div>• {lang === 'fr' ? 'WebSocket plus robuste (proxy handover).' : 'Robust WebSocket handover.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.47 (2026-05-17)</div>
-                        <div>• {lang === 'fr' ? 'Routage agnostique pour Dokploy.' : 'Proxy-agnostic routing for Dokploy.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.46 (2026-05-17)</div>
-                        <div>• {lang === 'fr' ? 'Correction de l\'ordre des messages.' : 'Message ordering fix.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.45 (2026-05-17)</div>
-                        <div>• {lang === 'fr' ? 'File d\'attente asynchrone (rafale).' : 'Asynchronous message queuing.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.43 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Correction du conflit de routage (retrait du middleware redondant).' : 'Routing conflict fix (removed redundant middleware).'}</div>
-                        <div>• {lang === 'fr' ? 'Routage explicite double ( / et /api ) pour une compatibilité native parfaite avec les reverse proxies.' : 'Explicit dual routing (/ and /api) for perfect native proxy compatibility.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.41 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Correction du double préfixe /api en production.' : 'Fixed double /api prefix bug in production.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.40 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Anonymisation du code : suppression des domaines personnels.' : 'Anonymized code: removed personal domains.'}</div>
-                        <div>• {lang === 'fr' ? 'Détection dynamique du domaine parent pour les cookies.' : 'Dynamic parent domain detection for cookies.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.39 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Refonte de l\'infrastructure en domaine unique (Path Routing).' : 'Overhauled infrastructure to single domain (Path Routing).'}</div>
-                        <div>• {lang === 'fr' ? 'Relocalisation des WebSockets sur /api/ws.' : 'Relocated WebSockets to /api/ws.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.38 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Correction critique du crash de la page blanche.' : 'Critical white screen crash fix.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.30 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Logs de transparence au démarrage du backend.' : 'Transparency logs on backend startup.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.28 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Correction de l\'erreur ECONNREFUSED sur Raspberry Pi/Docker.' : 'Fixed ECONNREFUSED error on Raspberry Pi/Docker.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
-                        <div style={{ fontWeight: 'bold' }}>v1.2.27 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Configuration Docker de production (images GHCR).' : 'Production Docker configuration (GHCR images).'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.26 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Correction d\'une erreur de build (référence obsolète à comfyModelsPath).' : 'Fixed build error (stale reference to comfyModelsPath).'}</div>
-                        <div>• {lang === 'fr' ? 'Mise à jour des Dockerfiles vers Node.js 22 (LTS).' : 'Updated Dockerfiles to Node.js 22 (LTS).'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.25 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Correction du workflow GitHub Actions (noms d\'images en minuscules).' : 'Fixed GitHub Actions workflow (lowercase image names).'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.24 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Correction de la lisibilité en mode clair (texte gris sur gris).' : 'Fixed readability in light mode (gray on gray text).'}</div>
-                        <div>• {lang === 'fr' ? 'Renforcement du contraste pour les messages et les titres.' : 'Increased contrast for messages and headings.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
-                        <div style={{ fontWeight: 'bold' }}>v1.2.23 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Mise en place de l\'automatisation Docker (GitHub Actions).' : 'Implemented Docker automation (GitHub Actions).'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
-                        <div style={{ fontWeight: 'bold' }}>v1.2.15 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Ajout d\'un bouton "Tester la connexion" pour l\'URL ComfyUI.' : 'Added "Test Connection" button for ComfyUI URL.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
-                        <div style={{ fontWeight: 'bold' }}>v1.2.14 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Dockerisation complète du projet (Docker Compose).' : 'Full project dockerization (Docker Compose).'}</div>
-                        <div>• {lang === 'fr' ? 'Configuration des volumes pour la persistance des données et images.' : 'Configured volumes for data and image persistence.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
-                        <div style={{ fontWeight: 'bold' }}>v1.2.9 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Utilisation de l\'API ComfyUI pour lister les modèles.' : 'Using ComfyUI API to list models.'}</div>
-                        <div>• {lang === 'fr' ? 'Suppression de la configuration manuelle du chemin des modèles.' : 'Removed manual models path configuration.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
-                        <div style={{ fontWeight: 'bold' }}>v1.2.8 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Correction de la visibilité du bouton de fermeture en mode clair.' : 'Fixed close button visibility in light mode.'}</div>
-                        <div>• {lang === 'fr' ? 'Utilisation des variables CSS thémées pour une meilleure cohérence.' : 'Using themed CSS variables for better consistency.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
-                        <div style={{ fontWeight: 'bold' }}>v1.2.6 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Finalisation du système de miniatures dynamiques.' : 'Finalized dynamic thumbnail system.'}</div>
-                        <div>• {lang === 'fr' ? 'Validation de l\'auto-récupération des médias.' : 'Validated media auto-recovery.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
-                        <div style={{ fontWeight: 'bold' }}>v1.2.5 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Génération des miniatures à la volée.' : 'On-the-fly thumbnail generation.'}</div>
-                        <div>• {lang === 'fr' ? 'Reconstruction automatique des miniatures manquantes à partir des originaux.' : 'Automatic reconstruction of missing thumbnails from originals.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
-                        <div style={{ fontWeight: 'bold' }}>v1.2.4 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Déplacement du dossier images à la racine du projet.' : 'Moved images directory to project root.'}</div>
-                        <div>• {lang === 'fr' ? 'Création automatique des dossiers images et thumbnails.' : 'Auto-creation of images and thumbnails directories.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
-                        <div style={{ color: 'var(--accent-color)', fontWeight: 'bold' }}>v1.2.3 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Correction du bug de "page blanche".' : 'Fixed "white screen" bug.'}</div>
-                        <div>• {lang === 'fr' ? 'Correction des erreurs TypeScript et clés de traduction manquantes.' : 'Fixed TypeScript errors and missing translation keys.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
-                        <div style={{ fontWeight: 'bold' }}>v1.2.2 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Refactorisation des traductions (i18n.ts).' : 'Translation refactoring (i18n.ts).'}</div>
-                        <div>• {lang === 'fr' ? 'Nettoyage du code et modularité accrue.' : 'Code cleanup and increased modularity.'}</div>
-                      </div>
-                      <div style={{ marginBottom: '1rem', opacity: 0.8 }}>
-                        <div style={{ fontWeight: 'bold' }}>v1.2.1 (2026-05-16)</div>
-                        <div>• {lang === 'fr' ? 'Initialisation du système de logs et versioning.' : 'Initialized logs and versioning system.'}</div>
-                        <div>• {lang === 'fr' ? 'Support bilingue (FR/EN) forcé pour les nouveautés.' : 'Enforced bilingual support (FR/EN) for new features.'}</div>
-                        <div>• {lang === 'fr' ? 'Automatisation du bump de version lors des sauvegardes.' : 'Automated version bump on backups.'}</div>
-                        <div>• {lang === 'fr' ? 'Intégration de l\'historique dans les paramètres.' : 'Integrated history in settings.'}</div>
-                      </div>
-                      <div style={{ opacity: 0.7 }}>
-                        <div style={{ fontWeight: 'bold' }}>v1.2.0</div>
-                        <div>• {lang === 'fr' ? 'Intégration SQLite (better-sqlite3).' : 'SQLite integration (better-sqlite3).'}</div>
-                      </div>
-                      <div style={{ opacity: 0.7 }}>
-                        <div style={{ fontWeight: 'bold' }}>v1.1.0</div>
-                        <div>• {lang === 'fr' ? 'Gestion des files d\'attente ComfyUI.' : 'ComfyUI queue management.'}</div>
-                      </div>
-                      <div style={{ opacity: 0.7 }}>
-                        <div style={{ fontWeight: 'bold' }}>v1.0.0</div>
-                        <div>• {lang === 'fr' ? 'Lancement initial.' : 'Initial release.'}</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                   <label>{t.devLogs}</label>
+                   <div className="logs-container" style={{
+                     background: 'rgba(0,0,0,0.2)',
+                     padding: '1rem',
+                     borderRadius: '8px',
+                     maxHeight: '400px',
+                     overflowY: 'auto',
+                     fontSize: '0.85rem',
+                     lineHeight: '1.4',
+                     fontFamily: 'inherit'
+                   }}>
+                     <div className="markdown-logs">
+                       <MarkdownLoader url={devLogsUrl} />
+                     </div>
+                   </div>
+                 </div>
+               </div>
               )}
-
               {activeTab === 'images' && (
                 <>
                   <div className="settings-grid">
