@@ -1,22 +1,21 @@
 # Development Logs
 
-## Current Version: 1.2.64-multiuser
+## Current Version: v.1.2.64
 
 ---
 
-### v1.2.64-multiuser (2026-05-20)
-- **Robust Process Cleanup**: Updated `run.bat` and `run.sh` to explicitly terminate processes on ports 3001 and 5173 before launching. This prevents "Address already in use" errors.
-- **Enhanced Mobile Double-Tap**: Increased double-tap detection window to 350ms for better responsiveness on touch devices. Users can now reliably double-tap to favorite images.
-- **Discreet Favorite Button**: Moved the favorite heart icon directly onto the image in the chat feed. Removed the bulky circular background for a minimalist, integrated look.
-- **Lightbox Double-Click**: Users can now double-click (or double-tap) the full-screen image in the lightbox to toggle favorite status.
-- **Navigation Fixes**: Resolved a bug preventing users from returning to their active chat session after visiting the "My Contents" gallery.
-- **Sidebar UX**: Fixed a transparent overlay bug that was blocking clicks on the top of the sidebar.
-- **AI Toggle Polish**: Improved visual feedback for the AI toggle button, ensuring it clearly returns to its neutral state when disabled.
-- **Build & Translation Fixes**: Added missing translation keys (`negativePrompt`, `deleteAll`, `readMore`, `readLess`) to resolve TypeScript build errors and fix missing UI text.
+### v.1.2.64 (2026-05-20)
+- **Log System Overhaul**: Development logs are now loaded directly from `DEVELOPMENT_LOGS.md` using `react-markdown`. This ensures a single source of truth and a cleaner `App.tsx`.
+- **Robust Process Cleanup**: Updated `run.bat` and `run.sh` to explicitly terminate processes on ports 3001 and 5173 before launching.
+- **Enhanced Mobile Double-Tap**: Increased double-tap detection window to 350ms for better responsiveness.
+- **Discreet Favorite Button**: Moved the heart icon directly onto the image with a minimalist design.
+- **Lightbox Improvements**: Added double-click to favorite in full-screen mode and improved navigation.
+- **Navigation & UX Fixes**: Fixed gallery-to-chat navigation, sidebar overlay blockage, and AI toggle visual feedback.
+- **Build Fixes**: Resolved TypeScript errors by adding missing translation keys.
 
 ---
 
-### v1.2.63-multiuser (2026-05-18)
+### v.1.2.63 (2026-05-18)
 - **Favorites System**: Added the ability to mark images as favorites with a heart icon. Favorited images can be easily filtered in the gallery.
 - **Cinematic Auto-Scroll**: Replaced the abrupt browser scroll with a custom, buttery-smooth cubic easing animation. The camera now gracefully glides to the newly generated image.
 - **Persistent Disk Cleanup**: Deleting an image or a chat session from the UI now physically removes the corresponding `.webp` and thumbnail files from the server's disk, preventing storage bloat.

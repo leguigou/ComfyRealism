@@ -1,0 +1,43 @@
+name: Auto Release from Logs
+
+on:
+  push:
+    tags:
+      - 'v.*' # Se déclenche pour les tags comme v.1.2.64
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract Changelog Entry
+        id: extract_changelog
+        shell: bash
+        run: |
+          # Récupère le nom du tag (ex: v.1.2.64)
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          
+          # Cherche le bloc entre "### $TAG_NAME" et le prochain "### " ou "---"
+          # On utilise awk pour extraire proprement la section
+          ENTRY=$(awk "/### $TAG_NAME/{flag=1;next}/### /{flag=0}flag" DEVELOPMENT_LOGS.md)
+          
+          # Nettoyage des lignes vides au début et à la fin
+          ENTRY=$(echo "$ENTRY" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+
+          # Export pour les étapes suivantes
+          echo "changelog_entry<<EOF" >> $GITHUB_OUTPUT
+          echo "$ENTRY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ github.ref_name }}
+          body: ${{ steps.extract_changelog.outputs.changelog_entry }}
+          draft: false
+          prerelease: false
