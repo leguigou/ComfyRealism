@@ -1,6 +1,12 @@
 # Development Logs
 
-## Current Version: v.1.2.64
+## Current Version: v.1.2.65
+
+---
+
+### v.1.2.65 (2026-05-20)
+- **UI Refinement**: Improved welcome screen typography with increased `line-height` and padding for better readability on mobile devices.
+- **Versioning Standard**: Synchronized project version to `v.1.2.65` across all branches.
 
 ---
 

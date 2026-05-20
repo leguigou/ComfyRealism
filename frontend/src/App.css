@@ -1445,11 +1445,14 @@ body {
   margin: 0;
   text-align: center;
   letter-spacing: -1px;
+  line-height: 1.3;
 }
 
 @media (max-width: 768px) {
   .welcome-screen h1 {
-    font-size: 2rem;
+    font-size: 2.2rem;
+    line-height: 1.4;
+    padding: 0 1rem;
   }
   .welcome-icon {
     width: 60px;
