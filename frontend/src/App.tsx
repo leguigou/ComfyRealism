@@ -1410,22 +1410,30 @@ function App() {
                 <div className="settings-grid">
                   <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                     <label>{t.currentVersion}</label>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.63-multiuser</div>
-                    
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v1.2.64-multiuser</div>
+
                     <label>{t.devLogs}</label>
-                    <div className="logs-container" style={{ 
-                      background: 'rgba(0,0,0,0.2)', 
-                      padding: '1rem', 
-                      borderRadius: '8px', 
-                      maxHeight: '300px', 
+                    <div className="logs-container" style={{
+                      background: 'rgba(0,0,0,0.2)',
+                      padding: '1rem',
+                      borderRadius: '8px',
+                      maxHeight: '300px',
                       overflowY: 'auto',
                       fontSize: '0.85rem',
                       lineHeight: '1.4',
                       fontFamily: 'monospace'
                     }}>
                       <div style={{ marginBottom: '1rem' }}>
-                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.63 (2026-05-18)</div>
-                        <div>• {lang === 'fr' ? 'Défilement cinématique (animation ultra-douce).' : 'Cinematic, buttery-smooth auto-scroll animation.'}</div>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.64 (2026-05-20)</div>
+                        <div>• {lang === 'fr' ? 'Nettoyage robuste des ports (3001/5173) au lancement.' : 'Robust port cleanup (3001/5173) on startup.'}</div>
+                        <div>• {lang === 'fr' ? 'Double-clic sur mobile pour les favoris (350ms).' : 'Mobile double-tap for favorites (350ms).'}</div>
+                        <div>• {lang === 'fr' ? 'Nouveau bouton favoris discret directement sur l\'image.' : 'New discreet favorite button directly on images.'}</div>
+                        <div>• {lang === 'fr' ? 'Correction de la navigation Galerie vers Chat.' : 'Fixed Gallery to Chat navigation bug.'}</div>
+                        <div>• {lang === 'fr' ? 'Correction du bug de superposition de la barre latérale.' : 'Fixed sidebar overlay blocking bug.'}</div>
+                        <div>• {lang === 'fr' ? 'Correction des erreurs de build TypeScript.' : 'Fixed TypeScript build errors.'}</div>
+                      </div>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>v1.2.63 (2026-05-18)</div>                        <div>• {lang === 'fr' ? 'Défilement cinématique (animation ultra-douce).' : 'Cinematic, buttery-smooth auto-scroll animation.'}</div>
                         <div>• {lang === 'fr' ? 'Nettoyage physique du disque à la suppression.' : 'Physical disk cleanup on deletion.'}</div>
                         <div>• {lang === 'fr' ? 'Dossiers d\'images isolés par utilisateur.' : 'Isolated user image directories.'}</div>
                       </div>
