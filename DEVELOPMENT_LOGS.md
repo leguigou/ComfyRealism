@@ -1,15 +1,18 @@
 # Development Logs
 
-## Current Version: v.1.2.66
+## Current Version: v.1.2.67
+
+---
+
+### v.1.2.67 (2026-05-20)
+- **New Refresh Icon**: Replaced all old refresh/regenerate icons with a new, sleek SVG design for better consistency.
+- **UI Refinement**: Improved welcome screen typography with increased `line-height` and padding for better readability on mobile devices.
+- **Info Panel Layout Fix**: Implemented robust word-wrapping for the generation info panel to prevent layout breaks from long names.
+- **Versioning Standard**: Synchronized project version to `v.1.2.67`.
 
 ---
 
 ### v.1.2.66 (2026-05-20)
-- **Info Panel Layout Fix**: Added missing CSS for the `generation-info-panel` and implemented robust word-wrapping (`overflow-wrap: anywhere`) to prevent long model or workflow names from breaking the chat layout.
-
----
-
-### v.1.2.65 (2026-05-20)
 - **UI Refinement**: Improved welcome screen typography with increased `line-height` and padding for better readability on mobile devices.
 - **Versioning Standard**: Synchronized project version to `v.1.2.65` across all branches.
 
