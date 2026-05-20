@@ -85,7 +85,9 @@ export const translations = {
     favoritesOnly: 'Favoris uniquement',
     viewInChat: 'Voir dans le chat',
     readMore: 'Voir plus',
-    readLess: 'Voir moins'
+    readLess: 'Voir moins',
+    negativePrompt: 'Prompt Négatif',
+    deleteAll: 'Tout supprimer'
   },
   en: {
     title: 'ComfyRealism',
@@ -171,7 +173,9 @@ export const translations = {
     favoritesOnly: 'Favorites only',
     viewInChat: 'View in chat',
     readMore: 'Read more',
-    readLess: 'Read less'
+    readLess: 'Read less',
+    negativePrompt: 'Negative Prompt',
+    deleteAll: 'Delete All'
   }
 };
 
