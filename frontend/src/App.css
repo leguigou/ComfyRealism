@@ -566,6 +566,29 @@ body {
   opacity: 0.9;
 }
 
+.generation-info-panel {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 0.8rem;
+  border: 1px solid var(--border);
+  font-size: 0.85rem;
+  color: var(--text);
+  line-height: 1.6;
+  animation: fadeIn 0.3s ease-out;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.generation-info-panel p {
+  margin: 0.3rem 0;
+}
+
+.generation-info-panel strong {
+  color: var(--accent);
+  margin-right: 0.4rem;
+}
+
 .message-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
 
 .action-btn {
