@@ -304,7 +304,9 @@ export const SettingsModal = ({
                   <label>{t.cfg}</label>
                   <input type="number" value={params.cfg} onChange={(e) => setParams({ ...params, cfg: Number(e.target.value) })} step={0.1} min={1} max={20} />
                 </div>
-                <div className="setting-item" style={{ gridColumn: 'span 2', marginTop: '1rem' }}>
+              </div>
+              <div className="settings-grid" style={{ marginTop: '1.5rem' }}>
+                <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                   <label>{t.negativePrompt}</label>
                   <textarea 
                     className="system-message-textarea" 
