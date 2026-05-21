@@ -377,6 +377,20 @@
   line-height: 1.5;
 }
 
+.input-box textarea::placeholder {
+  color: var(--text);
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 480px) {
+  .input-box textarea::placeholder {
+    font-size: 0.85rem;
+  }
+}
+
 .clear-input-btn {
   background: transparent;
   border: none;
