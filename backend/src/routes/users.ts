@@ -4,10 +4,37 @@ import bcrypt from 'bcryptjs';
 import path from 'path';
 import fs from 'fs';
 import db from '../services/database';
-import { requireAdmin } from '../middleware/auth';
+import { requireAdmin, authenticate } from '../middleware/auth';
 import { imagesDir } from '../services/image';
 
 const router = express.Router();
+
+router.patch('/me', authenticate, (req, res) => {
+  const { username, password, avatarUrl } = req.body;
+  const user = (req as any).user;
+  
+  try {
+    if (username) {
+      const existing = db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(username.trim().toLowerCase(), user.id);
+      if (existing) return res.status(400).json({ error: 'Username already exists' });
+      db.prepare('UPDATE users SET username = ? WHERE id = ?').run(username.trim().toLowerCase(), user.id);
+    }
+    
+    if (password) {
+      const passwordHash = bcrypt.hashSync(password.trim(), 10);
+      db.prepare('UPDATE users SET password = ? WHERE id = ?').run(passwordHash, user.id);
+    }
+    
+    if (avatarUrl !== undefined) {
+      db.prepare('UPDATE users SET avatarUrl = ? WHERE id = ?').run(avatarUrl, user.id);
+    }
+    
+    const updatedUser = db.prepare('SELECT id, username, isAdmin, avatarUrl FROM users WHERE id = ?').get(user.id) as any;
+    res.json({ success: true, user: { username: updatedUser.username, isAdmin: updatedUser.isAdmin === 1, avatarUrl: updatedUser.avatarUrl } });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 router.get('/', requireAdmin, (req, res) => {
   const users = db.prepare('SELECT id, username, isAdmin, createdAt FROM users ORDER BY createdAt DESC').all() as any[];

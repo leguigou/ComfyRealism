@@ -17,6 +17,7 @@ export const initDatabase = () => {
       username TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
       isAdmin INTEGER DEFAULT 0,
+      avatarUrl TEXT,
       createdAt INTEGER NOT NULL
     );
 
@@ -88,6 +89,13 @@ export const initDatabase = () => {
   } catch (e) {
     db.exec('ALTER TABLE sessions ADD COLUMN userId TEXT');
     console.log('[Migration] Added userId column to sessions table');
+  }
+
+  try {
+    db.prepare('SELECT avatarUrl FROM users LIMIT 1').get();
+  } catch (e) {
+    db.exec('ALTER TABLE users ADD COLUMN avatarUrl TEXT');
+    console.log('[Migration] Added avatarUrl column to users table');
   }
 
   // Default Admin

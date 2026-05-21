@@ -1,15 +1,17 @@
+import { useState, useEffect } from 'react';
 import './SettingsModal.css';
-import type { GenParameters, User, Language } from '../../types';
+import type { GenParameters, User, Language, GalleryItem } from '../../types';
 import { RefreshIcon } from '../ui/Icons';
 import { MarkdownLoader } from '../ui/MarkdownLoader';
 import devLogsUrl from '../../../../DEVELOPMENT_LOGS.md?url';
-import { formatBytes } from '../../services/api';
+import { formatBytes, getFullImageUrl } from '../../services/api';
+import toast from 'react-hot-toast';
 
 interface SettingsModalProps {
   showSettings: boolean;
   setShowSettings: (show: boolean) => void;
-  activeTab: 'images' | 'comfy' | 'llm' | 'archives' | 'logs' | 'admin';
-  setActiveTab: (tab: 'images' | 'comfy' | 'llm' | 'archives' | 'logs' | 'admin') => void;
+  activeTab: 'profile' | 'images' | 'comfy' | 'llm' | 'archives' | 'logs' | 'admin';
+  setActiveTab: (tab: 'profile' | 'images' | 'comfy' | 'llm' | 'archives' | 'logs' | 'admin') => void;
   params: GenParameters;
   setParams: (params: GenParameters) => void;
   lang: Language;
@@ -43,6 +45,9 @@ interface SettingsModalProps {
   handleResetPassword: (id: string) => void;
   archiveAllSessions: () => void;
   deleteAllActiveSessions: () => void;
+  updateProfile: (params: { username?: string; password?: string; avatarUrl?: string | null }) => Promise<{ success: boolean; error?: string }>;
+  galleryItems: GalleryItem[];
+  fetchGallery: (initial?: boolean) => void;
 }
 
 export const SettingsModal = ({
@@ -81,9 +86,73 @@ export const SettingsModal = ({
   setNewPasswordValue,
   handleResetPassword,
   archiveAllSessions,
-  deleteAllActiveSessions
+  deleteAllActiveSessions,
+  updateProfile,
+  galleryItems,
+  fetchGallery
 }: SettingsModalProps) => {
+  const [editUsername, setEditUsername] = useState(currentUser?.username || '');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [showImagePicker, setShowImagePicker] = useState(false);
+
+  useEffect(() => {
+    if (showSettings) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setEditUsername(currentUser?.username || '');
+      setNewPassword('');
+      setConfirmPassword('');
+    }
+  }, [showSettings, currentUser]);
+
   if (!showSettings) return null;
+
+  const handleUpdateProfile = async () => {
+    if (newPassword && newPassword !== confirmPassword) {
+      toast.error(t.passwordsDoNotMatch);
+      return;
+    }
+
+    setIsUpdating(true);
+    const result = await updateProfile({
+      username: editUsername !== currentUser?.username ? editUsername : undefined,
+      password: newPassword || undefined
+    });
+
+    if (result.success) {
+      toast.success(t.profileUpdated);
+      setNewPassword('');
+      setConfirmPassword('');
+    } else {
+      toast.error(result.error || t.profileUpdateFailed);
+    }
+    setIsUpdating(false);
+  };
+
+  const handleSelectAvatar = async (url: string) => {
+    const result = await updateProfile({ avatarUrl: url });
+    if (result.success) {
+      toast.success(t.profileUpdated);
+      setShowImagePicker(false);
+    } else {
+      toast.error(result.error || t.profileUpdateFailed);
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    const result = await updateProfile({ avatarUrl: null });
+    if (result.success) {
+      toast.success(t.profileUpdated);
+    } else {
+      toast.error(result.error || t.profileUpdateFailed);
+    }
+  };
+
+  const userInitial = currentUser?.username?.charAt(0).toUpperCase() || '?';
+
+  // Sort gallery: favorites first
+  const sortedGallery = [...galleryItems].sort((a, b) => (b.isFavorite || 0) - (a.isFavorite || 0));
 
   return (
     <div className="settings-modal-overlay" onClick={() => setShowSettings(false)}>
@@ -91,6 +160,7 @@ export const SettingsModal = ({
         <button className="settings-close-btn" onClick={() => setShowSettings(false)}>×</button>
         <h3>{t.settings}</h3>            
         <div className="settings-tabs">
+          <button className={`tab-btn ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')}>{t.tabProfile}</button>
           <button className={`tab-btn ${activeTab === 'images' ? 'active' : ''}`} onClick={() => setActiveTab('images')}>{t.tabImages}</button>
           <button className={`tab-btn ${activeTab === 'comfy' ? 'active' : ''}`} onClick={() => setActiveTab('comfy')}>{t.tabComfy}</button>
           <button className={`tab-btn ${activeTab === 'llm' ? 'active' : ''}`} onClick={() => setActiveTab('llm')}>{t.tabLLM}</button>
@@ -102,11 +172,78 @@ export const SettingsModal = ({
         </div>
 
         <div className="tab-content">
+          {activeTab === 'profile' && (
+            <div className="profile-edit-section">
+              <div className="avatar-edit-container">
+                <div className="avatar-preview-wrapper" onClick={() => { setShowImagePicker(true); fetchGallery(true); }}>
+                  {currentUser?.avatarUrl ? (
+                    <img src={getFullImageUrl(currentUser.avatarUrl)} alt="Avatar" className="avatar-preview-img" />
+                  ) : (
+                    <div className="avatar-preview-initial">{userInitial}</div>
+                  )}
+                  <div className="avatar-edit-overlay">
+                    <span>{t.changeAvatar}</span>
+                  </div>
+                </div>
+                {currentUser?.avatarUrl && (
+                  <button className="remove-avatar-btn" onClick={(e) => { e.stopPropagation(); handleRemoveAvatar(); }} title={t.deleteAvatar}>🗑️</button>
+                )}
+              </div>
+
+              <div className="settings-grid">
+                <div className="setting-item" style={{ gridColumn: 'span 2' }}>
+                  <label>{t.username}</label>
+                  <input type="text" value={editUsername} onChange={(e) => setEditUsername(e.target.value)} />
+                </div>
+                <div className="setting-item">
+                  <label>{t.newPassword}</label>
+                  <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" />
+                </div>
+                <div className="setting-item">
+                  <label>{t.confirmPassword}</label>
+                  <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" />
+                </div>
+                <div className="setting-item" style={{ gridColumn: 'span 2', marginTop: '1rem' }}>
+                  <button className="action-btn-large" onClick={handleUpdateProfile} disabled={isUpdating}>
+                    {isUpdating ? '...' : t.save}
+                  </button>
+                </div>
+              </div>
+
+              {showImagePicker && (
+                <div className="image-picker-overlay" onClick={() => setShowImagePicker(false)}>
+                  <div className="image-picker-container" onClick={(e) => e.stopPropagation()}>
+                    <div className="image-picker-header">
+                      <h4>{t.selectFromLibrary}</h4>
+                      <button className="picker-close" onClick={() => setShowImagePicker(false)}>×</button>
+                    </div>
+                    <div className="picker-grid">
+                      {sortedGallery.length > 0 ? (
+                        sortedGallery.map((item) => (
+                          <div 
+                            key={item.messageId} 
+                            className={`picker-item ${item.isFavorite ? 'favorite' : ''}`}
+                            onClick={() => handleSelectAvatar(item.imageUrl)}
+                          >
+                            <img src={getFullImageUrl(item.thumbnailUrl || item.imageUrl)} alt="Option" />
+                            {item.isFavorite === 1 && <span className="picker-favorite-badge">❤️</span>}
+                          </div>
+                        ))
+                      ) : (
+                        <p className="empty-picker">{t.noArchives}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === 'logs' && (
            <div className="settings-grid">
              <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                <label>{t.currentVersion}</label>
-               <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v.1.2.67</div>
+               <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v.1.3.1</div>
                <label>{t.devLogs}</label>
                <div className="logs-container" style={{
                  background: 'rgba(0,0,0,0.2)',

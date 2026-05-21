@@ -40,20 +40,20 @@ router.post('/login', (req, res) => {
   }
 
   res.cookie('userId', user.id, cookieOptions);
-  return res.json({ success: true, user: { username: user.username, isAdmin: user.isAdmin === 1 } });
+  return res.json({ success: true, user: { username: user.username, isAdmin: user.isAdmin === 1, avatarUrl: user.avatarUrl } });
 });
 
 router.get('/me', authenticate, (req, res) => {
   const user = (req as any).user;
-  res.json({ username: user.username, isAdmin: user.isAdmin === 1 });
+  res.json({ username: user.username, isAdmin: user.isAdmin === 1, avatarUrl: user.avatarUrl });
 });
 
 router.get('/check', (req, res) => {
   const userId = req.signedCookies.userId;
   if (!userId) return res.json({ authenticated: false });
-  const user = db.prepare('SELECT username, isAdmin FROM users WHERE id = ?').get(userId) as any;
+  const user = db.prepare('SELECT username, isAdmin, avatarUrl FROM users WHERE id = ?').get(userId) as any;
   if (!user) return res.json({ authenticated: false });
-  res.json({ authenticated: true, user: { username: user.username, isAdmin: user.isAdmin === 1 } });
+  res.json({ authenticated: true, user: { username: user.username, isAdmin: user.isAdmin === 1, avatarUrl: user.avatarUrl } });
 });
 
 router.post('/logout', (req, res) => { 

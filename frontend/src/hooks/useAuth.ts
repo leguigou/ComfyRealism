@@ -73,6 +73,27 @@ export const useAuth = () => {
     }
   };
 
+  const updateProfile = async (params: { username?: string; password?: string; avatarUrl?: string | null }) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/users/me`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params),
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setCurrentUser(data.user);
+        return { success: true };
+      } else {
+        return { success: false, error: data.error || 'Update failed' };
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      return { success: false, error: message };
+    }
+  };
+
   return {
     isAuthenticated,
     currentUser,
@@ -80,6 +101,7 @@ export const useAuth = () => {
     isLoginLoading,
     login,
     logout,
-    checkAuth
+    checkAuth,
+    updateProfile
   };
 };
