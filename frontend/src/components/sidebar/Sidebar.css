@@ -103,11 +103,14 @@
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+@media (hover: hover) {
+
 .new-chat-btn:hover {
   background-color: var(--sidebar-bg);
   border-color: var(--accent);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
 }
 
 .new-chat-btn.gallery-btn {
@@ -145,8 +148,10 @@
   background: var(--sidebar-border);
   border-radius: 10px;
 }
+@media (hover: hover) {
 .sessions-list:hover::-webkit-scrollbar-thumb {
   background: rgba(128, 128, 128, 0.3);
+}
 }
 
 .session-item {
@@ -168,9 +173,12 @@
   flex-shrink: 0;
 }
 
+@media (hover: hover) {
+
 .session-item:hover {
   background-color: var(--sidebar-hover);
   color: var(--text-h);
+}
 }
 
 .session-item.active {
@@ -195,10 +203,12 @@
   background: transparent;
   padding-left: 0.5rem;
 }
+@media (hover: hover) {
 .session-item:hover .session-actions { 
   display: flex; 
   opacity: 1; 
   pointer-events: auto;
+}
 }
 
 .edit-session, .delete-session { 
@@ -216,8 +226,13 @@
   transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .edit-session:hover { color: var(--accent); opacity: 1; background: rgba(16, 163, 127, 0.1) !important; }
+}
+@media (hover: hover) {
 .delete-session:hover { color: #ff4d4d; opacity: 1; background: rgba(255, 77, 77, 0.1) !important; }
+}
 
 /* Profile Pill Footer */
 .sidebar-footer-profile {
@@ -238,8 +253,11 @@
   color: var(--sidebar-text);
 }
 
+@media (hover: hover) {
+
 .profile-pill:hover, .profile-pill.active {
   background-color: var(--sidebar-hover);
+}
 }
 
 .profile-avatar {
@@ -336,9 +354,12 @@
   transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .popover-item:hover {
   background-color: var(--sidebar-hover);
   color: var(--text-h);
+}
 }
 
 .popover-item span {
@@ -358,6 +379,9 @@
   color: #ff4d4d;
 }
 
+@media (hover: hover) {
+
 .popover-item.logout:hover {
   background-color: rgba(255, 77, 77, 0.1);
+}
 }

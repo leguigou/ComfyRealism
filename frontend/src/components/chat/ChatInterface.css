@@ -79,9 +79,12 @@
   opacity: 0.5;
 }
 
+@media (hover: hover) {
+
 .image-fav-btn:hover {
   transform: scale(1.2);
   opacity: 1;
+} 
 }
 
 .image-fav-btn.active {
@@ -96,8 +99,11 @@
   transition: transform 0.3s ease;
 }
 
+@media (hover: hover) {
+
 .image-wrapper:hover img {
   transform: scale(1.02);
+} 
 }
 
 .generation-placeholder {
@@ -183,10 +189,13 @@
   justify-content: center;
 }
 
+@media (hover: hover) {
+
 .retry-btn:hover {
   filter: brightness(1.1);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(16, 163, 127, 0.3);
+} 
 }
 
 .retry-btn:active {
@@ -239,8 +248,11 @@
     opacity: 0.4; /* Semi-transparent sur desktop au repos */
   }
   
+  @media (hover: hover) {
+  
   .message-row:hover .message-actions {
     opacity: 1;
+  } 
   }
 }
 
@@ -259,17 +271,23 @@
   padding: 0;
 }
 
+@media (hover: hover) {
+
 .action-btn-icon:hover {
   background-color: var(--accent-bg);
   border-color: var(--accent);
   color: var(--accent);
   transform: translateY(-2px);
+} 
 }
+
+@media (hover: hover) {
 
 .action-btn-icon.delete:hover {
   background-color: rgba(255, 77, 77, 0.1);
   border-color: #ff4d4d;
   color: #ff4d4d;
+} 
 }
 
 .cancel-gen-btn {
@@ -288,11 +306,14 @@
   margin-top: 0.8rem;
 }
 
+@media (hover: hover) {
+
 .cancel-gen-btn:hover {
   background-color: #ff4d4d;
   color: white;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(255, 77, 77, 0.3);
+} 
 }
 
 .cancel-gen-btn .stop-icon-small {
@@ -371,9 +392,12 @@
   margin-bottom: 8px;
 }
 
+@media (hover: hover) {
+
 .clear-input-btn:hover {
   opacity: 1;
   color: var(--accent);
+} 
 }
 
 .read-more-btn { 
@@ -389,9 +413,12 @@
   transition: opacity 0.2s; 
 }
 
+@media (hover: hover) {
+
 .read-more-btn:hover { 
   opacity: 0.8; 
   text-decoration: underline; 
+} 
 }
 
 .send-btn { 
@@ -410,10 +437,13 @@
   margin-bottom: 2px;
 }
 
+@media (hover: hover) {
+
 .send-btn:hover:not(:disabled) {
   transform: translateY(-1px) scale(1.02);
   filter: brightness(1.1);
   box-shadow: 0 4px 15px rgba(16, 163, 127, 0.3);
+} 
 }
 
 .send-btn.stop-btn {
@@ -475,7 +505,10 @@
   background-color: var(--social-bg);
 }
 
-.gallery-item:hover { transform: scale(1.03); border-color: var(--accent); }
+@media (hover: hover) {
+
+.gallery-item:hover { transform: scale(1.03); border-color: var(--accent); } 
+}
 .gallery-item img { width: 100%; height: auto; display: block; }
 
 .gallery-item-actions {
@@ -493,8 +526,10 @@
   .gallery-item-actions {
     opacity: 0;
   }
+  @media (hover: hover) {
   .gallery-item:hover .gallery-item-actions {
     opacity: 1;
+  } 
   }
 }
 
@@ -511,9 +546,12 @@
   transition: transform 0.2s;
 }
 
+@media (hover: hover) {
+
 .gallery-action-btn:hover {
   transform: scale(1.2);
   color: var(--accent);
+} 
 }
 
 .gallery-item-favorite {
