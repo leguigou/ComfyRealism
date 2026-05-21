@@ -31,6 +31,7 @@
   flex: 1; 
   display: flex; 
   flex-direction: column; 
+  align-items: center; /* Recentrer l'image et le texte */
   gap: 1rem; 
   min-width: 0; 
 }
@@ -42,6 +43,7 @@
   font-size: 1rem;
   word-wrap: break-word;
   white-space: pre-wrap;
+  text-align: center; /* Texte centré aussi */
 }
 
 .bot .message-text {
