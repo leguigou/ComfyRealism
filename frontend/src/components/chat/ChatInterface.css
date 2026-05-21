@@ -3,7 +3,6 @@
   flex: 1; 
   overflow-y: auto; 
   padding-bottom: 2rem; 
-  scroll-behavior: smooth;
 }
 
 .message-row {
@@ -43,7 +42,7 @@
   font-size: 1rem;
   word-wrap: break-word;
   white-space: pre-wrap;
-  text-align: center; /* Texte centré aussi */
+  text-align: left; /* Retour à l'alignement à gauche */
 }
 
 .bot .message-text {
@@ -126,6 +125,74 @@
   opacity: 0.9;
 }
 
+.generation-error-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.5rem;
+  background-color: rgba(255, 77, 77, 0.05);
+  border: 1px solid rgba(255, 77, 77, 0.2);
+  border-radius: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.error-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.error-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: left;
+}
+
+.error-title {
+  margin: 0;
+  font-weight: 700;
+  color: #ff4d4d;
+  font-size: 1rem;
+}
+
+.error-details {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text);
+  opacity: 0.8;
+  word-break: break-word;
+}
+
+.retry-btn {
+  align-self: flex-start;
+  margin-top: 0.5rem;
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  padding: 0.5rem 1.2rem;
+  border-radius: 0.6rem;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.retry-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 163, 127, 0.3);
+}
+
+.retry-btn:active {
+  transform: translateY(0);
+}
+
 .generation-info-panel {
   margin-top: 0.8rem;
   padding: 0.8rem;
@@ -159,6 +226,12 @@
   margin-top: -0.6rem; 
   opacity: 1; /* Visible par défaut pour mobile */
   transition: opacity 0.2s;
+  justify-content: flex-end; /* Aligner les boutons à droite par défaut */
+  width: 100%;
+}
+
+.message-actions.has-image {
+  justify-content: center; /* Centrer les boutons quand il y a une image */
 }
 
 @media (min-width: 769px) {

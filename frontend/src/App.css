@@ -76,9 +76,7 @@ body {
 }
 
 .chat-header.hidden {
-  transform: translateY(-100%);
-  position: absolute;
-  width: 100%;
+  display: none;
 }
 
 .header-controls {

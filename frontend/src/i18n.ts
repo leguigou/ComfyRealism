@@ -1,5 +1,3 @@
-export type Language = 'fr' | 'en';
-
 export const translations = {
   fr: {
     title: 'ComfyRealism',
