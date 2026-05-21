@@ -136,14 +136,15 @@
 }
 
 .generation-info-panel {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 0.8rem;
+  margin-top: 0.8rem;
+  padding: 0.8rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 0.6rem;
   border: 1px solid var(--border);
-  font-size: 0.85rem;
+  font-size: 0.75rem; /* Plus petit pour être discret */
   color: var(--text);
-  line-height: 1.6;
+  opacity: 0.85;
+  line-height: 1.4;
   animation: fadeIn 0.3s ease-out;
   word-wrap: break-word;
   overflow-wrap: break-word;
@@ -152,11 +153,13 @@
 }
 
 .generation-info-panel p {
-  margin: 0.4rem 0;
+  margin: 0.2rem 0;
 }
 
 .generation-info-panel strong {
   color: var(--accent);
+  opacity: 0.9;
+  font-weight: 600;
 }
 
 .message-actions { 
