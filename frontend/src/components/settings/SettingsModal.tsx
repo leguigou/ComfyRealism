@@ -97,14 +97,20 @@ export const SettingsModal = ({
   const [isUpdating, setIsUpdating] = useState(false);
   const [showImagePicker, setShowImagePicker] = useState(false);
 
+  // Local states for textareas to allow manual save
+  const [localNegativePrompt, setLocalNegativePrompt] = useState(params.negativePrompt);
+  const [localLLMSystemMessage, setLocalLLMSystemMessage] = useState(params.llmSystemMessage);
+
   useEffect(() => {
     if (showSettings) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setEditUsername(currentUser?.username || '');
       setNewPassword('');
       setConfirmPassword('');
+      setLocalNegativePrompt(params.negativePrompt);
+      setLocalLLMSystemMessage(params.llmSystemMessage);
     }
-  }, [showSettings, currentUser]);
+  }, [showSettings, currentUser, params.negativePrompt, params.llmSystemMessage]);
 
   if (!showSettings) return null;
 
@@ -128,6 +134,15 @@ export const SettingsModal = ({
       toast.error(result.error || t.profileUpdateFailed);
     }
     setIsUpdating(false);
+  };
+
+  const handleSaveTextarea = (field: 'negativePrompt' | 'llmSystemMessage') => {
+    if (field === 'negativePrompt') {
+      setParams({ ...params, negativePrompt: localNegativePrompt });
+    } else {
+      setParams({ ...params, llmSystemMessage: localLLMSystemMessage });
+    }
+    // The App.tsx saveSettings will pick up the change and show a toast
   };
 
   const handleSelectAvatar = async (url: string) => {
@@ -291,7 +306,20 @@ export const SettingsModal = ({
                 </div>
                 <div className="setting-item" style={{ gridColumn: 'span 2', marginTop: '1rem' }}>
                   <label>{t.negativePrompt}</label>
-                  <textarea className="system-message-textarea" value={params.negativePrompt} onChange={(e) => setParams({ ...params, negativePrompt: e.target.value })} rows={3} />
+                  <textarea 
+                    className="system-message-textarea" 
+                    value={localNegativePrompt} 
+                    onChange={(e) => setLocalNegativePrompt(e.target.value)} 
+                    rows={3} 
+                  />
+                  <button 
+                    className="action-btn-small" 
+                    onClick={() => handleSaveTextarea('negativePrompt')}
+                    disabled={localNegativePrompt === params.negativePrompt}
+                    style={{ marginTop: '0.5rem', alignSelf: 'flex-start' }}
+                  >
+                    {t.save}
+                  </button>
                 </div>
               </div>
             </>
@@ -407,7 +435,20 @@ export const SettingsModal = ({
               </div>
               <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                 <label>{t.llmSystemMessage}</label>
-                <textarea className="system-message-textarea" value={params.llmSystemMessage} onChange={(e) => setParams({ ...params, llmSystemMessage: e.target.value })} rows={5} />
+                <textarea 
+                  className="system-message-textarea" 
+                  value={localLLMSystemMessage} 
+                  onChange={(e) => setLocalLLMSystemMessage(e.target.value)} 
+                  rows={5} 
+                />
+                <button 
+                  className="action-btn-small" 
+                  onClick={() => handleSaveTextarea('llmSystemMessage')}
+                  disabled={localLLMSystemMessage === params.llmSystemMessage}
+                  style={{ marginTop: '0.5rem', alignSelf: 'flex-start' }}
+                >
+                  {t.save}
+                </button>
               </div>
             </div>
           )}
@@ -510,8 +551,6 @@ export const SettingsModal = ({
             </div>
           )}
         </div>
-
-        <button className="save-settings-btn" onClick={() => setShowSettings(false)}>{t.save}</button>
       </div>
     </div>
   );

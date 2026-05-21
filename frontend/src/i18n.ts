@@ -12,6 +12,7 @@ export const translations = {
     steps: 'Étapes',
     cfg: 'CFG Scale',
     save: 'Enregistrer',
+    close: 'Fermer',
     square: 'Carré',
     landscape: 'Paysage',
     portrait: 'Portrait',
@@ -94,6 +95,7 @@ export const translations = {
     confirmPassword: 'Confirmer le mot de passe',
     profileUpdated: 'Profil mis à jour !',
     profileUpdateFailed: 'Échec de la mise à jour',
+    settingsSaved: 'Paramètres enregistrés !',
     passwordsDoNotMatch: 'Les mots de passe ne correspondent pas',
     avatarFromFavorites: 'Mes Favoris',
     avatarFromRecent: 'Récents'
@@ -111,6 +113,7 @@ export const translations = {
     steps: 'Steps',
     cfg: 'CFG Scale',
     save: 'Save',
+    close: 'Close',
     square: 'Square',
     landscape: 'Landscape',
     portrait: 'Portrait',
@@ -193,6 +196,7 @@ export const translations = {
     confirmPassword: 'Confirm Password',
     profileUpdated: 'Profile updated!',
     profileUpdateFailed: 'Update failed',
+    settingsSaved: 'Settings saved!',
     passwordsDoNotMatch: 'Passwords do not match',
     avatarFromFavorites: 'My Favorites',
     avatarFromRecent: 'Recent'
