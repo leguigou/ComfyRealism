@@ -280,7 +280,7 @@ export const SettingsModal = ({
 
           {activeTab === 'images' && (
             <>
-              <div className="settings-grid">
+              <div className="settings-row-2">
                 <div className="setting-item">
                   <label>{t.width}</label>
                   <input type="number" value={params.width} onChange={(e) => setParams({ ...params, width: Number(e.target.value) })} step={64} />
@@ -295,7 +295,7 @@ export const SettingsModal = ({
                 <button className={`preset-btn ${params.width === 1216 && params.height === 832 ? 'active' : ''}`} onClick={() => setParams({ ...params, width: 1216, height: 832 })}>3:2 {t.landscape}</button>
                 <button className={`preset-btn ${params.width === 896 && params.height === 1152 ? 'active' : ''}`} onClick={() => setParams({ ...params, width: 896, height: 1152 })}>2:3 {t.portrait}</button>
               </div>
-              <div className="settings-grid" style={{ marginTop: '1.5rem' }}>
+              <div className="settings-row-2" style={{ marginTop: '1.5rem' }}>
                 <div className="setting-item">
                   <label>{t.steps}</label>
                   <input type="number" value={params.steps} onChange={(e) => setParams({ ...params, steps: Number(e.target.value) })} min={1} max={50} />

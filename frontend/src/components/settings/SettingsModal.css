@@ -108,6 +108,12 @@
   gap: 1.5rem; 
 }
 
+.settings-row-2 {
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 1.5rem; 
+}
+
 .setting-item { 
   display: flex; 
   flex-direction: column; 
@@ -729,7 +735,7 @@
 /* Admin Panel Styles */
 .admin-panel h3 {
   margin-top: 0;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   font-size: 1.2rem;
   color: var(--text-h);
 }
@@ -785,6 +791,7 @@
   padding: 1.5rem;
   border-radius: 1rem;
   border: 1px solid var(--border);
+  margin-bottom: 0.5rem; /* Reduced space below form */
 }
 
 .add-user-form input {
