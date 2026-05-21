@@ -355,7 +355,7 @@
 }
 
 @keyframes shimmer { 
-  from { background-position: -200% center; }
+  from { background-position: 200% center; }
   to { background-position: 0% center; }
 }
 
