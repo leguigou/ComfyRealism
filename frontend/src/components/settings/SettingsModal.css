@@ -689,6 +689,46 @@
   color: var(--text-h);
 }
 
+/* Toggle Switch Styles */
+.toggle-container {
+  width: 44px;
+  height: 24px;
+  background-color: var(--sidebar-hover);
+  border-radius: 999px;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border: 1px solid var(--border);
+}
+
+.toggle-container:hover {
+  border-color: var(--accent);
+}
+
+.toggle-container.active,
+.toggle-container:has(.toggle-switch.on) {
+  background-color: var(--accent);
+  border-color: var(--accent);
+}
+
+.toggle-switch {
+  width: 18px;
+  height: 18px;
+  background-color: var(--text);
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-container.active .toggle-switch,
+.toggle-switch.on {
+  transform: translateX(20px);
+  background-color: white;
+}
+
 .add-user-form {
   display: flex;
   gap: 1rem;
