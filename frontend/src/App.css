@@ -135,14 +135,19 @@ body {
 }
 
 .header-ai-toggle:hover {
-  border-color: var(--accent);
-  background-color: var(--accent-bg);
+  background-color: var(--sidebar-hover);
+  border-color: var(--text);
 }
 
 .header-ai-toggle.active {
   border-color: var(--accent);
   background-color: var(--accent-bg);
   box-shadow: 0 0 10px rgba(16, 163, 127, 0.1);
+}
+
+.header-ai-toggle.active:hover {
+  border-color: var(--accent);
+  filter: brightness(1.1);
 }
 
 .ai-icon { font-size: 0.9rem; }
