@@ -6,6 +6,7 @@
 
 ### v.1.3.1 (2026-05-21)
 - **UI/UX Stability Fixes**:
+    - Converted the sidebar to a **fixed overlay layout** with a backdrop blur. This prevents the chat content from shifting or resizing when the menu is toggled, providing a much more stable and professional feel.
     - Resolved critical layout "jittering" and "jumping" at the bottom of the chat by disabling CSS `scroll-behavior: smooth` and implementing a robust JavaScript-driven scroll anchor.
     - Fixed header "flickering" loop by forcing header visibility when scrolled within 50px of the page bottom.
     - Improved `chat-header` transition logic by using `display: none` for hidden states, preventing unexpected height changes.
