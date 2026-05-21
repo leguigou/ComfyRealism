@@ -1,0 +1,381 @@
+import './SettingsModal.css';
+import type { GenParameters, User, Language } from '../../types';
+import { RefreshIcon } from '../ui/Icons';
+import { MarkdownLoader } from '../ui/MarkdownLoader';
+import devLogsUrl from '../../../../DEVELOPMENT_LOGS.md?url';
+import { formatBytes } from '../../services/api';
+
+interface SettingsModalProps {
+  showSettings: boolean;
+  setShowSettings: (show: boolean) => void;
+  activeTab: 'images' | 'comfy' | 'llm' | 'archives' | 'logs' | 'admin';
+  setActiveTab: (tab: 'images' | 'comfy' | 'llm' | 'archives' | 'logs' | 'admin') => void;
+  params: GenParameters;
+  setParams: (params: GenParameters) => void;
+  lang: Language;
+  t: Record<string, string>;
+  currentUser: User | null;
+  comfyModels: string[];
+  isFetchingComfyModels: boolean;
+  fetchComfyModels: () => void;
+  comfyStatus: { type: 'success' | 'error', msg: string } | null;
+  testComfyConnection: () => void;
+  isCheckingComfy: boolean;
+  comfyCheckStatus: { type: 'success' | 'error', msg: string } | null;
+  availableWorkflows: string[];
+  llmModels: string[];
+  isFetchingModels: boolean;
+  fetchLLMModels: () => void;
+  llmStatus: { type: 'success' | 'error', msg: string } | null;
+  testLLMConnection: () => void;
+  isCheckingLLM: boolean;
+  llmCheckStatus: { type: 'success' | 'error', msg: string } | null;
+  adminUsers: User[];
+  newUser: { username: string; password: string; isAdmin: boolean };
+  setNewUser: (user: { username: string; password: string; isAdmin: boolean }) => void;
+  handleAddUser: () => void;
+  isAdminLoading: boolean;
+  deleteUser: (id: string) => void;
+  resetPasswordId: string | null;
+  setResetPasswordId: (id: string | null) => void;
+  newPasswordValue: string;
+  setNewPasswordValue: (val: string) => void;
+  handleResetPassword: (id: string) => void;
+  archiveAllSessions: () => void;
+  deleteAllActiveSessions: () => void;
+}
+
+export const SettingsModal = ({
+  showSettings,
+  setShowSettings,
+  activeTab,
+  setActiveTab,
+  params,
+  setParams,
+  t,
+  currentUser,
+  comfyModels,
+  isFetchingComfyModels,
+  fetchComfyModels,
+  comfyStatus,
+  testComfyConnection,
+  isCheckingComfy,
+  comfyCheckStatus,
+  availableWorkflows,
+  llmModels,
+  isFetchingModels,
+  fetchLLMModels,
+  llmStatus,
+  testLLMConnection,
+  isCheckingLLM,
+  llmCheckStatus,
+  adminUsers,
+  newUser,
+  setNewUser,
+  handleAddUser,
+  isAdminLoading,
+  deleteUser,
+  resetPasswordId,
+  setResetPasswordId,
+  newPasswordValue,
+  setNewPasswordValue,
+  handleResetPassword,
+  archiveAllSessions,
+  deleteAllActiveSessions
+}: SettingsModalProps) => {
+  if (!showSettings) return null;
+
+  return (
+    <div className="settings-modal-overlay" onClick={() => setShowSettings(false)}>
+      <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
+        <button className="settings-close-btn" onClick={() => setShowSettings(false)}>×</button>
+        <h3>{t.settings}</h3>            
+        <div className="settings-tabs">
+          <button className={`tab-btn ${activeTab === 'images' ? 'active' : ''}`} onClick={() => setActiveTab('images')}>{t.tabImages}</button>
+          <button className={`tab-btn ${activeTab === 'comfy' ? 'active' : ''}`} onClick={() => setActiveTab('comfy')}>{t.tabComfy}</button>
+          <button className={`tab-btn ${activeTab === 'llm' ? 'active' : ''}`} onClick={() => setActiveTab('llm')}>{t.tabLLM}</button>
+          <button className={`tab-btn ${activeTab === 'archives' ? 'active' : ''}`} onClick={() => setActiveTab('archives')}>{t.tabArchives}</button>
+          <button className={`tab-btn ${activeTab === 'logs' ? 'active' : ''}`} onClick={() => setActiveTab('logs')}>{t.tabLogs}</button>
+          {currentUser?.isAdmin && (
+            <button className={`tab-btn ${activeTab === 'admin' ? 'active' : ''}`} onClick={() => setActiveTab('admin')}>{t.tabAdmin}</button>
+          )}
+        </div>
+
+        <div className="tab-content">
+          {activeTab === 'logs' && (
+           <div className="settings-grid">
+             <div className="setting-item" style={{ gridColumn: 'span 2' }}>
+               <label>{t.currentVersion}</label>
+               <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v.1.2.67</div>
+               <label>{t.devLogs}</label>
+               <div className="logs-container" style={{
+                 background: 'rgba(0,0,0,0.2)',
+                 padding: '1rem',
+                 borderRadius: '8px',
+                 maxHeight: '400px',
+                 overflowY: 'auto',
+                 fontSize: '0.85rem',
+                 lineHeight: '1.4',
+                 fontFamily: 'inherit'
+               }}>
+                 <div className="markdown-logs">
+                   <MarkdownLoader url={devLogsUrl} />
+                 </div>
+               </div>
+             </div>
+           </div>
+          )}
+
+          {activeTab === 'images' && (
+            <>
+              <div className="settings-grid">
+                <div className="setting-item">
+                  <label>{t.width}</label>
+                  <input type="number" value={params.width} onChange={(e) => setParams({ ...params, width: Number(e.target.value) })} step={64} />
+                </div>
+                <div className="setting-item">
+                  <label>{t.height}</label>
+                  <input type="number" value={params.height} onChange={(e) => setParams({ ...params, height: Number(e.target.value) })} step={64} />
+                </div>
+              </div>
+              <div className="format-presets">
+                <button className={`preset-btn ${params.width === 1024 && params.height === 1024 ? 'active' : ''}`} onClick={() => setParams({ ...params, width: 1024, height: 1024 })}>1:1 {t.square}</button>
+                <button className={`preset-btn ${params.width === 1216 && params.height === 832 ? 'active' : ''}`} onClick={() => setParams({ ...params, width: 1216, height: 832 })}>3:2 {t.landscape}</button>
+                <button className={`preset-btn ${params.width === 896 && params.height === 1152 ? 'active' : ''}`} onClick={() => setParams({ ...params, width: 896, height: 1152 })}>2:3 {t.portrait}</button>
+              </div>
+              <div className="settings-grid" style={{ marginTop: '1.5rem' }}>
+                <div className="setting-item">
+                  <label>{t.steps}</label>
+                  <input type="number" value={params.steps} onChange={(e) => setParams({ ...params, steps: Number(e.target.value) })} min={1} max={50} />
+                </div>
+                <div className="setting-item">
+                  <label>{t.cfg}</label>
+                  <input type="number" value={params.cfg} onChange={(e) => setParams({ ...params, cfg: Number(e.target.value) })} step={0.1} min={1} max={20} />
+                </div>
+                <div className="setting-item" style={{ gridColumn: 'span 2', marginTop: '1rem' }}>
+                  <label>{t.negativePrompt}</label>
+                  <textarea className="system-message-textarea" value={params.negativePrompt} onChange={(e) => setParams({ ...params, negativePrompt: e.target.value })} rows={3} />
+                </div>
+              </div>
+            </>
+          )}
+
+          {activeTab === 'comfy' && (
+            <div className="settings-grid">
+              <div className="setting-item" style={{ gridColumn: 'span 2' }}>
+                <label>{t.comfyUrl}</label>
+                <div className="model-select-group">
+                  <input 
+                    type="text" 
+                    value={params.comfyUrl} 
+                    onChange={(e) => setParams({ ...params, comfyUrl: e.target.value })} 
+                    placeholder="http://127.0.0.1:8188" 
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    className="refresh-models-btn test-conn-btn"
+                    onClick={testComfyConnection}
+                    disabled={isCheckingComfy || !params.comfyUrl}
+                    title={t.testConnection}
+                  >
+                    {isCheckingComfy ? '...' : t.testConnection}
+                  </button>
+                </div>
+                {comfyCheckStatus && <p className={`llm-status-msg ${comfyCheckStatus.type}`}>{comfyCheckStatus.msg}</p>}
+              </div>
+              <div className="setting-item" style={{ gridColumn: 'span 2' }}>
+                <label>{t.checkpointModel}</label>
+                <div className="model-select-group">
+                  <select
+                    value={params.comfyModel}
+                    onChange={(e) => setParams({ ...params, comfyModel: e.target.value })}
+                    className="model-select"
+                  >
+                    {comfyModels.length > 0 ? (
+                      comfyModels.map(m => <option key={m} value={m}>{m}</option>)
+                    ) : (
+                      <option value={params.comfyModel}>{params.comfyModel}</option>
+                    )}
+                  </select>
+                  <button
+                    className="refresh-models-btn"
+                    onClick={fetchComfyModels}
+                    disabled={isFetchingComfyModels || !params.comfyUrl}
+                    title={t.refreshModels}
+                  >
+                    {isFetchingComfyModels ? '...' : <RefreshIcon size={16} />}
+                  </button>
+                </div>
+                {comfyStatus && <p className={`llm-status-msg ${comfyStatus.type}`}>{comfyStatus.msg}</p>}
+              </div>
+              <div className="setting-item" style={{ gridColumn: 'span 2', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
+                <label>{t.workflowFile}</label>
+                <select
+                  value={params.workflowFile}
+                  onChange={(e) => setParams({ ...params, workflowFile: e.target.value })}
+                  className="model-select"
+                >
+                  {availableWorkflows.length > 0 ? (
+                    availableWorkflows.map(wf => <option key={wf} value={wf}>{wf}</option>)
+                  ) : (
+                    <option value={params.workflowFile}>{params.workflowFile}</option>
+                  )}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'llm' && (
+            <div className="settings-grid">
+              <div className="setting-item">
+                <label>{t.llmEnabled}</label>
+                <div className="toggle-container" onClick={() => setParams({ ...params, llmEnabled: !params.llmEnabled })}>
+                  <div className={`toggle-switch ${params.llmEnabled ? 'on' : ''}`}></div>
+                </div>
+              </div>
+              <div className="setting-item" style={{ gridColumn: 'span 2' }}>
+                <label>{t.llmUrl}</label>
+                <div className="model-select-group">
+                  <input 
+                    type="text" 
+                    value={params.llmUrl} 
+                    onChange={(e) => setParams({ ...params, llmUrl: e.target.value })} 
+                    placeholder="http://localhost:11434" 
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    className="refresh-models-btn test-conn-btn"
+                    onClick={testLLMConnection}
+                    disabled={isCheckingLLM || !params.llmUrl}
+                    title={t.testConnection}
+                  >
+                    {isCheckingLLM ? '...' : t.testConnection}
+                  </button>
+                </div>
+                {llmCheckStatus && <p className={`llm-status-msg ${llmCheckStatus.type}`}>{llmCheckStatus.msg}</p>}
+              </div>
+              <div className="setting-item" style={{ gridColumn: 'span 2' }}>
+                <label>{t.llmModel}</label>
+                <div className="model-select-group">
+                  {llmModels.length > 0 ? (
+                    <select value={params.llmModel} onChange={(e) => setParams({ ...params, llmModel: e.target.value })} className="model-select">
+                      {llmModels.map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                  ) : (
+                    <input type="text" value={params.llmModel} onChange={(e) => setParams({ ...params, llmModel: e.target.value })} placeholder="llama3:latest" />
+                  )}
+                  <button className="refresh-models-btn" onClick={fetchLLMModels} disabled={isFetchingModels || !params.llmUrl} title={t.refreshModels}>{isFetchingModels ? '...' : <RefreshIcon size={16} />}</button>
+                </div>
+                {llmStatus && <p className={`llm-status-msg ${llmStatus.type}`}>{llmStatus.msg}</p>}
+              </div>
+              <div className="setting-item" style={{ gridColumn: 'span 2' }}>
+                <label>{t.llmSystemMessage}</label>
+                <textarea className="system-message-textarea" value={params.llmSystemMessage} onChange={(e) => setParams({ ...params, llmSystemMessage: e.target.value })} rows={5} />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'admin' && (
+            <div className="settings-grid admin-panel">
+              <div className="setting-item" style={{ gridColumn: 'span 2' }}>
+                <h3>{t.addUser}</h3>
+                <div className="add-user-form">
+                  <input type="text" placeholder={t.username} value={newUser.username} onChange={(e) => setNewUser({ ...newUser, username: e.target.value })} />
+                  <input type="password" placeholder={t.password} value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} />
+                  <div className="admin-checkbox-wrapper">
+                    <label className="admin-toggle-label">
+                      <span>{t.admin}</span>
+                      <div 
+                        className={`toggle-container ${newUser.isAdmin ? 'active' : ''}`} 
+                        onClick={() => setNewUser({ ...newUser, isAdmin: !newUser.isAdmin })}
+                      >
+                        <div className={`toggle-switch ${newUser.isAdmin ? 'on' : ''}`}></div>
+                      </div>
+                    </label>
+                  </div>
+                  <button className="add-user-submit-btn" onClick={handleAddUser} disabled={isAdminLoading || !newUser.username || !newUser.password}>
+                    {isAdminLoading ? '...' : t.addUser}
+                  </button>
+                </div>
+              </div>
+              
+              <div className="setting-item" style={{ gridColumn: 'span 2' }}>
+                <h3>{t.userList}</h3>
+                <div className="user-table-wrapper">
+                  <table className="user-table">
+                    <thead>
+                      <tr>
+                        <th>{t.username}</th>
+                        <th>{t.role}</th>
+                        <th>{t.images}</th>
+                        <th>{t.diskUsage}</th>
+                        <th>{t.actions}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {adminUsers.map(u => (
+                        <tr key={u.id}>
+                          <td>{u.username}</td>
+                          <td>{u.isAdmin ? t.admin : t.user}</td>
+                          <td>{u.imageCount || 0}</td>
+                          <td>{formatBytes(u.diskUsage || 0)}</td>
+                          <td className="user-actions-cell">
+                            {resetPasswordId === u.id ? (
+                              <div className="reset-password-inline">
+                                <input 
+                                  type="password" 
+                                  placeholder="Nouveau mdp" 
+                                  value={newPasswordValue} 
+                                  onChange={(e) => setNewPasswordValue(e.target.value)} 
+                                  autoFocus
+                                />
+                                <button className="confirm-reset-btn" onClick={() => handleResetPassword(u.id)}>✅</button>
+                                <button className="cancel-reset-btn" onClick={() => setResetPasswordId(null)}>❌</button>
+                              </div>
+                            ) : (
+                              <div className="action-buttons-wrapper">
+                                <button 
+                                  className="reset-user-btn" 
+                                  onClick={() => setResetPasswordId(u.id)}
+                                  title="Modifier le mot de passe"
+                                >
+                                  🔑
+                                </button>
+                                <button 
+                                  className="delete-user-btn" 
+                                  onClick={() => deleteUser(u.id)}
+                                  disabled={u.username === currentUser?.username}
+                                  title="Supprimer l'utilisateur"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {activeTab === 'archives' && (
+            <div className="settings-grid">
+              <div className="setting-item" style={{ gridColumn: 'span 2' }}>
+                <p style={{ fontSize: '0.85rem', marginBottom: '1rem', opacity: 0.8 }}>{t.bulkActions}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                  <button className="action-btn-large" onClick={archiveAllSessions}>📦 {t.archiveAll}</button>
+                  <button className="action-btn-large delete" onClick={deleteAllActiveSessions}>🗑️ {t.deleteAll}</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <button className="save-settings-btn" onClick={() => setShowSettings(false)}>{t.save}</button>
+      </div>
+    </div>
+  );
+};

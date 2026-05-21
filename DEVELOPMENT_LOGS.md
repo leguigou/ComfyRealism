@@ -1,6 +1,20 @@
 # Development Logs
 
-## Current Version: v.1.3.0
+## Current Version: v.1.3.1
+
+---
+
+### v.1.3.1 (2026-05-21)
+- **UI/UX Stability Fixes**:
+    - Resolved critical layout "jittering" and "jumping" at the bottom of the chat by disabling CSS `scroll-behavior: smooth` and implementing a robust JavaScript-driven scroll anchor.
+    - Fixed header "flickering" loop by forcing header visibility when scrolled within 50px of the page bottom.
+    - Improved `chat-header` transition logic by using `display: none` for hidden states, preventing unexpected height changes.
+- **Visual Enhancements**:
+    - Fully styled the **Retry** button for failed generations to match the project's modern aesthetic (accent background, hover effects, and shadow).
+    - Improved error feedback with a dedicated container for generation failures, including title, details, and warning icon.
+- **Maintenance**:
+    - Restored service accessibility by clearing hanging background processes on ports 3001 and 5173.
+    - Synchronized versions across backend and frontend to `v.1.3.1`.
 
 ---
 

@@ -1,0 +1,355 @@
+/* Settings Modal */
+.settings-modal-overlay {
+  position: fixed; 
+  top: 0; 
+  left: 0; 
+  width: 100vw; 
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.8); 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  z-index: 3000;
+}
+
+.settings-modal {
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 1.5rem;
+  padding: 2.5rem;
+  width: 95%;
+  max-width: 850px;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.settings-close-btn {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--sidebar-hover);
+  color: var(--text);
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  line-height: 1;
+}
+
+.settings-close-btn:hover {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+  transform: rotate(90deg);
+}
+
+.settings-modal h3 { 
+  margin: 0 0 2rem 0; 
+  font-size: 1.6rem; 
+  color: var(--text-h); 
+}
+
+.settings-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2.5rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+  overflow-x: auto;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  padding: 0.6rem 1.2rem;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border-radius: 999px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+
+.tab-btn:hover { 
+  background-color: var(--sidebar-hover); 
+  color: var(--text-h);
+}
+
+.tab-btn.active { 
+  background-color: var(--accent); 
+  color: white; 
+  box-shadow: 0 4px 10px rgba(16, 163, 127, 0.2);
+}
+
+.tab-content { 
+  min-height: 350px; 
+  padding: 0.5rem 0; 
+}
+
+.settings-grid { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 1.5rem; 
+}
+
+.setting-item { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 0.6rem; 
+}
+
+.setting-item label { 
+  font-weight: 700; 
+  font-size: 0.85rem; 
+  color: var(--accent); 
+  text-transform: uppercase; 
+  letter-spacing: 0.5px; 
+}
+
+.setting-item input, 
+.setting-item select, 
+.setting-item textarea, 
+.model-select-group {
+  background-color: var(--social-bg); 
+  border: 1px solid var(--border);
+  color: var(--text-h); 
+  padding: 0.8rem 1rem; 
+  border-radius: 0.8rem; 
+  outline: none; 
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.setting-item input:focus, 
+.setting-item select:focus { 
+  border-color: var(--accent); 
+  box-shadow: 0 0 0 1px var(--accent-border);
+}
+
+.format-presets { 
+  display: flex; 
+  gap: 0.8rem; 
+  margin-top: 1rem; 
+}
+
+.preset-btn {
+  flex: 1; 
+  background: var(--social-bg); 
+  border: 1px solid var(--border);
+  color: var(--text); 
+  padding: 0.75rem; 
+  border-radius: 0.8rem;
+  cursor: pointer; 
+  font-size: 0.85rem; 
+  font-weight: 700; 
+  transition: all 0.2s;
+}
+
+.preset-btn:hover { 
+  background-color: var(--sidebar-hover); 
+  border-color: var(--text);
+}
+
+.preset-btn.active { 
+  border-color: var(--accent); 
+  color: var(--accent); 
+  background: var(--accent-bg); 
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.save-settings-btn {
+  width: 100%; 
+  margin-top: 3rem; 
+  padding: 1.1rem;
+  background: linear-gradient(135deg, var(--accent) 0%, #0d8a6a 100%);
+  color: white;
+  border: none; 
+  border-radius: 1rem; 
+  font-weight: 700; 
+  cursor: pointer; 
+  font-size: 1.1rem;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(16, 163, 127, 0.3);
+}
+
+.save-settings-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+  box-shadow: 0 6px 20px rgba(16, 163, 127, 0.4);
+}
+
+.save-settings-btn:active {
+  transform: translateY(0);
+}
+
+/* Confirmation Dialog */
+.confirm-modal {
+  background-color: var(--bg); 
+  border: 1px solid var(--border);
+  border-radius: 1.2rem; 
+  padding: 2.5rem; 
+  width: 95%; 
+  max-width: 450px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7);
+}
+
+.confirm-modal h3 { 
+  margin: 0 0 1.5rem 0; 
+  color: var(--text-h); 
+  font-size: 1.3rem; 
+}
+
+.confirm-buttons { 
+  display: flex; 
+  gap: 1rem; 
+  margin-top: 2.5rem; 
+}
+
+.confirm-btn {
+  flex: 1; 
+  padding: 0.8rem; 
+  border-radius: 0.6rem; 
+  cursor: pointer; 
+  font-weight: 600;
+  transition: all 0.2s; 
+  border: 1px solid var(--border);
+}
+
+.confirm-btn.delete { 
+  background-color: rgba(255, 77, 77, 0.1); 
+  border-color: rgba(255, 77, 77, 0.2); 
+  color: #ff4d4d; 
+}
+
+.confirm-btn.delete:hover { 
+  background-color: #ff4d4d; 
+  color: white; 
+}
+
+.confirm-btn.archive { 
+  background-color: var(--accent-bg); 
+  border-color: var(--accent-border); 
+  color: var(--accent); 
+}
+
+.confirm-btn.archive:hover { 
+  background-color: var(--accent); 
+  color: white; 
+}
+
+.confirm-btn.cancel { 
+  background: transparent; 
+  color: var(--text); 
+}
+
+/* Archives tab buttons */
+.action-btn-large {
+  width: 100%; 
+  padding: 1rem; 
+  border-radius: 0.8rem; 
+  border: 1px solid var(--border);
+  background: var(--social-bg); 
+  color: var(--text-h); 
+  cursor: pointer;
+  font-weight: 600; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  gap: 1rem;
+  transition: all 0.2s;
+}
+
+.action-btn-large:hover { 
+  background-color: var(--accent-bg); 
+  border-color: var(--accent); 
+  color: var(--accent); 
+}
+
+.action-btn-large.delete:hover { 
+  background-color: rgba(255, 77, 77, 0.1); 
+  border-color: #ff4d4d; 
+  color: #ff4d4d; 
+}
+
+.test-conn-btn {
+  width: auto;
+  min-width: 140px;
+  padding: 0 1.2rem;
+}
+
+.model-select-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.model-select {
+  flex: 1;
+}
+
+.refresh-models-btn {
+  background: var(--sidebar-hover);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.6rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  height: 42px;
+  width: 42px;
+}
+
+.refresh-models-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.llm-status-msg {
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 0.4rem;
+}
+
+.llm-status-msg.success {
+  background: rgba(16, 163, 127, 0.1);
+  color: #10a37f;
+}
+
+.llm-status-msg.error {
+  background: rgba(255, 77, 77, 0.1);
+  color: #ff4d4d;
+}
+
+@media (max-width: 768px) {
+  .settings-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .format-presets { flex-wrap: wrap; }
+  .settings-modal { padding: 1.5rem; }
+  .settings-tabs { margin-bottom: 1.5rem; }
+  
+  .model-select-group { 
+    flex-direction: column; 
+    align-items: stretch;
+  }
+  
+  .refresh-models-btn {
+    width: 100% !important;
+    padding: 0.85rem;
+    height: auto;
+    min-height: 44px;
+    font-size: 0.95rem;
+  }
+}

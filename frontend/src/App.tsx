@@ -295,6 +295,12 @@ function App() {
   }, [toggleFavorite]);
 
   const handleLightboxImageClick = useCallback((e: React.MouseEvent) => {
+    // Si on clique sur le conteneur vide autour de l'image, on ferme
+    if (e.target === e.currentTarget) {
+      setActiveLightbox(null);
+      return;
+    }
+
     e.stopPropagation();
     if (!activeLightbox) return;
     if (clickTimeoutRef.current) {
@@ -392,8 +398,21 @@ function App() {
 
   const handleScroll = useCallback(() => {
     if (!containerRef.current) return;
-    const st = containerRef.current.scrollTop;
-    setShowHeader(st <= lastScrollTop.current || st <= 50);
+    const container = containerRef.current;
+    const st = container.scrollTop;
+    const sh = container.scrollHeight;
+    const ch = container.clientHeight;
+
+    // Détection de la fin de page (avec une marge de 50px)
+    const isNearBottom = st + ch >= sh - 50;
+
+    // On affiche toujours le header en haut (st <= 100) ou si on est proche du bas
+    if (st <= 100 || isNearBottom) {
+      setShowHeader(true);
+    } else {
+      // Sinon on suit la direction du scroll
+      setShowHeader(st <= lastScrollTop.current);
+    }
     lastScrollTop.current = st <= 0 ? 0 : st;
   }, []);
 
