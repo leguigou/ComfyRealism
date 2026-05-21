@@ -85,7 +85,18 @@ export const translations = {
     readMore: 'Voir plus',
     readLess: 'Voir moins',
     negativePrompt: 'Prompt Négatif',
-    deleteAll: 'Tout supprimer'
+    deleteAll: 'Tout supprimer',
+    tabProfile: 'Profil',
+    changeAvatar: 'Changer l\'avatar',
+    deleteAvatar: 'Supprimer l\'avatar',
+    selectFromLibrary: 'Choisir dans ma bibliothèque',
+    newPassword: 'Nouveau mot de passe',
+    confirmPassword: 'Confirmer le mot de passe',
+    profileUpdated: 'Profil mis à jour !',
+    profileUpdateFailed: 'Échec de la mise à jour',
+    passwordsDoNotMatch: 'Les mots de passe ne correspondent pas',
+    avatarFromFavorites: 'Mes Favoris',
+    avatarFromRecent: 'Récents'
   },
   en: {
     title: 'ComfyRealism',
@@ -173,7 +184,18 @@ export const translations = {
     readMore: 'Read more',
     readLess: 'Read less',
     negativePrompt: 'Negative Prompt',
-    deleteAll: 'Delete All'
+    deleteAll: 'Delete All',
+    tabProfile: 'Profile',
+    changeAvatar: 'Change Avatar',
+    deleteAvatar: 'Delete Avatar',
+    selectFromLibrary: 'Choose from library',
+    newPassword: 'New Password',
+    confirmPassword: 'Confirm Password',
+    profileUpdated: 'Profile updated!',
+    profileUpdateFailed: 'Update failed',
+    passwordsDoNotMatch: 'Passwords do not match',
+    avatarFromFavorites: 'My Favorites',
+    avatarFromRecent: 'Recent'
   }
 };
 

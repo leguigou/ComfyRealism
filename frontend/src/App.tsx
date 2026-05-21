@@ -40,7 +40,8 @@ function App() {
     loginError, 
     isLoginLoading, 
     login, 
-    logout 
+    logout,
+    updateProfile
   } = useAuth();
 
   const [view, setView] = useState<'chat' | 'gallery' | 'archives'>(() => {
@@ -841,6 +842,7 @@ function App() {
         adminUsers={adminUsers} newUser={newUser} setNewUser={setNewUser} handleAddUser={handleAddUser} isAdminLoading={isAdminLoading}
         deleteUser={internalDeleteUser} resetPasswordId={resetPasswordId} setResetPasswordId={setResetPasswordId} newPasswordValue={newPasswordValue}
         setNewPasswordValue={setNewPasswordValue} handleResetPassword={handleResetPassword} archiveAllSessions={archiveAllSessions} deleteAllActiveSessions={deleteAllActiveSessions}
+        updateProfile={updateProfile} galleryItems={galleryItems} fetchGallery={fetchGallery}
       />
 
       {sessionToDelete && (
@@ -874,7 +876,9 @@ function App() {
         sessions={sessions} currentSessionId={currentSessionId} setCurrentSessionId={setCurrentSessionId}
         renamingId={renamingId} setRenamingId={setRenamingId} renameValue={renameValue} setRenameValue={setRenameValue}
         renameSession={renameSession} toggleArchive={toggleArchive} deleteSession={deleteSession}
-        setShowSettings={setShowSettings} handleLogout={handleLogout}
+        setShowSettings={(show) => { setShowSettings(show); if (show) setSidebarOpen(false); }} 
+        handleLogout={handleLogout}
+        currentUser={currentUser} lang={lang} setLang={setLang} theme={theme} setTheme={setTheme}
       />
 
       <main className="main-content">
@@ -890,11 +894,6 @@ function App() {
               <span className="ai-text">AI</span>
               <div className={`mini-toggle ${params.llmEnabled ? 'on' : ''}`}><div className="mini-toggle-thumb"></div></div>
             </div>
-            <div className="control-group">
-              <button className={`control-pill ${lang === 'fr' ? 'active' : ''}`} onClick={() => setLang('fr')}>FR</button>
-              <button className={`control-pill ${lang === 'en' ? 'active' : ''}`} onClick={() => setLang('en')}>EN</button>
-            </div>
-            <button className="icon-btn theme-toggle" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} title={theme === 'light' ? 'Dark Mode' : 'Light Mode'}>{theme === 'light' ? '🌙' : '☀️'}</button>
           </div>
         </header>
 

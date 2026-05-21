@@ -1,5 +1,7 @@
+import { useState, useRef, useEffect } from 'react';
 import './Sidebar.css';
-import type { Session } from '../../types';
+import type { Session, Language, Theme, User } from '../../types';
+import { getFullImageUrl } from '../../services/api';
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -22,6 +24,11 @@ interface SidebarProps {
   deleteSession: (e: React.MouseEvent, id: string) => void;
   setShowSettings: (show: boolean) => void;
   handleLogout: () => void;
+  currentUser: User | null;
+  lang: Language;
+  setLang: (lang: Language) => void;
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
 }
 
 export const Sidebar = ({
@@ -44,8 +51,28 @@ export const Sidebar = ({
   toggleArchive,
   deleteSession,
   setShowSettings,
-  handleLogout
+  handleLogout,
+  currentUser,
+  lang,
+  setLang,
+  theme,
+  setTheme
 }: SidebarProps) => {
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const userInitial = currentUser?.username?.charAt(0).toUpperCase() || '?';
+
   return (
     <>
       <div className={`sidebar-overlay ${sidebarOpen ? 'visible' : ''}`} onClick={() => setSidebarOpen(false)} />
@@ -113,13 +140,45 @@ export const Sidebar = ({
           ))}
           {view === 'archives' && sessions.length === 0 && <p className="empty-archives-msg">{t.noArchives}</p>}
         </div>
-        <div className="sidebar-footer">
-          <button className="settings-btn" onClick={() => { setShowSettings(true); setSidebarOpen(false); }}>
-            <span>⚙️</span> <span className="btn-label">{t.settings}</span>
-          </button>
-          <button className="settings-btn logout" onClick={handleLogout}>
-            <span>🚪</span> <span className="btn-label">{t.logout}</span>
-          </button>
+
+        <div className="sidebar-footer-profile" ref={profileRef}>
+          {profileMenuOpen && (
+            <div className="profile-popover">
+              <div className="popover-section">
+                <button className="popover-item" onClick={() => { setLang(lang === 'fr' ? 'en' : 'fr'); setProfileMenuOpen(false); }}>
+                  <span>🌐</span> {lang === 'fr' ? 'English (EN)' : 'Français (FR)'}
+                </button>
+                <button className="popover-item" onClick={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); setProfileMenuOpen(false); }}>
+                  <span>{theme === 'dark' ? '☀️' : '🌙'}</span> {theme === 'dark' ? (lang === 'fr' ? 'Mode Clair' : 'Light Mode') : (lang === 'fr' ? 'Mode Sombre' : 'Dark Mode')}
+                </button>
+                <button className="popover-item" onClick={() => { setShowSettings(true); setProfileMenuOpen(false); setSidebarOpen(false); }}>
+                  <span>⚙️</span> {t.settings}
+                </button>
+              </div>
+              <div className="popover-divider" />
+              <button className="popover-item logout" onClick={() => { handleLogout(); setProfileMenuOpen(false); }}>
+                <span>🚪</span> {t.logout}
+              </button>
+            </div>
+          )}
+          
+          <div 
+            className={`profile-pill ${profileMenuOpen ? 'active' : ''}`} 
+            onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+          >
+            <div className="profile-avatar">
+              {currentUser?.avatarUrl ? (
+                <img src={getFullImageUrl(currentUser.avatarUrl)} alt="Avatar" className="profile-avatar-img" />
+              ) : (
+                userInitial
+              )}
+            </div>
+            <div className="profile-info">
+              <span className="profile-name">{currentUser?.username}</span>
+              {currentUser?.isAdmin && <span className="profile-role">Admin</span>}
+            </div>
+            <div className="profile-more">•••</div>
+          </div>
         </div>
       </aside>
     </>

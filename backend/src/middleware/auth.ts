@@ -7,7 +7,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const user = db.prepare('SELECT id, username, isAdmin FROM users WHERE id = ?').get(userId) as any;
+  const user = db.prepare('SELECT id, username, isAdmin, avatarUrl FROM users WHERE id = ?').get(userId) as any;
   if (!user) {
     res.clearCookie('userId');
     return res.status(401).json({ error: 'Unauthorized' });
