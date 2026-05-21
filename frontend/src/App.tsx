@@ -426,18 +426,6 @@ function App() {
     finally { setIsSettingsLoaded(true); }
   }, []);
 
-  const saveSettings = useCallback(async (newParams: GenParameters) => {
-    if (!isSettingsLoaded) return;
-    try {
-      await fetch(`${API_BASE}/api/settings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newParams),
-        credentials: 'include'
-      });
-    } catch (err) { console.error('Error saving settings:', err); }
-  }, [isSettingsLoaded]);
-
   useEffect(() => {
     if (isAuthenticated) {
       fetchSessions();
@@ -448,8 +436,29 @@ function App() {
     }
   }, [isAuthenticated, fetchSessions, fetchComfyModels, fetchSettings, fetchWorkflows]);
 
+  const saveSettings = useCallback(async (newParams: GenParameters) => {
+    if (!isSettingsLoaded) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newParams),
+        credentials: 'include'
+      });
+      if (res.ok) {
+        toast.success(t.settingsSaved, { id: 'settings-save' });
+      }
+    } catch (err) { console.error('Error saving settings:', err); }
+  }, [isSettingsLoaded, t.settingsSaved]);
+
   useEffect(() => {
-    if (isAuthenticated && isSettingsLoaded) saveSettings(params);
+    if (!isAuthenticated || !isSettingsLoaded) return;
+    
+    const timer = setTimeout(() => {
+      saveSettings(params);
+    }, 1000); // Debounce de 1s pour éviter de spammer le serveur (surtout pour le texte)
+
+    return () => clearTimeout(timer);
   }, [params, isAuthenticated, isSettingsLoaded, saveSettings]);
 
   useEffect(() => {

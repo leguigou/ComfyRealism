@@ -131,6 +131,7 @@ body {
   cursor: pointer;
   transition: all 0.2s;
   user-select: none;
+  white-space: nowrap; /* Prevent text from breaking into two lines */
 }
 
 .header-ai-toggle:hover {
@@ -145,10 +146,23 @@ body {
 }
 
 .ai-icon { font-size: 0.9rem; }
-.ai-text { font-size: 0.8rem; font-weight: 700; color: var(--text); }
+.ai-text { 
+  font-size: 0.8rem; 
+  font-weight: 700; 
+  color: var(--text); 
+  flex-shrink: 0; /* Prevent text from shrinking on narrow screens */
+}
 .header-ai-toggle.active .ai-text { color: var(--accent); }
 
-.mini-toggle { width: 28px; height: 16px; background-color: var(--border); border-radius: 999px; position: relative; transition: background-color 0.2s; }
+.mini-toggle { 
+  width: 28px; 
+  height: 16px; 
+  background-color: var(--border); 
+  border-radius: 999px; 
+  position: relative; 
+  transition: background-color 0.2s; 
+  flex-shrink: 0; /* Prevent the toggle pill from shrinking */
+}
 .mini-toggle.on { background-color: var(--accent); }
 .mini-toggle-thumb { width: 12px; height: 12px; background-color: white; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: transform 0.2s; }
 .mini-toggle.on .mini-toggle-thumb { transform: translateX(12px); }

@@ -356,7 +356,7 @@
 
   .format-presets { 
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, 1fr);
     gap: 0.5rem;
   }
   
@@ -619,6 +619,58 @@
 }
 
 /* User Table Profile Icon */
+/* Action Buttons */
+.action-btn-large {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 0.8rem;
+  background: var(--accent);
+  color: white;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(16, 163, 127, 0.2);
+}
+
+.action-btn-large:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 163, 127, 0.3);
+}
+
+.action-btn-large:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-btn-small {
+  align-self: flex-start;
+  margin-top: 0.5rem;
+  padding: 0.5rem 1.2rem;
+  border-radius: 0.6rem;
+  background: var(--accent);
+  color: white;
+  border: none;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn-small:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.action-btn-small:disabled {
+  background: var(--sidebar-hover);
+  color: var(--text);
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .user-profile-icon {
   width: 24px;
   height: 24px;
@@ -627,4 +679,187 @@
   vertical-align: middle;
   margin-right: 8px;
   border: 1px solid var(--border);
+}
+
+/* Admin Panel Styles */
+.admin-panel h3 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  font-size: 1.2rem;
+  color: var(--text-h);
+}
+
+.add-user-form {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  background-color: var(--social-bg);
+  padding: 1.5rem;
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+}
+
+.add-user-form input {
+  flex: 1;
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-h);
+  padding: 0.8rem 1rem;
+  border-radius: 0.8rem;
+  outline: none;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+
+.add-user-form input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-border);
+}
+
+.admin-checkbox-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.admin-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  user-select: none;
+}
+
+.add-user-submit-btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.add-user-submit-btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 163, 127, 0.3);
+}
+
+.add-user-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-buttons-wrapper {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.reset-user-btn,
+.delete-user-btn {
+  background: var(--social-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  width: 36px;
+  height: 36px;
+  border-radius: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1.1rem;
+}
+
+.reset-user-btn:hover {
+  border-color: var(--accent);
+  background-color: var(--accent-bg);
+}
+
+.delete-user-btn:hover:not(:disabled) {
+  border-color: #ff4d4d;
+  background-color: rgba(255, 77, 77, 0.1);
+}
+
+.delete-user-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.reset-password-inline {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.reset-password-inline input {
+  background-color: var(--bg);
+  border: 1px solid var(--accent);
+  color: var(--text-h);
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.6rem;
+  outline: none;
+  font-size: 0.9rem;
+  width: 150px;
+}
+
+.confirm-reset-btn,
+.cancel-reset-btn {
+  background: var(--social-bg);
+  border: 1px solid var(--border);
+  width: 32px;
+  height: 32px;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1rem;
+}
+
+.confirm-reset-btn:hover {
+  background-color: var(--accent-bg);
+  border-color: var(--accent);
+}
+
+.cancel-reset-btn:hover {
+  background-color: rgba(255, 77, 77, 0.1);
+  border-color: #ff4d4d;
+}
+
+@media (max-width: 768px) {
+  .add-user-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .admin-toggle-label {
+    margin: 0.5rem 0;
+  }
+  
+  .reset-password-inline {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .reset-password-inline input {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+  
+  .reset-password-inline .confirm-reset-btn,
+  .reset-password-inline .cancel-reset-btn {
+    width: 100%;
+    height: 40px;
+  }
+  
+  .action-buttons-wrapper {
+    justify-content: flex-start;
+  }
 }
