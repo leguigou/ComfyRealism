@@ -70,22 +70,17 @@
   letter-spacing: -0.5px;
 }
 
-.close-sidebar-mobile { display: none; background: transparent; border: none; color: var(--sidebar-text); font-size: 1.8rem; cursor: pointer; }
-
-.sidebar-overlay { 
+.close-sidebar-mobile { 
   display: none; 
-  position: fixed; 
-  top: 0; 
-  left: 0; 
-  width: 100vw; 
-  height: 100vh; 
-  background-color: rgba(0, 0, 0, 0.5); 
-  z-index: 2050; 
-  cursor: pointer;
+  background: transparent; 
+  border: none; 
+  color: var(--sidebar-text); 
+  font-size: 1.8rem; 
+  cursor: pointer; 
 }
 
 @media (max-width: 768px) {
-  .sidebar-overlay {
+  .close-sidebar-mobile {
     display: block;
   }
 }
