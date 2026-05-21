@@ -10,7 +10,6 @@
   display: flex;
   align-items: flex-start;
   padding: 1rem;
-  gap: 1rem;
   max-width: 850px;
   width: calc(100% - 2rem);
   margin: 0.8rem auto;
@@ -23,18 +22,7 @@
 .message-row.bot { background-color: var(--social-bg); }
 
 .avatar {
-  width: 24px; 
-  height: 24px; 
-  border-radius: 6px;
-  display: flex; 
-  align-items: center; 
-  justify-content: center;
-  font-weight: bold; 
-  font-size: 0.75rem;
-  flex-shrink: 0;
-  background-color: var(--accent); 
-  color: white;
-  margin-top: 0.2rem;
+  display: none; /* Masqué pour gagner de l'espace */
 }
 
 .bot .avatar { background-color: #10a37f; }
