@@ -1,18 +1,28 @@
 # Development Logs
 
-## Current Version: v.1.2.67
+## Current Version: v.1.3.0
+
+---
+
+### v.1.3.0 (2026-05-21)
+- **React Stability Overhaul**: Fixed critical React hook violations including "Cannot access refs during render", synchronous state updates in effects, and variable declaration order issues.
+- **UI Aesthetics**:
+    - Reduced spacing between images and action buttons in the feed for a tighter, more cohesive look.
+    - Added transparency (0.5 opacity) to the favorite heart icon when inactive to make it more discreet on images.
+    - Reversed the "shimmer" animation direction; it now flows from left to right.
+- **Mobile UX**: Improved readability of the welcome screen text on small screens by increasing `line-height` and optimizing font size.
+- **Code Quality**: Cleaned up ESLint warnings, removed unused directives, and improved type safety in `App.tsx`.
+
+---
+
+### v.1.2.68 (2026-05-20)
+- **New Refresh Icon**: Integrated the custom SVG design for all refresh and regenerate buttons.
+- **Cache Invalidation**: Updated Service Worker cache version to force immediate UI updates for all users.
+- **Refactoring Strategy**: Proposed a senior-level architecture plan to decouple `App.tsx` into specialized components and hooks.
 
 ---
 
 ### v.1.2.67 (2026-05-20)
-- **New Refresh Icon**: Replaced all old refresh/regenerate icons with a new, sleek SVG design for better consistency.
-- **UI Refinement**: Improved welcome screen typography with increased `line-height` and padding for better readability on mobile devices.
-- **Info Panel Layout Fix**: Implemented robust word-wrapping for the generation info panel to prevent layout breaks from long names.
-- **Versioning Standard**: Synchronized project version to `v.1.2.67`.
-
----
-
-### v.1.2.66 (2026-05-20)
 - **UI Refinement**: Improved welcome screen typography with increased `line-height` and padding for better readability on mobile devices.
 - **Versioning Standard**: Synchronized project version to `v.1.2.65` across all branches.
 
