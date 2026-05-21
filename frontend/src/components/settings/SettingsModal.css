@@ -45,11 +45,14 @@
   line-height: 1;
 }
 
+@media (hover: hover) {
+
 .settings-close-btn:hover {
   background: var(--accent);
   color: white;
   border-color: var(--accent);
   transform: rotate(90deg);
+}
 }
 
 .settings-modal h3 { 
@@ -80,9 +83,12 @@
   white-space: nowrap;
 }
 
+@media (hover: hover) {
+
 .tab-btn:hover { 
   background-color: var(--sidebar-hover); 
   color: var(--text-h);
+}
 }
 
 .tab-btn.active { 
@@ -155,9 +161,12 @@
   transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .preset-btn:hover { 
   background-color: var(--sidebar-hover); 
   border-color: var(--text);
+}
 }
 
 .preset-btn.active { 
@@ -182,10 +191,13 @@
   box-shadow: 0 4px 15px rgba(16, 163, 127, 0.3);
 }
 
+@media (hover: hover) {
+
 .save-settings-btn:hover {
   transform: translateY(-2px);
   filter: brightness(1.1);
   box-shadow: 0 6px 20px rgba(16, 163, 127, 0.4);
+}
 }
 
 .save-settings-btn:active {
@@ -231,9 +243,12 @@
   color: #ff4d4d; 
 }
 
+@media (hover: hover) {
+
 .confirm-btn.delete:hover { 
   background-color: #ff4d4d; 
   color: white; 
+}
 }
 
 .confirm-btn.archive { 
@@ -242,9 +257,12 @@
   color: var(--accent); 
 }
 
+@media (hover: hover) {
+
 .confirm-btn.archive:hover { 
   background-color: var(--accent); 
   color: white; 
+}
 }
 
 .confirm-btn.cancel { 
@@ -269,16 +287,22 @@
   transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .action-btn-large:hover { 
   background-color: var(--accent-bg); 
   border-color: var(--accent); 
   color: var(--accent); 
 }
+}
+
+@media (hover: hover) {
 
 .action-btn-large.delete:hover { 
   background-color: rgba(255, 77, 77, 0.1); 
   border-color: #ff4d4d; 
   color: #ff4d4d; 
+}
 }
 
 .test-conn-btn {
@@ -312,9 +336,12 @@
   width: 42px;
 }
 
+@media (hover: hover) {
+
 .refresh-models-btn:hover:not(:disabled) {
   border-color: var(--accent);
   color: var(--accent);
+}
 }
 
 .llm-status-msg {
@@ -435,9 +462,12 @@
   flex-shrink: 0;
 }
 
+@media (hover: hover) {
+
 .avatar-preview-wrapper:hover {
   transform: scale(1.05);
   border-color: var(--accent);
+}
 }
 
 .avatar-preview-img {
@@ -466,8 +496,11 @@
   transition: opacity 0.2s;
 }
 
+@media (hover: hover) {
+
 .avatar-preview-wrapper:hover .avatar-edit-overlay {
   opacity: 1;
+}
 }
 
 .avatar-edit-overlay span {
@@ -497,10 +530,13 @@
   margin-bottom: 5px;
 }
 
+@media (hover: hover) {
+
 .remove-avatar-btn:hover {
   background: #ff4d4d;
   color: white;
   border-color: #ff4d4d;
+}
 }
 
 /* Image Picker Modal/Overlay */
@@ -591,9 +627,12 @@
   display: flex; /* Force inner image to fit */
 }
 
+@media (hover: hover) {
+
 .picker-item:hover {
   border-color: var(--accent);
   transform: translateY(-2px);
+}
 }
 
 .picker-item img {
@@ -633,10 +672,13 @@
   box-shadow: 0 4px 12px rgba(16, 163, 127, 0.2);
 }
 
+@media (hover: hover) {
+
 .action-btn-large:hover:not(:disabled) {
   filter: brightness(1.1);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(16, 163, 127, 0.3);
+}
 }
 
 .action-btn-large:disabled {
@@ -658,9 +700,12 @@
   transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .action-btn-small:hover:not(:disabled) {
   filter: brightness(1.1);
   transform: translateY(-1px);
+}
 }
 
 .action-btn-small:disabled {
@@ -701,8 +746,11 @@
   border: 1px solid var(--border);
 }
 
+@media (hover: hover) {
+
 .toggle-container:hover {
   border-color: var(--accent);
+}
 }
 
 .toggle-container.active,
@@ -784,10 +832,13 @@
   white-space: nowrap;
 }
 
+@media (hover: hover) {
+
 .add-user-submit-btn:hover:not(:disabled) {
   filter: brightness(1.1);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(16, 163, 127, 0.3);
+}
 }
 
 .add-user-submit-btn:disabled {
@@ -816,14 +867,20 @@
   font-size: 1.1rem;
 }
 
+@media (hover: hover) {
+
 .reset-user-btn:hover {
   border-color: var(--accent);
   background-color: var(--accent-bg);
 }
+}
+
+@media (hover: hover) {
 
 .delete-user-btn:hover:not(:disabled) {
   border-color: #ff4d4d;
   background-color: rgba(255, 77, 77, 0.1);
+}
 }
 
 .delete-user-btn:disabled {
@@ -863,14 +920,20 @@
   font-size: 1rem;
 }
 
+@media (hover: hover) {
+
 .confirm-reset-btn:hover {
   background-color: var(--accent-bg);
   border-color: var(--accent);
 }
+}
+
+@media (hover: hover) {
 
 .cancel-reset-btn:hover {
   background-color: rgba(255, 77, 77, 0.1);
   border-color: #ff4d4d;
+}
 }
 
 @media (max-width: 768px) {

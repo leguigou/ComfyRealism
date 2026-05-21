@@ -46,6 +46,10 @@ body {
   overflow: hidden;
 }
 
+button, a, input, select, textarea, .session-item, .profile-pill, .control-pill, .icon-btn, .picker-item {
+  -webkit-tap-highlight-color: transparent;
+}
+
 .app-layout {
   display: flex;
   height: 100vh;
@@ -114,10 +118,13 @@ body {
   box-shadow: 0 4px 10px rgba(16, 163, 127, 0.3);
 }
 
+@media (hover: hover) {
+
 .control-pill:not(.active):hover {
   background-color: var(--sidebar-hover);
   border-color: var(--text);
   transform: translateY(-1px);
+}
 }
 
 .header-ai-toggle {
@@ -192,7 +199,10 @@ body {
   transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .icon-btn:hover { background-color: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+}
 
 .header-left { display: flex; align-items: center; gap: 0.8rem; }
 
@@ -211,7 +221,10 @@ body {
   transition: all 0.2s;
 }
 
+@media (hover: hover) {
+
 .toggle-sidebar:hover { border-color: var(--accent); background-color: var(--accent-bg); }
+}
 
 .hamburger-icon {
   width: 18px;
@@ -244,7 +257,9 @@ body {
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; font-size: 1.1rem;
 }
+@media (hover: hover) {
 .header-delete-btn:hover { background-color: rgba(255, 77, 77, 0.1); border-color: #ff4d4d; }
+}
 
 /* Lightbox */
 .lightbox {
@@ -292,7 +307,10 @@ body {
   backdrop-filter: blur(10px); flex-shrink: 0;
 }
 
+@media (hover: hover) {
+
 .lightbox-btn:hover { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+}
 .lightbox-btn.favorite.active { border-color: #ff4b4b; background: rgba(255, 75, 75, 0.15); }
 .lightbox-btn.close { font-size: 1.8rem; }
 .lightbox-btn.go-to-chat { background: var(--accent); border-color: transparent; color: white; }
