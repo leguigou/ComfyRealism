@@ -17,6 +17,7 @@ import { useSessions } from './hooks/useSessions';
 import { useGeneration } from './hooks/useGeneration';
 import { useWebSocket } from './hooks/useWebSocket';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
+import { ComposeIcon } from './components/ui/Icons';
 
 import { Toaster } from 'react-hot-toast';
 
@@ -366,8 +367,6 @@ function App() {
 
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
   const [backendError] = useState(false);
-  const [showHeader, setShowHeader] = useState(true);
-  const lastScrollTop = useRef(0);
 
   const fetchComfyModels = useCallback(async () => {
     setIsFetchingComfyModels(true);
@@ -744,6 +743,8 @@ function App() {
     }
   }, [currentSessionId, fetchSessionDetails, isAuthenticated]);
 
+  const [showSessionMenu, setShowSessionMenu] = useState(false);
+
   if (isAuthenticated === null) return (
     <div className="app-loader">
       <div className="bounced-loader"><div className="bounce1"></div><div className="bounce2"></div><div className="bounce3"></div></div>
@@ -891,17 +892,39 @@ function App() {
       />
 
       <main className="main-content">
-        <header className={`chat-header ${!showHeader ? 'hidden' : ''}`}>
+        <header className="chat-header">
           <div className="header-left">
-            <button className="toggle-sidebar" onClick={() => setSidebarOpen(!sidebarOpen)}>
-              <div className={`hamburger-icon ${sidebarOpen ? 'open' : ''}`}><span></span><span></span><span></span></div>
+            <button className="header-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
+              <div className={`hamburger-icon ${sidebarOpen ? 'open' : ''}`}><span></span><span></span></div>
             </button>
-            {currentSessionId && <button className="header-delete-btn" onClick={(e) => deleteSession(e, currentSessionId)} title={t.delete}>🗑️</button>}
-          </div>
-          <div className="header-controls">
             <div className={`header-ai-toggle ${params.llmEnabled ? 'active' : ''}`} onClick={() => setParams({ ...params, llmEnabled: !params.llmEnabled })} title={t.llmEnabled}>
               <span className="ai-text">AI</span>
               <div className={`mini-toggle ${params.llmEnabled ? 'on' : ''}`}><div className="mini-toggle-thumb"></div></div>
+            </div>
+          </div>
+
+          <div className="header-right">
+            <div className="header-actions-pill">
+              <button className="action-pill-btn" onClick={() => createNewSession()} title="Nouveau message">
+                <ComposeIcon size={18} />
+              </button>
+              <div className="session-menu-container">
+                <button className="action-pill-btn" onClick={() => setShowSessionMenu(!showSessionMenu)}>⋮</button>
+                {showSessionMenu && currentSessionId && (
+                  <>
+                    <div className="dropdown-overlay" onClick={() => setShowSessionMenu(false)} />
+                    <div className="session-dropdown">
+                      <button className="dropdown-item" onClick={() => { setRenamingId(currentSessionId); setRenameValue(sessions.find(s => s.id === currentSessionId)?.title || ''); setShowSessionMenu(false); setSidebarOpen(true); }}>
+                        <span>✎</span> {t.rename}
+                      </button>
+
+                      <button className="dropdown-item delete" onClick={(e) => { deleteSession(e, currentSessionId); setShowSessionMenu(false); }}>
+                        <span>🗑️</span> {t.delete}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </header>

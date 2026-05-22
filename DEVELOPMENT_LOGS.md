@@ -1,6 +1,20 @@
 # Development Logs
 
-## Current Version: v.1.3.1
+## Current Version: v.1.4.0
+
+---
+
+### v.1.4.0 (2026-05-22)
+- **UI/UX Transformation**:
+    - **Header Redesign**: Completely rebuilt the header with rounded components. Includes a 2-line circular burger menu, a pill-style AI toggle, and a unified action group for "New Chat" and session management.
+    - **Chat Input Refinement**: Optimized the input box for a more compact and professional look. It now expands into a rounded rectangle rather than a distorted oval for multi-line text, features a white circular send button, and has a dedicated focus border.
+    - **Session Dropdown**: Added a floating menu (⋮) to the header for quick access to "Rename" and "Delete" actions.
+    - **Fixed Transparency**: Header and Input areas are now fixed and transparent, allowing chat content to flow seamlessly underneath.
+- **Backend & Logic Robustness**:
+    - **LLM Cleanup**: Upgraded the LLM response handler to automatically strip Markdown backticks and extract valid JSON even when the model returns duplicate blocks.
+    - **Session Sync Fix**: Resolved a bug where bot messages were incorrectly filtered out if their text matched the user's prompt during session merges.
+- **Maintenance**:
+    - Synchronized versions across backend and frontend to `v.1.4.0`.
 
 ---
 
