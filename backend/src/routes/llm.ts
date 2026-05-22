@@ -20,16 +20,68 @@ router.post('/enhance-prompt', authenticate, async (req, res) => {
     
     let content = response.data.choices[0].message.content;
     let result = { positive: content, negative: "" };
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
     
-    if (jsonMatch) {
+    // Try to extract JSON from markdown blocks first
+    let jsonStr = null;
+    const jsonBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (jsonBlockMatch) {
+      jsonStr = jsonBlockMatch[1];
+    }
+
+    // Try to extract the first valid JSON object block if no markdown block
+    const extractJSON = (text: string) => {
+      const start = text.indexOf('{');
+      if (start === -1) return null;
+      let depth = 0;
+      for (let i = start; i < text.length; i++) {
+        if (text[i] === '{') depth++;
+        else if (text[i] === '}') {
+          depth--;
+          if (depth === 0) return text.substring(start, i + 1);
+        }
+      }
+      return null;
+    };
+
+    if (!jsonStr) {
+      jsonStr = extractJSON(content);
+    }
+    
+    if (jsonStr) {
       try { 
-        const parsed = JSON.parse(jsonMatch[0]);
+        const parsed = JSON.parse(jsonStr);
         const pos = parsed.positive || parsed.prompt || parsed.positive_prompt || parsed.text;
         const neg = parsed.negative || parsed.negative_prompt || parsed.neg || "";
-        if (pos) { result.positive = pos; result.negative = neg; }
-      } catch (e) {}
+        if (pos) { 
+          result.positive = pos; 
+          if (neg) result.negative = neg; 
+        }
+      } catch (e) {
+        console.error('[LLM] Failed to parse JSON block:', e);
+      }
     }
+
+    // Fallback: If we failed to parse JSON, at least strip the markdown formatting
+    if (result.positive === content) {
+      const stripped = content.replace(/```(?:json)?\s*([\s\S]*?)\s*```/g, '$1').trim();
+      if (stripped.startsWith('{')) {
+         // It might be a valid JSON without markdown
+         try {
+           const parsed = JSON.parse(stripped);
+           if (parsed.positive) {
+             result.positive = parsed.positive;
+             result.negative = parsed.negative || "";
+           } else {
+             result.positive = stripped;
+           }
+         } catch(e) {
+           result.positive = stripped;
+         }
+      } else {
+        result.positive = stripped;
+      }
+    }
+
     res.json({ enhancedPrompt: result.positive, negativePrompt: result.negative });
   } catch (error: any) { 
     res.status(500).json({ error: 'LLM Error: ' + (error.response?.data?.error?.message || error.message) }); 

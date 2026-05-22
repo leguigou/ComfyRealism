@@ -53,7 +53,7 @@ export const useSessions = (view: 'chat' | 'gallery' | 'archives', isAuthenticat
             }
             return newMsg;
           });
-          return [...newMessages, ...tempMessages.filter(tm => !newMessages.some((nm: Message) => nm.prompt === tm.text || nm.text === tm.text))];
+          return [...newMessages, ...tempMessages.filter(tm => !newMessages.some((nm: Message) => nm.role === tm.role && (nm.prompt === tm.text || nm.text === tm.text)))];
         });
       }
     } catch (err) {

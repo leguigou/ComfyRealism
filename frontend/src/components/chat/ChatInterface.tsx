@@ -104,13 +104,15 @@ export const ChatInterface = ({
             )}
             {messages.map((msg, index) => {
               const messageText = msg.text || msg.prompt;
+              // On ne masque le texte que s'il est redondant ET que le message n'est pas en cours de traitement/IA
               const isRedundant = index > 0 && messageText === (messages[index - 1].text || messages[index - 1].prompt);
+              const shouldShowText = messageText && (!isRedundant || (msg.role === 'bot' && (msg.isEnhancing || msg.status === 'pending' || msg.status === 'processing')));
               
               return (
                 <div key={msg.id} id={`msg-${msg.id}`} className={`message-row ${msg.role}`}>
                   <div className="avatar">{msg.role === 'user' ? 'U' : 'C'}</div>
                   <div className="message-content">
-                    {messageText && !isRedundant && (
+                    {shouldShowText && (
                       <div className="message-text-wrapper">
                         {msg.text && msg.text !== msg.prompt && msg.role === 'bot' && <span className="ai-badge" title="Optimisé par l'IA">✨</span>}
                         <MessageText text={messageText} lang={lang} />
