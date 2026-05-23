@@ -1,8 +1,15 @@
 # Development Logs
 
-## Current Version: v.1.5.3
+## Current Version: v.1.5.4
 
 ---
+
+### v.1.5.4 (2026-05-24)
+- **UI Polishing & Stability**:
+    - **Maximized Mobile Layout**: Pushed the options toggle button to the extreme left edge and reduced internal gaps to maximize input space on small screens.
+    - **Solid Aesthetics**: Increased background opacity to 99% for both input and toggle buttons for a more robust and professional look.
+    - **Backend Fixes**: Resolved a critical syntax error (variable redeclaration) in the update checker route that was causing server crashes.
+    - **Version Comparison Logic**: Implemented proper semver comparison to ensure the update checker only notifies when a truly newer version is available.
 
 ### v.1.5.3 (2026-05-24)
 - **Update Tab & UI Refinements**:

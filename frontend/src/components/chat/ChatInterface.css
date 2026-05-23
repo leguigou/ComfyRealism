@@ -464,7 +464,7 @@
 
 /* Input Box Toggle */
 .options-toggle-btn {
-  background-color: rgba(33, 33, 33, 0.95);
+  background-color: rgba(28, 28, 28, 0.99);
   backdrop-filter: blur(10px);
   border: 1px solid var(--border);
   color: var(--text);
@@ -501,7 +501,7 @@
 }
 
 .input-box { 
-  background-color: rgba(33, 33, 33, 0.95);
+  background-color: rgba(28, 28, 28, 0.99);
   backdrop-filter: blur(10px);
   border: 1px solid var(--border); 
   border-radius: 1.5rem; 
@@ -846,6 +846,6 @@
 @media (max-width: 768px) {
   .message-row { width: 100%; border-radius: 0; margin: 0.5rem 0; padding: 1rem; }
   .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 0.6rem; }
-  .input-container { padding: 1rem 0.6rem 2rem; }
-  .input-wrapper { padding: 0; gap: 0.5rem; }
+  .input-container { padding: 1rem 0.4rem 2rem; max-width: 100%; }
+  .input-wrapper { padding: 0; gap: 0.4rem; }
 }
