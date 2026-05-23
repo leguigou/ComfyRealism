@@ -5,6 +5,7 @@ import { RefreshIcon } from '../ui/Icons';
 import { MarkdownLoader } from '../ui/MarkdownLoader';
 import devLogsUrl from '../../assets/DEVELOPMENT_LOGS.md?url';
 import { formatBytes, getFullImageUrl, API_BASE } from '../../services/api';
+import { APP_CONFIG } from '../../config';
 import toast from 'react-hot-toast';
 
 interface SettingsModalProps {
@@ -259,7 +260,7 @@ export const SettingsModal = ({
            <div className="settings-grid">
              <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                <label>{t.currentVersion}</label>
-               <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v.1.5.4</div>
+               <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v.{APP_CONFIG.VERSION}</div>
                <label>{t.devLogs}</label>
                <div className="logs-container" style={{
                  background: 'rgba(0,0,0,0.2)',
