@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import './ChatInterface.css';
 import type { Message, Language, GalleryItem, GenParameters } from '../../types';
 import { WelcomeScreen } from './WelcomeScreen';
@@ -86,14 +86,14 @@ export const ChatInterface = ({
 }: ChatInterfaceProps) => {
   const [showOptions, setShowOptions] = useState(false);
   
-  useEffect(() => {
+  useLayoutEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = 'auto';
-      if (input === '') {
-        textarea.style.height = ''; 
-      } else {
+      if (input) {
         textarea.style.height = `${textarea.scrollHeight}px`;
+      } else {
+        textarea.style.height = ''; 
       }
     }
   }, [input, textareaRef]);

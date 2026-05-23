@@ -565,10 +565,12 @@
   font-family: inherit; 
   max-height: 350px;
   overflow-y: auto; 
-  padding: 0.6rem 0 0.4rem; /* Lowered the text slightly by increasing top padding */
+  padding: 0.6rem 0 0.4rem;
   line-height: 1.4;
   width: 100%;
   display: block;
+  min-height: 1.4em; /* Ensure it at least shows one line */
+  box-sizing: border-box; /* Important for height calculations */
 }
 
 .input-box.has-text textarea {
