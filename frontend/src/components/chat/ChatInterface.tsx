@@ -3,7 +3,7 @@ import './ChatInterface.css';
 import type { Message, Language, GalleryItem, GenParameters } from '../../types';
 import { WelcomeScreen } from './WelcomeScreen';
 import { MessageText } from './MessageText';
-import { InfoIcon, RefreshIcon, SendIcon, ChatIcon, PlusIcon } from '../ui/Icons';
+import { InfoIcon, RefreshIcon, SendIcon, ChatIcon, PlusIcon, XIcon } from '../ui/Icons';
 import { getFullImageUrl, formatDuration } from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -335,26 +335,32 @@ export const ChatInterface = ({
             </div>
           )}
 
-          <div className={`input-box ${params.llmEnabled ? 'ai-active' : ''}`}>
+          <div className="input-wrapper">
             <button className={`options-toggle-btn ${showOptions ? 'active' : ''}`} onClick={() => setShowOptions(!showOptions)} title={t.options}>
               <PlusIcon size={20} />
             </button>
-            <textarea 
-              ref={textareaRef} 
-              value={input} 
-              onChange={(e) => setInput(e.target.value)} 
-              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())} 
-              placeholder={params.llmEnabled ? t.aiPlaceholder : t.placeholder} 
-              rows={1} 
-            />
-            {input && <button className="clear-input-btn" onClick={() => setInput('')} title="Effacer le texte">×</button>}
-            <button className={`send-btn ${isGenerating && !input.trim() ? 'stop-btn' : ''}`} onClick={() => isGenerating && !input.trim() ? interruptGeneration() : handleSend()} disabled={!input.trim() && !isGenerating}>
-              {isGenerating && !input.trim() ? (
-                <div className="stop-icon"></div>
-              ) : (
-                <SendIcon />
+            <div className={`input-box ${params.llmEnabled ? 'ai-active' : ''}`}>
+              <textarea 
+                ref={textareaRef} 
+                value={input} 
+                onChange={(e) => setInput(e.target.value)} 
+                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())} 
+                placeholder={params.llmEnabled ? t.aiPlaceholder : t.placeholder} 
+                rows={1} 
+              />
+              {input && (
+                <button className="clear-input-btn" onClick={() => setInput('')} title="Effacer le texte">
+                  <XIcon size={18} />
+                </button>
               )}
-            </button>
+              <button className={`send-btn ${isGenerating && !input.trim() ? 'stop-btn' : ''}`} onClick={() => isGenerating && !input.trim() ? interruptGeneration() : handleSend()} disabled={!input.trim() && !isGenerating}>
+                {isGenerating && !input.trim() ? (
+                  <div className="stop-icon"></div>
+                ) : (
+                  <SendIcon />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -464,11 +464,11 @@
 
 /* Input Box Toggle */
 .options-toggle-btn {
-  background: transparent;
-  border: none;
+  background: var(--social-bg); /* Use theme variable */
+  border: 1px solid var(--border);
   color: var(--text);
-  width: 32px;
-  height: 32px;
+  width: 50px; /* Matches exact computed height of input-box (padding + content) */
+  height: 50px; 
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -476,22 +476,29 @@
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
-  opacity: 0.6;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .options-toggle-btn:hover {
-  opacity: 1;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--sidebar-hover);
+  border-color: var(--accent);
 }
 
 .options-toggle-btn.active {
-  opacity: 1;
   transform: rotate(45deg);
   color: var(--accent);
+  border-color: var(--accent);
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: flex-end; /* Keeps the toggle button aligned to the bottom when textarea grows */
+  gap: 0.8rem;
+  width: 100%;
 }
 
 .input-box { 
-  background-color: #212121; /* Fond moins transparent (plus sombre) */
+  background-color: var(--social-bg); /* Use theme variable */
   border: 1px solid var(--border); 
   border-radius: 1.5rem; /* Réduit pour garder un aspect rectangulaire pro en multi-ligne */
   padding: 0.4rem 0.6rem 0.4rem 1.2rem; /* Plus compact */
@@ -552,28 +559,36 @@
 }
 
 .clear-input-btn {
-  background: transparent;
-  border: none;
-  color: var(--text);
-  font-size: 1.1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #ff4d4d;
   cursor: pointer;
-  padding: 0 0.3rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.5;
-  transition: all 0.2s;
-  margin-bottom: 0; /* Aligné au centre maintenant */
+  opacity: 0.6;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+.clear-input-btn svg {
+  width: 16px;
+  height: 16px;
+  opacity: 0.8;
 }
 
 @media (hover: hover) {
-
-.clear-input-btn:hover {
-  opacity: 1;
-  color: var(--accent);
-} 
+  .clear-input-btn:hover {
+    opacity: 1;
+    background: rgba(255, 77, 77, 0.1);
+    border-color: rgba(255, 77, 77, 0.3);
+    transform: scale(1.05);
+  }
 }
-
 .read-more-btn { 
   background: transparent; 
   border: none; 
