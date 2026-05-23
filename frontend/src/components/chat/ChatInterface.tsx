@@ -339,7 +339,7 @@ export const ChatInterface = ({
             <button className={`options-toggle-btn ${showOptions ? 'active' : ''}`} onClick={() => setShowOptions(!showOptions)} title={t.options}>
               <PlusIcon size={20} />
             </button>
-            <div className={`input-box ${params.llmEnabled ? 'ai-active' : ''}`}>
+            <div className={`input-box ${params.llmEnabled ? 'ai-active' : ''} ${input ? 'has-text' : ''}`}>
               <textarea 
                 ref={textareaRef} 
                 value={input} 
@@ -348,18 +348,20 @@ export const ChatInterface = ({
                 placeholder={params.llmEnabled ? t.aiPlaceholder : t.placeholder} 
                 rows={1} 
               />
-              {input && (
-                <button className="clear-input-btn" onClick={() => setInput('')} title="Effacer le texte">
-                  <XIcon size={18} />
-                </button>
-              )}
-              <button className={`send-btn ${isGenerating && !input.trim() ? 'stop-btn' : ''}`} onClick={() => isGenerating && !input.trim() ? interruptGeneration() : handleSend()} disabled={!input.trim() && !isGenerating}>
-                {isGenerating && !input.trim() ? (
-                  <div className="stop-icon"></div>
-                ) : (
-                  <SendIcon />
+              <div className="input-box-actions">
+                {input && (
+                  <button className="clear-input-btn" onClick={() => setInput('')} title="Effacer le texte">
+                    <XIcon size={18} />
+                  </button>
                 )}
-              </button>
+                <button className={`send-btn ${isGenerating && !input.trim() ? 'stop-btn' : ''}`} onClick={() => isGenerating && !input.trim() ? interruptGeneration() : handleSend()} disabled={!input.trim() && !isGenerating}>
+                  {isGenerating && !input.trim() ? (
+                    <div className="stop-icon"></div>
+                  ) : (
+                    <SendIcon />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

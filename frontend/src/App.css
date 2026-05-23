@@ -312,8 +312,7 @@ button.click-feedback,
   color: white !important;
 }
 
-.dropdown-item.delete:hover {
-
+.dropdown-item.delete {
   color: #ff4d4d;
 }
 
@@ -329,6 +328,7 @@ button.click-feedback,
   bottom: 0;
   z-index: 1500;
   background: transparent;
+  pointer-events: auto; /* Ensure it receives clicks despite header being pointer-events: none */
 }
 
 /* Lightbox */
