@@ -1,6 +1,15 @@
 # Development Logs
 
-## Current Version: v.1.5.1
+## Current Version: v.1.5.2
+
+---
+
+### v.1.5.2 (2026-05-23)
+- **Chat Input Layout Optimization**:
+    - **Adaptive Layout**: Implemented a dynamic layout for the chat input that switches from a compact horizontal view (when empty) to a stacked vertical view (when text is present). This prevents horizontal layout shifts when the "clear text" button appears.
+    - **Symmetrical Design**: Ensured perfectly symmetrical spacing for the toggle button and input area on mobile devices by adjusting the wrapper's side padding.
+    - **Improved Clear Button**: Replaced the text-based cross with a new `XIcon` component and styled it as a discrete circular button with a gray border and subtle red hover state.
+    - **Button Positioning**: Refactored action buttons (Clear and Send) to reside in a dedicated bottom-right row within the input box during vertical mode for better UX on longer prompts.
 
 ---
 
