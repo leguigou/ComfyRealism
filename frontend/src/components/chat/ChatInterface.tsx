@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useLayoutEffect } from 'react';
 import './ChatInterface.css';
 import type { Message, Language, GalleryItem, GenParameters } from '../../types';
 import { WelcomeScreen } from './WelcomeScreen';
@@ -89,11 +89,21 @@ export const ChatInterface = ({
   useLayoutEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
+      // Step 1: Reset height to auto to get the correct scrollHeight
       textarea.style.height = 'auto';
+      
+      // Step 2: Get the scrollHeight
+      const scrollHeight = textarea.scrollHeight;
+      
       if (input) {
-        textarea.style.height = `${textarea.scrollHeight}px`;
+        // Step 3: Apply the height (it will be capped by max-height in CSS)
+        textarea.style.height = `${scrollHeight}px`;
+        // Step 4: Manage overflow based on height
+        textarea.style.overflowY = scrollHeight >= 350 ? 'auto' : 'hidden';
       } else {
-        textarea.style.height = ''; 
+        // Reset to initial state when empty
+        textarea.style.height = '';
+        textarea.style.overflowY = 'hidden';
       }
     }
   }, [input, textareaRef]);

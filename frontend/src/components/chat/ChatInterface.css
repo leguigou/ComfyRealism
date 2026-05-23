@@ -464,7 +464,8 @@
 
 /* Input Box Toggle */
 .options-toggle-btn {
-  background: var(--social-bg); /* Use theme variable */
+  background-color: rgba(33, 33, 33, 0.95);
+  backdrop-filter: blur(10px);
   border: 1px solid var(--border);
   color: var(--text);
   width: 50px; /* Matches exact computed height of input-box (padding + content) */
@@ -500,7 +501,8 @@
 }
 
 .input-box { 
-  background-color: var(--social-bg);
+  background-color: rgba(33, 33, 33, 0.95);
+  backdrop-filter: blur(10px);
   border: 1px solid var(--border); 
   border-radius: 1.5rem; 
   padding: 0.4rem 0.6rem 0.4rem 1.2rem;
@@ -564,7 +566,7 @@
   resize: none; 
   font-family: inherit; 
   max-height: 350px;
-  overflow-y: auto; 
+  overflow-y: hidden; 
   padding: 0.6rem 0 0.4rem;
   line-height: 1.4;
   width: 100%;
@@ -575,6 +577,7 @@
 
 .input-box.has-text textarea {
   padding: 0; /* Remove extra padding when there's text to maximize space */
+  flex: none;
 }
 
 .input-box textarea::placeholder {
@@ -595,7 +598,7 @@
 
 .clear-input-btn {
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border);
+  border: 1px solid #ff4d4d;
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -843,4 +846,6 @@
 @media (max-width: 768px) {
   .message-row { width: 100%; border-radius: 0; margin: 0.5rem 0; padding: 1rem; }
   .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 0.6rem; }
+  .input-container { padding: 1rem 0.6rem 2rem; }
+  .input-wrapper { padding: 0; gap: 0.5rem; }
 }
