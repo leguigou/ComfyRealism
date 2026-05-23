@@ -1,6 +1,15 @@
 # Development Logs
 
-## Current Version: v.1.5.0
+## Current Version: v.1.5.1
+
+---
+
+### v.1.5.1 (2026-05-23)
+- **UI/UX Refinements**:
+    - **Chat Input Redesign**: Extracted the options toggle button (`+`) out of the input box, making it a standalone circular button perfectly aligned in height with the input box.
+    - **Theme Compatibility**: Replaced hardcoded dark mode colors in the chat input and toggle button with CSS variables (`var(--social-bg)`) to ensure proper display in light mode.
+    - **Dropdown Interaction**: Fixed an issue where clicking outside the top-right session menu (⋮) wouldn't close it. The invisible overlay was replaced with a robust `useRef` and `useEffect` approach for detecting outside clicks.
+    - **Red Destructive Actions**: The "Delete" option in the session dropdown menu is now consistently red, rather than only turning red on hover.
 
 ---
 
