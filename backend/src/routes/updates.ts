@@ -19,12 +19,31 @@ router.get('/check', async (req, res) => {
     });
 
     const latestRelease = response.data;
-    const latestVersion = latestRelease.tag_name.replace('v', '');
+    // Clean version strings: remove 'v', leading dots, and whitespace
+    const clean = (v: string) => v.replace(/^v/, '').replace(/^\./, '').trim();
+    
+    const currentVersion = clean(pkg.version);
+    const latestVersion = clean(latestRelease.tag_name);
+    
+    // Simple semver comparison: returns true if latest > current
+    const isNewer = (latest: string, current: string) => {
+      const l = latest.split('.').map(Number);
+      const c = current.split('.').map(Number);
+      for (let i = 0; i < Math.max(l.length, c.length); i++) {
+        const lNum = l[i] || 0;
+        const cNum = c[i] || 0;
+        if (lNum > cNum) return true;
+        if (lNum < cNum) return false;
+      }
+      return false;
+    };
+
+    const updateAvailable = isNewer(latestVersion, currentVersion);
     
     res.json({
       currentVersion,
       latestVersion,
-      updateAvailable: latestVersion !== currentVersion,
+      updateAvailable,
       releaseUrl: latestRelease.html_url,
       releaseNotes: latestRelease.body,
       publishedAt: latestRelease.published_at
