@@ -723,6 +723,25 @@ function App() {
   }, [activeLightbox, messages, galleryItems, currentSessionId]);
 
   const [showSessionMenu, setShowSessionMenu] = useState(false);
+  const sessionMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (sessionMenuRef.current && !sessionMenuRef.current.contains(event.target as Node)) {
+        setShowSessionMenu(false);
+      }
+    };
+
+    if (showSessionMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [showSessionMenu]);
 
   useEffect(() => {
     const handleVisualFeedback = (e: MouseEvent | TouchEvent) => {
@@ -880,21 +899,18 @@ function App() {
               <button className="action-pill-btn" onClick={() => createNewSession()} title="Nouveau message">
                 <ComposeIcon size={18} />
               </button>
-              <div className="session-menu-container">
+              <div className="session-menu-container" ref={sessionMenuRef}>
                 <button className="action-pill-btn" onClick={() => setShowSessionMenu(!showSessionMenu)}>⋮</button>
                 {showSessionMenu && currentSessionId && (
-                  <>
-                    <div className="dropdown-overlay" onClick={() => setShowSessionMenu(false)} />
-                    <div className="session-dropdown">
-                      <button className="dropdown-item" onClick={() => { setRenamingId(currentSessionId); setRenameValue(sessions.find(s => s.id === currentSessionId)?.title || ''); setShowSessionMenu(false); setSidebarOpen(true); }}>
-                        <span>✎</span> {t.rename}
-                      </button>
+                  <div className="session-dropdown">
+                    <button className="dropdown-item" onClick={() => { setRenamingId(currentSessionId); setRenameValue(sessions.find(s => s.id === currentSessionId)?.title || ''); setShowSessionMenu(false); setSidebarOpen(true); }}>
+                      <span>✎</span> {t.rename}
+                    </button>
 
-                      <button className="dropdown-item delete" onClick={(e) => { deleteSession(e, currentSessionId); setShowSessionMenu(false); }}>
-                        <span>🗑️</span> {t.delete}
-                      </button>
-                    </div>
-                  </>
+                    <button className="dropdown-item delete" onClick={(e) => { deleteSession(e, currentSessionId); setShowSessionMenu(false); }}>
+                      <span>🗑️</span> {t.delete}
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
