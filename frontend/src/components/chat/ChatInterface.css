@@ -492,32 +492,57 @@
 
 .input-wrapper {
   display: flex;
-  align-items: flex-end; /* Keeps the toggle button aligned to the bottom when textarea grows */
+  align-items: flex-end;
   gap: 0.8rem;
   width: 100%;
+  padding: 0 0.5rem; /* Symmetrical side padding for the whole wrapper on mobile */
+  box-sizing: border-box;
 }
 
 .input-box { 
-  background-color: var(--social-bg); /* Use theme variable */
+  background-color: var(--social-bg);
   border: 1px solid var(--border); 
-  border-radius: 1.5rem; /* Réduit pour garder un aspect rectangulaire pro en multi-ligne */
-  padding: 0.4rem 0.6rem 0.4rem 1.2rem; /* Plus compact */
+  border-radius: 1.5rem; 
+  padding: 0.4rem 0.6rem 0.4rem 1.2rem;
   display: flex; 
-  align-items: center; /* Centrer verticalement les icônes */
+  flex-direction: row; /* Default horizontal */
+  align-items: center;
   gap: 0.5rem; 
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); 
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  min-height: 44px; /* Hauteur réduite */
+  min-height: 44px;
+  flex: 1;
+}
+
+/* Vertical layout only when there is text */
+.input-box.has-text {
+  flex-direction: column;
+  align-items: stretch;
+  border-radius: 1.2rem;
+  padding: 0.8rem 1rem 0.6rem;
+  gap: 0.4rem;
+}
+
+.input-box-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* Align actions to right in horizontal mode (when empty) */
+.input-box:not(.has-text) .input-box-actions {
+  flex-shrink: 0;
 }
 
 .input-box:focus-within {
-  border-color: var(--accent); /* Contour vert émeraude au focus */
+  border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent), 0 8px 30px rgba(0, 0, 0, 0.4);
 }
 
 .input-box.ai-active {
-  border: 2px solid transparent; /* Grossissement de 1px (total 2px) */
+  border: 2px solid transparent;
   animation: ai-glow 3s infinite linear;
   box-shadow: 0 0 15px rgba(16, 163, 127, 0.2);
 }
@@ -535,21 +560,29 @@
   border: none; 
   outline: none; 
   color: var(--text-h); 
-  font-size: 1rem; /* Slightly larger */
+  font-size: 1rem;
   resize: none; 
   font-family: inherit; 
-  max-height: 350px; /* Kept large for desktop long prompts */
+  max-height: 350px;
   overflow-y: auto; 
-  padding: 0.4rem 0; /* Reverted padding to fix centering */
+  padding: 0.6rem 0 0.4rem; /* Lowered the text slightly by increasing top padding */
   line-height: 1.4;
+  width: 100%;
+  display: block;
+}
+
+.input-box.has-text textarea {
+  padding: 0; /* Remove extra padding when there's text to maximize space */
 }
 
 .input-box textarea::placeholder {
-  color: #8e8ea0; /* Couleur grise plus proche de ChatGPT */
+  color: #8e8ea0;
   opacity: 1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  /* Ensure the placeholder starts at the same vertical point */
+  line-height: 1.4; 
 }
 
 @media (max-width: 480px) {
