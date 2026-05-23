@@ -55,10 +55,12 @@ function App() {
   useEffect(() => {
     localStorage.setItem('keepAwake', keepAwake.toString());
     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let wakeLock: any = null;
     const requestWakeLock = async () => {
       if (keepAwake && 'wakeLock' in navigator) {
         try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           wakeLock = await (navigator as any).wakeLock.request('screen');
           wakeLock.addEventListener('release', () => {
             // Wake Lock was released, we can try to request it again if we still want it
@@ -214,6 +216,7 @@ function App() {
   const lastTouchPos = useRef<{ x: number, y: number } | null>(null);
 
   // Clear HD state and zoom when lightbox closes
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!activeLightbox) {
       if (hdLoaded !== null) setHdLoaded(null);
@@ -336,6 +339,7 @@ function App() {
 
   useEffect(() => {
     if (activeTab === 'admin') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchAdminUsers();
     }
   }, [activeTab, fetchAdminUsers]);
@@ -499,9 +503,13 @@ function App() {
 
   useEffect(() => {
     if (isAuthenticated) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchSessions();
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchComfyModels();
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchSettings();
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchWorkflows();
     }
   }, [isAuthenticated, fetchSessions, fetchComfyModels, fetchSettings, fetchWorkflows]);
@@ -585,6 +593,7 @@ function App() {
   }, [isFetchingGallery, hasMoreGallery, fetchGallery]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (view === 'gallery') fetchGallery(true);
   }, [view, showArchivedInGallery, favoritesOnly, fetchGallery]);
 

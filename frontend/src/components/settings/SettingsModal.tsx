@@ -3,7 +3,7 @@ import './SettingsModal.css';
 import type { GenParameters, User, Language, GalleryItem } from '../../types';
 import { RefreshIcon } from '../ui/Icons';
 import { MarkdownLoader } from '../ui/MarkdownLoader';
-import devLogsUrl from '../../../../DEVELOPMENT_LOGS.md?url';
+import devLogsUrl from '../../assets/DEVELOPMENT_LOGS.md?url';
 import { formatBytes, getFullImageUrl } from '../../services/api';
 import toast from 'react-hot-toast';
 
