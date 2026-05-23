@@ -130,7 +130,13 @@ export const Sidebar = ({
                     {s.isArchived ? (
                       <button className="edit-session" onClick={(e) => { e.stopPropagation(); toggleArchive(s.id, false); }} title={t.unarchive}>📤</button>
                     ) : (
-                      <button className="edit-session" onClick={(e) => { e.stopPropagation(); setRenamingId(s.id); setRenameValue(s.title); }} title={t.edit}>✎</button>
+                      <button className="edit-session" onClick={(e) => { 
+                        e.stopPropagation(); 
+                        if (window.innerWidth > 768) {
+                          setRenamingId(s.id); 
+                          setRenameValue(s.title); 
+                        }
+                      }} title={t.edit} style={{ display: window.innerWidth <= 768 ? 'none' : 'flex' }}>✎</button>
                     )}
                     <button className="delete-session" onClick={(e) => deleteSession(e, s.id)}>🗑️</button>
                   </div>

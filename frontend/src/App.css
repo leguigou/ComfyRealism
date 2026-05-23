@@ -76,7 +76,6 @@ button.click-feedback,
   border-color: var(--accent) !important;
   opacity: 1 !important;
   box-shadow: 0 0 15px var(--accent) !important;
-  z-index: 100;
 }
 
 .click-feedback * {
