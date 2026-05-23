@@ -18,13 +18,7 @@ import { useGeneration } from './hooks/useGeneration';
 import { useWebSocket } from './hooks/useWebSocket';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { ComposeIcon } from './components/ui/Icons';
-
-import { Toaster } from 'react-hot-toast';
-
-// Memoize sub-components to avoid unnecessary re-renders
-const MemoSidebar = memo(Sidebar);
-const MemoSettingsModal = memo(SettingsModal);
-const MemoChatInterface = memo(ChatInterface);
+import { Toaster, toast } from 'react-hot-toast';
 
 function App() {
   const [lang, setLang] = useState<Language>(() => {
@@ -105,7 +99,9 @@ function App() {
       negativePrompt: "low quality, bad anatomy, malformed, extra limbs, extra fingers, fused fingers, bad hands, poorly drawn hands, missing fingers, fused face, poorly drawn face, asymmetrical, cartoon, anime, 3d, render, watermark, text, logo, swept hair, portrait",
       llmEnabled: false,
       workflowFile: 'workflow_lcm.json',
-      nodeMapping: { checkpoint: "1", positive: "3", negative: "4", ksampler: "10", latent: "6", save: "99" }
+      nodeMapping: { checkpoint: "1", positive: "3", negative: "4", ksampler: "10", latent: "6", save: "99" },
+      seedMode: 'random',
+      forcedSeed: ''
     };
   });
 
@@ -177,11 +173,11 @@ function App() {
   // Clear HD state and zoom when lightbox closes
   useEffect(() => {
     if (!activeLightbox) {
-      setHdLoaded(null);
+      if (hdLoaded !== null) setHdLoaded(null);
       setZoomScale(1);
       setZoomOffset({ x: 0, y: 0 });
     }
-  }, [activeLightbox]);
+  }, [activeLightbox, hdLoaded]);
 
   const handleLightboxTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 2) {
@@ -297,7 +293,6 @@ function App() {
 
   useEffect(() => {
     if (activeTab === 'admin') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchAdminUsers();
     }
   }, [activeTab, fetchAdminUsers]);
@@ -352,7 +347,6 @@ function App() {
   }, [toggleFavorite]);
 
   const handleLightboxImageClick = useCallback((e: React.MouseEvent) => {
-    // Si on clique sur le conteneur vide autour de l'image, on ferme
     if (e.target === e.currentTarget) {
       setActiveLightbox(null);
       return;
@@ -463,7 +457,6 @@ function App() {
   useEffect(() => {
     if (isAuthenticated) {
       fetchSessions();
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchComfyModels();
       fetchSettings();
       fetchWorkflows();
@@ -473,25 +466,18 @@ function App() {
   const saveSettings = useCallback(async (newParams: GenParameters) => {
     if (!isSettingsLoaded) return;
     try {
-      const res = await fetch(`${API_BASE}/api/settings`, {
+      await fetch(`${API_BASE}/api/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newParams),
         credentials: 'include'
       });
-      if (res.ok) {
-        toast.success(t.settingsSaved, { id: 'settings-save' });
-      }
     } catch (err) { console.error('Error saving settings:', err); }
-  }, [isSettingsLoaded, t.settingsSaved]);
+  }, [isSettingsLoaded]);
 
   useEffect(() => {
     if (!isAuthenticated || !isSettingsLoaded) return;
-    
-    const timer = setTimeout(() => {
-      saveSettings(params);
-    }, 1000); // Debounce de 1s pour éviter de spammer le serveur (surtout pour le texte)
-
+    const timer = setTimeout(() => saveSettings(params), 1000);
     return () => clearTimeout(timer);
   }, [params, isAuthenticated, isSettingsLoaded, saveSettings]);
 
@@ -524,21 +510,16 @@ function App() {
 
   const fetchGallery = useCallback(async (isInitial = false) => {
     if (isFetchingGallery || (!hasMoreGallery && !isInitial)) return;
-    
     setIsFetchingGallery(true);
-    // On utilise l'offset local pour l'appel API
     const currentOffset = isInitial ? 0 : galleryOffset;
-    
     try {
       const res = await fetch(`${API_BASE}/api/gallery?limit=25&offset=${currentOffset}&includeArchived=${showArchivedInGallery}&favoritesOnly=${favoritesOnly}`, { credentials: 'include' });
       const data: GalleryItem[] = await res.json();
-      
       if (isInitial) {
         setGalleryItems(data);
         setGalleryOffset(data.length);
       } else if (data.length > 0) {
         setGalleryItems(prev => {
-          // Éviter les doublons par ID de message
           const existingIds = new Set(prev.map(item => item.messageId));
           const uniqueNewData = data.filter(item => !existingIds.has(item.messageId));
           return [...prev, ...uniqueNewData];
@@ -546,11 +527,8 @@ function App() {
         setGalleryOffset(prev => prev + data.length);
       }
       setHasMoreGallery(data.length === 25);
-    } catch (err) { 
-      console.error('Error fetching gallery:', err); 
-    } finally { 
-      setIsFetchingGallery(false); 
-    }
+    } catch (err) { console.error('Error fetching gallery:', err); }
+    finally { setIsFetchingGallery(false); }
   }, [galleryOffset, hasMoreGallery, isFetchingGallery, showArchivedInGallery, favoritesOnly]);
 
   const observer = useRef<IntersectionObserver | null>(null);
@@ -558,24 +536,14 @@ function App() {
     if (isFetchingGallery) return;
     if (observer.current) observer.current.disconnect();
     observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMoreGallery) {
-        fetchGallery(false);
-      }
-    }, {
-      rootMargin: '400px', // Plus de marge pour un chargement anticipé
-      threshold: 0
-    });
+      if (entries[0].isIntersecting && hasMoreGallery) fetchGallery(false);
+    }, { rootMargin: '400px', threshold: 0 });
     if (node) observer.current.observe(node);
   }, [isFetchingGallery, hasMoreGallery, fetchGallery]);
 
-  // Déclencher le chargement initial uniquement quand nécessaire
   useEffect(() => {
-    if (view === 'gallery') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      fetchGallery(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, showArchivedInGallery, favoritesOnly]); // Supprimer fetchGallery des dépendances pour casser la boucle
+    if (view === 'gallery') fetchGallery(true);
+  }, [view, showArchivedInGallery, favoritesOnly, fetchGallery]);
 
   const fetchLLMModels = useCallback(async () => {
     if (!params.llmUrl) return;
@@ -605,11 +573,7 @@ function App() {
     setView('chat');
     pendingAnchorRef.current = messageId;
     isAnchoringRef.current = true;
-    
-    // Fallback security if messages don't load or something fails
-    setTimeout(() => {
-      if (isAnchoringRef.current) isAnchoringRef.current = false;
-    }, 5000);
+    setTimeout(() => { if (isAnchoringRef.current) isAnchoringRef.current = false; }, 5000);
   }, [setCurrentSessionId]);
 
   useEffect(() => {
@@ -619,12 +583,9 @@ function App() {
       if (element) {
         pendingAnchorRef.current = null;
         isAnchoringRef.current = true;
-        
-        // Wait a bit for layout to stabilize
         setTimeout(() => {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' });
           element.classList.add('highlight-message');
-          
           setTimeout(() => {
             element.classList.remove('highlight-message');
             isAnchoringRef.current = false;
@@ -637,10 +598,7 @@ function App() {
   const handleEdit = useCallback((text: string) => {
     setInput(text);
     setView('chat');
-    // Petit délai pour laisser à React le temps de basculer la vue et de rendre le textarea
-    setTimeout(() => {
-      textareaRef.current?.focus();
-    }, 50);
+    setTimeout(() => textareaRef.current?.focus(), 50);
   }, []);
 
   const touchStart = useRef<number | null>(null);
@@ -653,33 +611,18 @@ function App() {
     if (activeLightbox && Math.abs(distance) > 50) {
       const isNext = distance > 0;
       const items = activeLightbox.source === 'chat' ? messages.filter(m => m.imageUrl) : galleryItems;
-      const currentIndex = items.findIndex(m => {
-        if (activeLightbox.source === 'chat') return (m as Message).id === activeLightbox.messageId;
-        return (m as GalleryItem).messageId === activeLightbox.messageId;
-      });
+      const currentIndex = items.findIndex(m => (activeLightbox.source === 'chat' ? (m as Message).id : (m as GalleryItem).messageId) === activeLightbox.messageId);
       if (currentIndex !== -1) {
         const nextIdx = isNext ? currentIndex + 1 : currentIndex - 1;
         if (nextIdx >= 0 && nextIdx < items.length) {
           const next = items[nextIdx];
-          setHdLoaded(null); // Reset loader state for next image
+          setHdLoaded(null);
           if (activeLightbox.source === 'chat') {
             const m = next as Message;
-            setActiveLightbox({ 
-              url: m.imageUrl!, 
-              thumbnailUrl: m.thumbnailUrl,
-              sessionId: currentSessionId || '', 
-              messageId: m.id, 
-              source: 'chat' 
-            });
+            setActiveLightbox({ url: m.imageUrl!, thumbnailUrl: m.thumbnailUrl, sessionId: currentSessionId || '', messageId: m.id, source: 'chat' });
           } else {
             const g = next as GalleryItem;
-            setActiveLightbox({ 
-              url: g.imageUrl, 
-              thumbnailUrl: g.thumbnailUrl,
-              sessionId: g.sessionId, 
-              messageId: g.messageId, 
-              source: 'gallery' 
-            });
+            setActiveLightbox({ url: g.imageUrl, thumbnailUrl: g.thumbnailUrl, sessionId: g.sessionId, messageId: g.messageId, source: 'gallery' });
           }
         }
       }
@@ -699,103 +642,49 @@ function App() {
   const onHandleSend = useCallback((override?: string, regen?: boolean) => {
     const text = override !== undefined ? override : input;
     if (!text.trim()) return;
-    
     handleSend(text, regen);
     if (override === undefined) setInput('');
   }, [handleSend, input]);
 
-  const onInputChange = useCallback((val: string) => {
-    setInput(val);
-  }, []);
+  const onInputChange = useCallback((val: string) => setInput(val), []);
 
-  // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setActiveLightbox(null);
-      }
-      
+      if (e.key === 'Escape') setActiveLightbox(null);
       if (activeLightbox && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
-        if (activeLightbox.source === 'chat') {
-          const imageMessages = messages.filter(m => m.imageUrl);
-          const currentIndex = imageMessages.findIndex(m => m.id === activeLightbox.messageId);
-          
-          if (currentIndex !== -1) {
-            if (e.key === 'ArrowLeft' && currentIndex > 0) {
-              const prev = imageMessages[currentIndex - 1];
-              setActiveLightbox({ 
-                url: prev.imageUrl!, 
-                thumbnailUrl: prev.thumbnailUrl,
-                sessionId: currentSessionId!, 
-                messageId: prev.id, 
-                source: 'chat' 
-              });
-            } else if (e.key === 'ArrowRight' && currentIndex < imageMessages.length - 1) {
-              const next = imageMessages[currentIndex + 1];
-              setActiveLightbox({ 
-                url: next.imageUrl!, 
-                thumbnailUrl: next.thumbnailUrl,
-                sessionId: currentSessionId!, 
-                messageId: next.id, 
-                source: 'chat' 
-              });
-            }
-          }
-        } else {
-          const currentIndex = galleryItems.findIndex(m => m.messageId === activeLightbox.messageId);
-          if (currentIndex !== -1) {
-            if (e.key === 'ArrowLeft' && currentIndex > 0) {
-              const prev = galleryItems[currentIndex - 1];
-              setActiveLightbox({ 
-                url: prev.imageUrl, 
-                thumbnailUrl: prev.thumbnailUrl,
-                sessionId: prev.sessionId, 
-                messageId: prev.messageId, 
-                source: 'gallery' 
-              });
-            } else if (e.key === 'ArrowRight' && currentIndex < galleryItems.length - 1) {
-              const next = galleryItems[currentIndex + 1];
-              setActiveLightbox({ 
-                url: next.imageUrl, 
-                thumbnailUrl: next.thumbnailUrl,
-                sessionId: next.sessionId, 
-                messageId: next.messageId, 
-                source: 'gallery' 
-              });
+        const items = activeLightbox.source === 'chat' ? messages.filter(m => m.imageUrl) : galleryItems;
+        const currentIndex = items.findIndex(m => (activeLightbox.source === 'chat' ? (m as Message).id : (m as GalleryItem).messageId) === activeLightbox.messageId);
+        if (currentIndex !== -1) {
+          const nextIdx = e.key === 'ArrowRight' ? currentIndex + 1 : currentIndex - 1;
+          if (nextIdx >= 0 && nextIdx < items.length) {
+            const next = items[nextIdx];
+            if (activeLightbox.source === 'chat') {
+              const m = next as Message;
+              setActiveLightbox({ url: m.imageUrl!, thumbnailUrl: m.thumbnailUrl, sessionId: currentSessionId!, messageId: m.id, source: 'chat' });
+            } else {
+              const g = next as GalleryItem;
+              setActiveLightbox({ url: g.imageUrl, thumbnailUrl: g.thumbnailUrl, sessionId: g.sessionId, messageId: g.messageId, source: 'gallery' });
             }
           }
         }
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activeLightbox, messages, galleryItems, currentSessionId]);
-
-  useEffect(() => {
-    if (currentSessionId && isAuthenticated) {
-      fetchSessionDetails(currentSessionId);
-    }
-  }, [currentSessionId, fetchSessionDetails, isAuthenticated]);
 
   const [showSessionMenu, setShowSessionMenu] = useState(false);
 
   useEffect(() => {
     const handleVisualFeedback = (e: MouseEvent | TouchEvent) => {
       const target = (e.target as HTMLElement).closest('button, .header-ai-toggle, .gallery-action-btn, .action-btn-icon, .dropdown-item, .image-fav-btn, .lightbox-btn');
-      
-      // On exclut les boutons du header du feedback de 500ms car ça casse le design épuré
       if (target && !target.closest('.chat-header')) {
         target.classList.add('click-feedback');
-        setTimeout(() => {
-          target.classList.remove('click-feedback');
-        }, 500);
+        setTimeout(() => target.classList.remove('click-feedback'), 500);
       }
     };
-    
     window.addEventListener('mousedown', handleVisualFeedback);
     window.addEventListener('touchstart', handleVisualFeedback, { passive: true });
-    
     return () => {
       window.removeEventListener('mousedown', handleVisualFeedback);
       window.removeEventListener('touchstart', handleVisualFeedback);
@@ -836,49 +725,16 @@ function App() {
         {activeLightbox && (
         <div className="lightbox" onClick={() => setActiveLightbox(null)} onTouchStart={handleLightboxTouchStart} onTouchMove={handleLightboxTouchMove} onTouchEnd={handleLightboxTouchEnd}>
           <div className="lightbox-content" key={activeLightbox.messageId} onClick={handleLightboxImageClick}>
-            {/* 1. Miniature en fond (seulement si pas déjà en cache) */}
             {activeLightbox.thumbnailUrl && !isAlreadyLoaded && (
-              <img 
-                key={`${activeLightbox.messageId}-thumb`}
-                src={getFullImageUrl(activeLightbox.thumbnailUrl)} 
-                alt="Loading..." 
-                className="lightbox-thumb"
-                style={{ 
-                  filter: 'blur(10px)', 
-                  position: 'absolute', 
-                  top: 0, 
-                  left: 0, 
-                  width: '100%', 
-                  height: '100%', 
-                  objectFit: 'contain',
-                  opacity: hdLoaded === activeLightbox.messageId ? 0 : 1,
-                  transition: 'opacity 0.3s ease-out'
-                }}
-              />
+              <img src={getFullImageUrl(activeLightbox.thumbnailUrl)} alt="Loading..." className="lightbox-thumb" style={{ filter: 'blur(10px)', position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain', opacity: hdLoaded === activeLightbox.messageId ? 0 : 1, transition: 'opacity 0.3s ease-out' }} />
             )}
-            {/* 2. Image HD par dessus */}
-            <img 
-              key={`${activeLightbox.messageId}-hd`}
-              src={getFullImageUrl(activeLightbox.url)} 
-              alt="Fullscreen" 
-              className="lightbox-hd"
-              style={{ 
-                position: 'relative', 
-                zIndex: 2, 
-                opacity: (hdLoaded === activeLightbox.messageId || isAlreadyLoaded) ? 1 : 0, 
-                transition: isAlreadyLoaded ? 'none' : 'opacity 0.4s ease-in',
-                transform: `translate(${zoomOffset.x}px, ${zoomOffset.y}px) scale(${zoomScale})`
-              }}
-              onLoad={() => {
-                setHdLoaded(activeLightbox.messageId);
-                setLoadedHdImages(prev => new Set(prev).add(activeLightbox.messageId));
-              }}
-            />
+            <img src={getFullImageUrl(activeLightbox.url)} alt="Fullscreen" className="lightbox-hd" style={{ position: 'relative', zIndex: 2, opacity: (hdLoaded === activeLightbox.messageId || isAlreadyLoaded) ? 1 : 0, transition: isAlreadyLoaded ? 'none' : 'opacity 0.4s ease-in', transform: `translate(${zoomOffset.x}px, ${zoomOffset.y}px) scale(${zoomScale})` }} onLoad={() => { setHdLoaded(activeLightbox.messageId); setLoadedHdImages(prev => new Set(prev).add(activeLightbox.messageId)); }} />
             {favoritedId === activeLightbox.messageId && <div className="image-overlay-heart" style={{ fontSize: '8rem' }}>❤️</div>}
           </div>
           <div className="lightbox-actions" onClick={(e) => e.stopPropagation()}>
             <button className="lightbox-btn" onClick={() => { goToImage(activeLightbox.sessionId, activeLightbox.messageId); setActiveLightbox(null); }} title={t.viewInChat}>💬</button>
             <button className={`lightbox-btn favorite ${currentLightboxItem?.isFavorite ? 'active' : ''}`} onClick={() => toggleFavorite(activeLightbox.sessionId, activeLightbox.messageId, currentLightboxItem?.isFavorite)} title={t.favorites}>{currentLightboxItem?.isFavorite ? '❤️' : '🤍'}</button>
+            <button className="lightbox-btn" onClick={() => { if (currentLightboxItem?.seed) { setParams(prev => ({ ...prev, seedMode: 'fixed', forcedSeed: currentLightboxItem.seed!.toString() })); setView('chat'); setActiveLightbox(null); toast.success(t.reuseSeed); } }} title={t.reuseSeed}>🎲</button>
             <button className="lightbox-btn" onClick={() => { if (currentLightboxItem) { handleEdit(currentLightboxItem.text || currentLightboxItem.prompt || ''); setActiveLightbox(null); } }} title={t.edit}>✎</button>
             <button className="lightbox-btn" onClick={() => downloadImage(getFullImageUrl(activeLightbox.url), `img-${activeLightbox.messageId}.png`)} title="Télécharger">💾</button>
             <button className="lightbox-btn close" onClick={() => setActiveLightbox(null)}>×</button>
@@ -900,7 +756,7 @@ function App() {
 
       {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
 
-      <MemoSettingsModal
+      <SettingsModal
         showSettings={showSettings} setShowSettings={setShowSettings} activeTab={activeTab} setActiveTab={setActiveTab}
         params={params} setParams={setParams} lang={lang} t={t} currentUser={currentUser}
         comfyModels={comfyModels} isFetchingComfyModels={isFetchingComfyModels} fetchComfyModels={fetchComfyModels}
@@ -938,7 +794,7 @@ function App() {
         </div>
       )}
 
-      <MemoSidebar
+      <Sidebar
         sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} backendError={backendError} t={t}
         createNewSession={createNewSession} view={view} setView={setView} fetchGallery={fetchGallery}
         sessions={sessions} currentSessionId={currentSessionId} setCurrentSessionId={setCurrentSessionId}
@@ -987,7 +843,7 @@ function App() {
           </div>
         </header>
 
-        <MemoChatInterface
+        <ChatInterface
           view={view} messages={messages} lang={lang} t={t} isGenerating={isGenerating} isEnhancing={isEnhancing}
           currentSessionId={currentSessionId} input={input} setInput={onInputChange} handleSend={onHandleSend}
           interruptGeneration={interruptGeneration} handleEdit={handleEdit} goToImage={goToImage} setActiveInfoId={setActiveInfoId} activeInfoId={activeInfoId}
@@ -995,7 +851,7 @@ function App() {
           galleryItems={galleryItems} isFetchingGallery={isFetchingGallery} favoritesOnly={favoritesOnly} setFavoritesOnly={setFavoritesOnly}
           showArchivedInGallery={showArchivedInGallery} setShowArchivedInGallery={setShowArchivedInGallery} setGalleryOffset={setGalleryOffset}
           setHasMoreGallery={setHasMoreGallery} lastImageElementRef={lastImageElementRef} containerRef={containerRef} textareaRef={textareaRef}
-          messagesEndRef={messagesEndRef} params={params} smoothScrollTo={smoothScrollTo} handleScroll={() => {}} downloadImage={downloadImage}
+          messagesEndRef={messagesEndRef} params={params} setParams={setParams} smoothScrollTo={smoothScrollTo} handleScroll={() => {}} downloadImage={downloadImage}
         />
       </main>
       </div>

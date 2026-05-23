@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import './ChatInterface.css';
 import type { Message, Language, GalleryItem, GenParameters } from '../../types';
 import { WelcomeScreen } from './WelcomeScreen';
 import { MessageText } from './MessageText';
-import { InfoIcon, RefreshIcon, SendIcon, ChatIcon } from '../ui/Icons';
+import { InfoIcon, RefreshIcon, SendIcon, ChatIcon, PlusIcon } from '../ui/Icons';
 import { getFullImageUrl, formatDuration } from '../../services/api';
+import toast from 'react-hot-toast';
 
 interface ChatInterfaceProps {
   view: 'chat' | 'gallery' | 'archives';
@@ -39,6 +40,7 @@ interface ChatInterfaceProps {
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   params: GenParameters;
+  setParams: React.Dispatch<React.SetStateAction<GenParameters>>;
   smoothScrollTo: (id: string) => void;
   handleScroll: () => void;
   downloadImage: (url: string, filename: string) => void;
@@ -77,10 +79,12 @@ export const ChatInterface = ({
   textareaRef,
   messagesEndRef,
   params,
+  setParams,
   smoothScrollTo,
   handleScroll,
   downloadImage
 }: ChatInterfaceProps) => {
+  const [showOptions, setShowOptions] = useState(false);
   
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -107,16 +111,9 @@ export const ChatInterface = ({
               const prevMsg = index > 0 ? messages[index - 1] : null;
               const prevText = prevMsg ? (prevMsg.text || prevMsg.prompt) : null;
               
-              // On ne rend rien si le message est totalement vide (sécurité demandée par l'utilisateur)
               if (!messageText && !msg.imageUrl && msg.status !== 'pending' && msg.status !== 'processing') return null;
 
-              // On masque le texte s'il est identique au message précédent (souvent le cas entre User et Bot sans IA)
               const isRedundant = prevText === messageText;
-              
-              // On affiche le texte si :
-              // 1. Il n'est pas redondant
-              // 2. OU c'est un bot en train de charger (pour garder un retour visuel)
-              // 3. OU c'est un bot dont le texte est DIFFERENT de son propre prompt (cas de l'IA activée)
               const shouldShowText = messageText && (!isRedundant || (msg.role === 'bot' && (msg.isEnhancing || msg.status === 'pending' || msg.status === 'processing')));
               
               return (
@@ -217,7 +214,11 @@ export const ChatInterface = ({
                       <p><strong>{t.model}:</strong> {msg.model || t.unknown}</p>
                       <p><strong>{t.workflow}:</strong> {msg.workflow || t.unknown}</p>
                       <p><strong>{t.dimensions}:</strong> {msg.width}x{msg.height}</p>
-                      <p><strong>{t.steps}:</strong> {msg.steps} | <strong>CFG:</strong> {msg.cfg} | <strong>{t.seed}:</strong> {msg.seed || t.unknown}</p>
+                      <p><strong>{t.steps}:</strong> {msg.steps} | <strong>CFG:</strong> {msg.cfg} | <strong>{t.seed}:</strong> <span className="reusable-seed" title={t.reuseSeed} onClick={() => { 
+                        setParams(prev => ({ ...prev, seedMode: 'fixed', forcedSeed: msg.seed?.toString() || '' }));
+                        setShowOptions(true);
+                        toast.success(t.reuseSeed);
+                      }}>{msg.seed || t.unknown}</span></p>
                       {msg.duration !== undefined && (
                         <p><strong>{lang === 'fr' ? 'Durée' : 'Duration'}:</strong> {formatDuration(msg.duration)}</p>
                       )}
@@ -233,9 +234,9 @@ export const ChatInterface = ({
                 <div className="message-content loading">
                   <div className="generation-placeholder">
                     <div className="bounced-loader">
-                      <div className="bounced-ball"></div>
-                      <div className="bounced-ball"></div>
-                      <div className="bounced-ball"></div>
+                      <div className="bounce1"></div>
+                      <div className="bounce2"></div>
+                      <div className="bounce3"></div>
                     </div>
                     <p>{isEnhancing ? t.enhancing : t.generating}</p>
                     <button className="cancel-gen-btn" onClick={interruptGeneration} title="Annuler la génération">
@@ -303,7 +304,41 @@ export const ChatInterface = ({
 
       {view === 'chat' && (
         <div className="input-container">
+          {showOptions && (
+            <div className="generation-options-drawer fadeIn">
+              <div className="options-group">
+                <div className="option-label">{t.seed}</div>
+                <div className="option-controls">
+                  <button 
+                    className={`option-badge ${params.seedMode === 'random' ? 'active' : ''}`}
+                    onClick={() => setParams({ ...params, seedMode: 'random' })}
+                  >
+                    🎲 {t.random}
+                  </button>
+                  <button 
+                    className={`option-badge ${params.seedMode === 'fixed' ? 'active' : ''}`}
+                    onClick={() => setParams({ ...params, seedMode: 'fixed' })}
+                  >
+                    🔒 {t.fixed}
+                  </button>
+                  {params.seedMode === 'fixed' && (
+                    <input 
+                      type="text" 
+                      className="option-input seed-input" 
+                      value={params.forcedSeed} 
+                      onChange={(e) => setParams({ ...params, forcedSeed: e.target.value.replace(/\D/g, '') })}
+                      placeholder="Graine..."
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className={`input-box ${params.llmEnabled ? 'ai-active' : ''}`}>
+            <button className={`options-toggle-btn ${showOptions ? 'active' : ''}`} onClick={() => setShowOptions(!showOptions)} title={t.options}>
+              <PlusIcon size={20} />
+            </button>
             <textarea 
               ref={textareaRef} 
               value={input} 

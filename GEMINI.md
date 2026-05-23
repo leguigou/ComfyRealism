@@ -9,7 +9,9 @@ This workspace is a full-stack application connecting a React chat interface to 
     - **Layout Stability**: Maintain the "Overlay Sidebar" pattern. Never use layouts that "push" or "shrink" the main content (to avoid jittering).
     - **Smooth Scrolling**: Avoid CSS `scroll-behavior: smooth` on chat containers; use the custom JS `smoothScrollTo` for reliable anchoring.
     - **Header Logic**: The `chat-header` must remain visible when near the bottom of the page (50px threshold) to prevent flickering feedback loops.
-- **Verification**: When fixing generation issues, always verify the connection to `http://127.0.0.1:8188` first.
+- **Verification**: 
+    - When fixing generation issues, always verify the connection to `http://127.0.0.1:8188` first.
+    - When implementing code changes, always verify the status of the live application at `http://sweethome.deloffre.fr:55200/`.
 - **Quality**: Always run `npm run lint` and `npx tsc` in the `frontend` directory after changes. Use `.cmd` suffix on Windows.
 
 ## Tech Stack
