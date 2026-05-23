@@ -60,6 +60,8 @@ export interface GenParameters {
   llmEnabled: boolean;
   workflowFile: string;
   nodeMapping: NodeMapping;
+  seedMode: 'random' | 'fixed';
+  forcedSeed?: string;
 }
 
 export interface Session {

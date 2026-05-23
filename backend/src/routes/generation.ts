@@ -21,7 +21,7 @@ router.post('/generate', authenticate, async (req, res) => {
     const enhancedText = isEnhanced ? prompt : '';
     const model = params?.comfyModel || 'dirtyRealism_DMDSAT.safetensors';
     const workflowFile = params?.workflowFile || 'workflow_lcm.json';
-    const seed = params?.seed || Math.floor(Math.random() * 1000000000000000);
+    const seed = (params?.seed && params.seed !== -1) ? params.seed : Math.floor(Math.random() * 1000000000000000);
     
     const insertMsg = db.prepare('INSERT INTO messages (id, sessionId, role, text, prompt, imageUrl, timestamp, model, width, height, steps, cfg, workflow, status, seed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
     

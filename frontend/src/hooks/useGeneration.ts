@@ -111,7 +111,9 @@ export const useGeneration = (
             ...params, 
             negativePrompt: finalNegativePrompt,
             workflowFile: params.workflowFile,
-            nodeMapping: params.nodeMapping
+            nodeMapping: params.nodeMapping,
+            // Gestion de la seed
+            seed: params.seedMode === 'fixed' && params.forcedSeed ? parseInt(params.forcedSeed, 10) : -1
           }
         }),
         credentials: 'include'

@@ -99,7 +99,11 @@ export const translations = {
     settingsSaved: 'Paramètres enregistrés !',
     passwordsDoNotMatch: 'Les mots de passe ne correspondent pas',
     avatarFromFavorites: 'Mes Favoris',
-    avatarFromRecent: 'Récents'
+    avatarFromRecent: 'Récents',
+    random: 'Aléatoire',
+    fixed: 'Fixe',
+    reuseSeed: 'Utiliser cette seed',
+    options: 'Options'
   },
   en: {
     title: 'ComfyRealism',
@@ -202,7 +206,11 @@ export const translations = {
     settingsSaved: 'Settings saved!',
     passwordsDoNotMatch: 'Passwords do not match',
     avatarFromFavorites: 'My Favorites',
-    avatarFromRecent: 'Recent'
+    avatarFromRecent: 'Recent',
+    random: 'Random',
+    fixed: 'Fixed',
+    reuseSeed: 'Use this seed',
+    options: 'Options'
   }
 };
 
