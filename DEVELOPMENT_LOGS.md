@@ -1,6 +1,21 @@
 # Development Logs
 
-## Current Version: v.1.4.0
+## Current Version: v.1.5.0
+
+---
+
+### v.1.5.0 (2026-05-22)
+- **Mobile Experience & Interactions**:
+    - **Pinch-to-Zoom**: Implemented multi-finger zoom and single-finger pan in the image lightbox for mobile devices. Supports up to 4x magnification.
+    - **Enhanced Click Feedback**: Upgraded the visual confirmation system to support `touchstart` for instant response on mobile. Added a green "glow" effect and increased priority to ensure all interactive elements provide clear feedback.
+    - **Header Design Integrity**: Excluded header buttons from the flash feedback to preserve their clean, minimalist aesthetic.
+- **Stability & Performance**:
+    - **Scroll Crash Fix**: Resolved a critical `ReferenceError` in the scroll handler that was causing random application reloads.
+    - **Empty Card Elimination**: Refined the chat rendering logic to automatically hide messages with redundant or missing content, ensuring a dense and relevant discussion thread.
+- **Backend & Logic**:
+    - **Prompt Flow Optimization**: Fixed the synchronization between LLM enhancement and ComfyUI generation to ensure enriched prompts are correctly applied and displayed.
+- **Maintenance**:
+    - Synchronized versions across backend and frontend to `v.1.5.0`.
 
 ---
 

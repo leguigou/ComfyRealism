@@ -104,8 +104,19 @@ export const ChatInterface = ({
             )}
             {messages.map((msg, index) => {
               const messageText = msg.text || msg.prompt;
-              // On ne masque le texte que s'il est redondant ET que le message n'est pas en cours de traitement/IA
-              const isRedundant = index > 0 && messageText === (messages[index - 1].text || messages[index - 1].prompt);
+              const prevMsg = index > 0 ? messages[index - 1] : null;
+              const prevText = prevMsg ? (prevMsg.text || prevMsg.prompt) : null;
+              
+              // On ne rend rien si le message est totalement vide (sécurité demandée par l'utilisateur)
+              if (!messageText && !msg.imageUrl && msg.status !== 'pending' && msg.status !== 'processing') return null;
+
+              // On masque le texte s'il est identique au message précédent (souvent le cas entre User et Bot sans IA)
+              const isRedundant = prevText === messageText;
+              
+              // On affiche le texte si :
+              // 1. Il n'est pas redondant
+              // 2. OU c'est un bot en train de charger (pour garder un retour visuel)
+              // 3. OU c'est un bot dont le texte est DIFFERENT de son propre prompt (cas de l'IA activée)
               const shouldShowText = messageText && (!isRedundant || (msg.role === 'bot' && (msg.isEnhancing || msg.status === 'pending' || msg.status === 'processing')));
               
               return (

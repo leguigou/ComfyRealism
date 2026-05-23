@@ -14,8 +14,11 @@ router.post('/generate', authenticate, async (req, res) => {
     const timestamp = Date.now();
     const messageId = uuidv4();
     const userMessageId = uuidv4();
+    
+    // Si prompt est différent d'originalPrompt, c'est que l'IA a bossé
+    const isEnhanced = prompt && originalPrompt && prompt !== originalPrompt;
     const displayPrompt = originalPrompt || prompt;
-    const enhancedText = (prompt && prompt !== originalPrompt || req.body.isRegeneration) ? prompt : '';
+    const enhancedText = isEnhanced ? prompt : '';
     const model = params?.comfyModel || 'dirtyRealism_DMDSAT.safetensors';
     const workflowFile = params?.workflowFile || 'workflow_lcm.json';
     const seed = params?.seed || Math.floor(Math.random() * 1000000000000000);

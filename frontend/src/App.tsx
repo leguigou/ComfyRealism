@@ -167,14 +167,69 @@ function App() {
 
   const [hdLoaded, setHdLoaded] = useState<string | null>(null);
   const [loadedHdImages, setLoadedHdImages] = useState<Set<string>>(new Set());
-  
-  // Clear HD state when lightbox closes
+
+  // Pinch-to-zoom states
+  const [zoomScale, setZoomScale] = useState(1);
+  const [zoomOffset, setZoomOffset] = useState({ x: 0, y: 0 });
+  const touchStartDist = useRef<number | null>(null);
+  const lastTouchPos = useRef<{ x: number, y: number } | null>(null);
+
+  // Clear HD state and zoom when lightbox closes
   useEffect(() => {
     if (!activeLightbox) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHdLoaded(null);
+      setZoomScale(1);
+      setZoomOffset({ x: 0, y: 0 });
     }
   }, [activeLightbox]);
+
+  const handleLightboxTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      // Start pinching
+      const dist = Math.hypot(
+        e.touches[0].pageX - e.touches[1].clientX,
+        e.touches[0].pageY - e.touches[1].clientY
+      );
+      touchStartDist.current = dist;
+    } else if (e.touches.length === 1 && zoomScale > 1) {
+      // Start panning (only if zoomed in)
+      lastTouchPos.current = { x: e.touches[0].pageX, y: e.touches[0].pageY };
+    } else {
+      // Swipe logic fallback
+      handleTouchStart(e);
+    }
+  };
+
+  const handleLightboxTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && touchStartDist.current !== null) {
+      // Pinching
+      const dist = Math.hypot(
+        e.touches[0].pageX - e.touches[1].clientX,
+        e.touches[0].pageY - e.touches[1].clientY
+      );
+      const scaleChange = dist / touchStartDist.current;
+      const newScale = Math.min(Math.max(1, zoomScale * scaleChange), 4);
+      setZoomScale(newScale);
+      touchStartDist.current = dist;
+    } else if (e.touches.length === 1 && lastTouchPos.current && zoomScale > 1) {
+      // Panning
+      const deltaX = e.touches[0].pageX - lastTouchPos.current.x;
+      const deltaY = e.touches[0].pageY - lastTouchPos.current.y;
+      setZoomOffset(prev => ({ x: prev.x + deltaX, y: prev.y + deltaY }));
+      lastTouchPos.current = { x: e.touches[0].pageX, y: e.touches[0].pageY };
+    } else if (e.touches.length === 1 && zoomScale === 1) {
+      // Swipe logic fallback
+      handleTouchMove(e);
+    }
+  };
+
+  const handleLightboxTouchEnd = () => {
+    touchStartDist.current = null;
+    lastTouchPos.current = null;
+    if (zoomScale === 1) {
+      handleTouchEnd();
+    }
+  };
 
   const [adminUsers, setAdminUsers] = useState<User[]>([]);
   const [newUser, setNewUser] = useState({ username: '', password: '', isAdmin: false });
@@ -394,26 +449,6 @@ function App() {
       const data = await res.json();
       setAvailableWorkflows(data);
     } catch (err) { console.error('Error fetching workflows:', err); }
-  }, []);
-
-  const handleScroll = useCallback(() => {
-    if (!containerRef.current) return;
-    const container = containerRef.current;
-    const st = container.scrollTop;
-    const sh = container.scrollHeight;
-    const ch = container.clientHeight;
-
-    // Détection de la fin de page (avec une marge de 50px)
-    const isNearBottom = st + ch >= sh - 50;
-
-    // On affiche toujours le header en haut (st <= 100) ou si on est proche du bas
-    if (st <= 100 || isNearBottom) {
-      setShowHeader(true);
-    } else {
-      // Sinon on suit la direction du scroll
-      setShowHeader(st <= lastScrollTop.current);
-    }
-    lastScrollTop.current = st <= 0 ? 0 : st;
   }, []);
 
   const fetchSettings = useCallback(async () => {
@@ -745,6 +780,28 @@ function App() {
 
   const [showSessionMenu, setShowSessionMenu] = useState(false);
 
+  useEffect(() => {
+    const handleVisualFeedback = (e: MouseEvent | TouchEvent) => {
+      const target = (e.target as HTMLElement).closest('button, .header-ai-toggle, .gallery-action-btn, .action-btn-icon, .dropdown-item, .image-fav-btn, .lightbox-btn');
+      
+      // On exclut les boutons du header du feedback de 500ms car ça casse le design épuré
+      if (target && !target.closest('.chat-header')) {
+        target.classList.add('click-feedback');
+        setTimeout(() => {
+          target.classList.remove('click-feedback');
+        }, 500);
+      }
+    };
+    
+    window.addEventListener('mousedown', handleVisualFeedback);
+    window.addEventListener('touchstart', handleVisualFeedback, { passive: true });
+    
+    return () => {
+      window.removeEventListener('mousedown', handleVisualFeedback);
+      window.removeEventListener('touchstart', handleVisualFeedback);
+    };
+  }, []);
+
   if (isAuthenticated === null) return (
     <div className="app-loader">
       <div className="bounced-loader"><div className="bounce1"></div><div className="bounce2"></div><div className="bounce3"></div></div>
@@ -777,7 +834,7 @@ function App() {
       <div className={`app-layout ${theme}`}>
         <Toaster position="top-right" />
         {activeLightbox && (
-        <div className="lightbox" onClick={() => setActiveLightbox(null)} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+        <div className="lightbox" onClick={() => setActiveLightbox(null)} onTouchStart={handleLightboxTouchStart} onTouchMove={handleLightboxTouchMove} onTouchEnd={handleLightboxTouchEnd}>
           <div className="lightbox-content" key={activeLightbox.messageId} onClick={handleLightboxImageClick}>
             {/* 1. Miniature en fond (seulement si pas déjà en cache) */}
             {activeLightbox.thumbnailUrl && !isAlreadyLoaded && (
@@ -809,7 +866,8 @@ function App() {
                 position: 'relative', 
                 zIndex: 2, 
                 opacity: (hdLoaded === activeLightbox.messageId || isAlreadyLoaded) ? 1 : 0, 
-                transition: isAlreadyLoaded ? 'none' : 'opacity 0.4s ease-in' 
+                transition: isAlreadyLoaded ? 'none' : 'opacity 0.4s ease-in',
+                transform: `translate(${zoomOffset.x}px, ${zoomOffset.y}px) scale(${zoomScale})`
               }}
               onLoad={() => {
                 setHdLoaded(activeLightbox.messageId);
@@ -937,7 +995,7 @@ function App() {
           galleryItems={galleryItems} isFetchingGallery={isFetchingGallery} favoritesOnly={favoritesOnly} setFavoritesOnly={setFavoritesOnly}
           showArchivedInGallery={showArchivedInGallery} setShowArchivedInGallery={setShowArchivedInGallery} setGalleryOffset={setGalleryOffset}
           setHasMoreGallery={setHasMoreGallery} lastImageElementRef={lastImageElementRef} containerRef={containerRef} textareaRef={textareaRef}
-          messagesEndRef={messagesEndRef} params={params} smoothScrollTo={smoothScrollTo} handleScroll={handleScroll} downloadImage={downloadImage}
+          messagesEndRef={messagesEndRef} params={params} smoothScrollTo={smoothScrollTo} handleScroll={() => {}} downloadImage={downloadImage}
         />
       </main>
       </div>
