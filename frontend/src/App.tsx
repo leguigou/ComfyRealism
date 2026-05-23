@@ -44,9 +44,51 @@ function App() {
     return (localStorage.getItem('currentView') as 'chat' | 'gallery' | 'archives') || 'chat';
   });
 
+  const [keepAwake, setKeepAwake] = useState<boolean>(() => {
+    return localStorage.getItem('keepAwake') === 'true';
+  });
+
   useEffect(() => {
     localStorage.setItem('currentView', view);
   }, [view]);
+
+  useEffect(() => {
+    localStorage.setItem('keepAwake', keepAwake.toString());
+    
+    let wakeLock: any = null;
+    const requestWakeLock = async () => {
+      if (keepAwake && 'wakeLock' in navigator) {
+        try {
+          wakeLock = await (navigator as any).wakeLock.request('screen');
+          wakeLock.addEventListener('release', () => {
+            // Wake Lock was released, we can try to request it again if we still want it
+            if (keepAwake && document.visibilityState === 'visible') {
+               requestWakeLock();
+            }
+          });
+        } catch (err) {
+          console.error(`Wake Lock error: ${err}`);
+        }
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (keepAwake && document.visibilityState === 'visible') {
+        requestWakeLock();
+      }
+    };
+
+    requestWakeLock();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (wakeLock !== null) {
+        wakeLock.release().catch(console.error);
+        wakeLock = null;
+      }
+    };
+  }, [keepAwake]);
 
   const {
     sessions,
@@ -818,6 +860,7 @@ function App() {
         setShowSettings={(show) => { setShowSettings(show); if (show) setSidebarOpen(false); }} 
         handleLogout={handleLogout}
         currentUser={currentUser} lang={lang} setLang={setLang} theme={theme} setTheme={setTheme}
+        keepAwake={keepAwake} setKeepAwake={setKeepAwake}
       />
 
       <main className="main-content">

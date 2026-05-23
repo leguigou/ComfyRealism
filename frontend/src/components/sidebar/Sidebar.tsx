@@ -29,6 +29,8 @@ interface SidebarProps {
   setLang: (lang: Language) => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
+  keepAwake: boolean;
+  setKeepAwake: (keepAwake: boolean) => void;
 }
 
 export const Sidebar = ({
@@ -56,7 +58,9 @@ export const Sidebar = ({
   lang,
   setLang,
   theme,
-  setTheme
+  setTheme,
+  keepAwake,
+  setKeepAwake
 }: SidebarProps) => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -156,6 +160,9 @@ export const Sidebar = ({
                 </button>
                 <button className="popover-item" onClick={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); setProfileMenuOpen(false); }}>
                   <span>{theme === 'dark' ? '☀️' : '🌙'}</span> {theme === 'dark' ? (lang === 'fr' ? 'Mode Clair' : 'Light Mode') : (lang === 'fr' ? 'Mode Sombre' : 'Dark Mode')}
+                </button>
+                <button className="popover-item" onClick={() => { setKeepAwake(!keepAwake); setProfileMenuOpen(false); }}>
+                  <span>{keepAwake ? '📱' : '📱'}</span> {keepAwake ? (lang === 'fr' ? 'Écran actif (Oui)' : 'Keep Awake (On)') : (lang === 'fr' ? 'Écran actif (Non)' : 'Keep Awake (Off)')}
                 </button>
                 <button className="popover-item" onClick={() => { setShowSettings(true); setProfileMenuOpen(false); setSidebarOpen(false); }}>
                   <span>⚙️</span> {t.settings}
