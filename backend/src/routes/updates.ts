@@ -7,9 +7,7 @@ const router = express.Router();
 // Get current local version and check for updates on GitHub
 router.get('/check', async (req, res) => {
   try {
-    const currentVersion = pkg.version;
     const repoUrl = 'https://api.github.com/repos/leguigou/ComfyRealism/releases/latest';
-    
     const response = await axios.get(repoUrl, {
       headers: {
         'Accept': 'application/vnd.github.v3+json',
