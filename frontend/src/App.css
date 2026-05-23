@@ -48,6 +48,40 @@ body {
 
 button, a, input, select, textarea, .session-item, .profile-pill, .control-pill, .icon-btn, .picker-item {
   -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+/* Remove focus state for mouse users but keep it for keyboard accessibility */
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible),
+div:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Temporary click feedback with higher specificity */
+button.click-feedback,
+.header-ai-toggle.click-feedback,
+.gallery-action-btn.click-feedback,
+.action-btn-icon.click-feedback,
+.dropdown-item.click-feedback,
+.lightbox-btn.click-feedback,
+.image-fav-btn.click-feedback,
+.click-feedback:focus,
+.click-feedback:active {
+  background-color: var(--accent) !important;
+  color: white !important;
+  transform: scale(0.92) !important;
+  transition: none !important; /* Instant response on mobile */
+  border-color: var(--accent) !important;
+  opacity: 1 !important;
+  box-shadow: 0 0 15px var(--accent) !important;
+  z-index: 100;
+}
+
+.click-feedback * {
+  color: white !important;
+  stroke: white !important;
 }
 
 .app-layout {
@@ -164,7 +198,15 @@ button, a, input, select, textarea, .session-item, .profile-pill, .control-pill,
 }
 
 .header-ai-toggle.active {
-  border-color: rgba(16, 163, 127, 0.4);
+  background-color: rgba(16, 163, 127, 0.15);
+  animation: ai-glow 3s infinite linear;
+}
+
+@keyframes ai-glow {
+  0% { border-color: #10a37f; box-shadow: 0 0 10px rgba(16, 163, 127, 0.4); }
+  33% { border-color: #8e44ad; box-shadow: 0 0 15px rgba(142, 68, 173, 0.4); }
+  66% { border-color: #3498db; box-shadow: 0 0 15px rgba(52, 152, 219, 0.4); }
+  100% { border-color: #10a37f; box-shadow: 0 0 10px rgba(16, 163, 127, 0.4); }
 }
 
 .ai-text { 
@@ -257,7 +299,22 @@ button, a, input, select, textarea, .session-item, .profile-pill, .control-pill,
   background-color: var(--sidebar-hover);
 }
 
-.dropdown-item.delete {
+.dropdown-item:focus:not(:focus-visible),
+.header-btn:focus:not(:focus-visible) {
+  outline: none !important;
+  background-color: transparent !important;
+  color: var(--text) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.header-btn:focus:not(:focus-visible) {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  color: white !important;
+}
+
+.dropdown-item.delete:hover {
+
   color: #ff4d4d;
 }
 
@@ -307,6 +364,8 @@ button, a, input, select, textarea, .session-item, .profile-pill, .control-pill,
 .lightbox-hd {
   z-index: 2;
   box-shadow: 0 0 50px rgba(0,0,0,0.3);
+  transition: transform 0.1s ease-out, opacity 0.4s ease-in;
+  transform-origin: center center;
 }
 
 .lightbox-actions {
@@ -319,6 +378,26 @@ button, a, input, select, textarea, .session-item, .profile-pill, .control-pill,
   border-radius: 0.8rem; cursor: pointer; font-weight: 600; font-size: 1.2rem;
   transition: all 0.2s; display: flex; align-items: center; justify-content: center;
   backdrop-filter: blur(10px); flex-shrink: 0;
+  outline: none;
+}
+
+.lightbox-btn:focus:not(:focus-visible),
+.theme-btn:focus:not(:focus-visible) {
+  outline: none !important;
+  background-color: var(--lightbox-btn-bg) !important;
+  border-color: var(--border) !important;
+  color: var(--lightbox-btn-text) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.theme-btn:focus:not(:focus-visible) {
+  background-color: var(--social-bg) !important;
+  color: var(--text-h) !important;
+}
+
+.lightbox-btn:focus:not(:focus-visible) * {
+  color: inherit !important;
 }
 
 @media (hover: hover) {
@@ -478,3 +557,63 @@ button, a, input, select, textarea, .session-item, .profile-pill, .control-pill,
 .user-table th { padding: 1rem; border-bottom: 2px solid var(--border); color: var(--accent); font-weight: 700; }
 .user-table td { padding: 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
 .user-actions-cell { min-width: 150px; }
+
+.gallery-filter-fav {
+  background: var(--social-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.5rem 1.2rem;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  outline: none;
+}
+
+.gallery-filter-fav.active {
+  border-color: #ff4b4b;
+  color: #ff4b4b;
+}
+
+.gallery-filter-fav:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Control Pill & Group Styles */
+.control-group {
+  display: flex;
+  background-color: var(--social-bg);
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+}
+
+.control-pill {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  padding: 0.5rem 1.2rem;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 700;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.control-pill.active {
+  background-color: var(--accent);
+  color: white;
+  box-shadow: 0 4px 10px rgba(16, 163, 127, 0.3);
+}
+
+@media (hover: hover) {
+  .control-pill:not(.active):hover {
+    background-color: var(--sidebar-hover);
+    color: var(--text-h);
+  }
+}

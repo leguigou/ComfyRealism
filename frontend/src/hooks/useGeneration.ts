@@ -39,11 +39,11 @@ export const useGeneration = (
       let finalNegativePrompt = params.negativePrompt;
       const botMsgId = `temp-${Math.random().toString(36).substring(7)}`;
 
-      // 1. Ajouter la bulle bot en chargement
+      // 1. Ajouter la bulle bot en chargement (texte vide au début pour éviter la card inutile)
       const initialBotMsg: Message = { 
         id: botMsgId, 
         role: 'bot', 
-        text: textToSend, 
+        text: '', 
         prompt: textToSend, 
         status: 'pending',
         isEnhancing: params.llmEnabled && !!params.llmUrl && !!params.llmModel && !isRegeneration,
@@ -78,7 +78,13 @@ export const useGeneration = (
           if (enhanceData.enhancedPrompt) {
             finalPrompt = enhanceData.enhancedPrompt;
             if (enhanceData.negativePrompt) finalNegativePrompt = enhanceData.negativePrompt;
-            setMessages(prev => prev.map(m => m.id === botMsgId ? { ...m, text: finalPrompt, isEnhancing: false } : m));
+            // Mise à jour immédiate de la bulle bot avec le nouveau texte
+            setMessages(prev => prev.map(m => m.id === botMsgId ? { 
+              ...m, 
+              text: finalPrompt, 
+              prompt: finalPrompt, // On met à jour le prompt de référence aussi
+              isEnhancing: false 
+            } : m));
           } else {
             setMessages(prev => prev.map(m => m.id === botMsgId ? { ...m, isEnhancing: false } : m));
           }
