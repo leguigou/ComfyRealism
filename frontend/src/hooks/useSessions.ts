@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { API_BASE } from '../services/api';
 import type { Session, Message } from '../types';
 
@@ -60,6 +60,14 @@ export const useSessions = (view: 'chat' | 'gallery' | 'archives', isAuthenticat
       console.error('Error fetching session details:', err);
     }
   }, []);
+
+  useEffect(() => {
+    if (currentSessionId && (view === 'chat' || view === 'archives')) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setMessages([]);
+      fetchSessionDetails(currentSessionId);
+    }
+  }, [currentSessionId, view, fetchSessionDetails]);
 
   const renameSession = async (id: string, newTitle: string) => {
     if (!newTitle.trim()) {
