@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, memo } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import './App.css';
 import { translations } from './i18n';
 import type { 
@@ -6,7 +6,8 @@ import type {
   GenParameters, 
   Theme, 
   Language,
-  User 
+  User,
+  Message
 } from './types';
 import { API_BASE, getFullImageUrl } from './services/api';
 import { Sidebar } from './components/sidebar/Sidebar';
@@ -18,7 +19,7 @@ import { useGeneration } from './hooks/useGeneration';
 import { useWebSocket } from './hooks/useWebSocket';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { ComposeIcon } from './components/ui/Icons';
-import { Toaster, toast } from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast';
 
 function App() {
   const [lang, setLang] = useState<Language>(() => {
@@ -81,7 +82,7 @@ function App() {
   const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [showSettings, setShowSettings] = useState(false);
-  const [activeTab, setActiveTab] = useState<'images' | 'comfy' | 'llm' | 'archives' | 'logs' | 'admin'>('images');
+  const [activeTab, setActiveTab] = useState<'profile' | 'images' | 'comfy' | 'llm' | 'archives' | 'logs' | 'admin'>('images');
   
   const [input, setInput] = useState('');
   
@@ -611,7 +612,10 @@ function App() {
     if (activeLightbox && Math.abs(distance) > 50) {
       const isNext = distance > 0;
       const items = activeLightbox.source === 'chat' ? messages.filter(m => m.imageUrl) : galleryItems;
-      const currentIndex = items.findIndex(m => (activeLightbox.source === 'chat' ? (m as Message).id : (m as GalleryItem).messageId) === activeLightbox.messageId);
+      const currentIndex = items.findIndex(m => {
+        if (activeLightbox.source === 'chat') return (m as Message).id === activeLightbox.messageId;
+        return (m as GalleryItem).messageId === activeLightbox.messageId;
+      });
       if (currentIndex !== -1) {
         const nextIdx = isNext ? currentIndex + 1 : currentIndex - 1;
         if (nextIdx >= 0 && nextIdx < items.length) {
@@ -653,7 +657,10 @@ function App() {
       if (e.key === 'Escape') setActiveLightbox(null);
       if (activeLightbox && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
         const items = activeLightbox.source === 'chat' ? messages.filter(m => m.imageUrl) : galleryItems;
-        const currentIndex = items.findIndex(m => (activeLightbox.source === 'chat' ? (m as Message).id : (m as GalleryItem).messageId) === activeLightbox.messageId);
+        const currentIndex = items.findIndex(m => {
+            if (activeLightbox.source === 'chat') return (m as Message).id === activeLightbox.messageId;
+            return (m as GalleryItem).messageId === activeLightbox.messageId;
+        });
         if (currentIndex !== -1) {
           const nextIdx = e.key === 'ArrowRight' ? currentIndex + 1 : currentIndex - 1;
           if (nextIdx >= 0 && nextIdx < items.length) {
@@ -734,7 +741,15 @@ function App() {
           <div className="lightbox-actions" onClick={(e) => e.stopPropagation()}>
             <button className="lightbox-btn" onClick={() => { goToImage(activeLightbox.sessionId, activeLightbox.messageId); setActiveLightbox(null); }} title={t.viewInChat}>💬</button>
             <button className={`lightbox-btn favorite ${currentLightboxItem?.isFavorite ? 'active' : ''}`} onClick={() => toggleFavorite(activeLightbox.sessionId, activeLightbox.messageId, currentLightboxItem?.isFavorite)} title={t.favorites}>{currentLightboxItem?.isFavorite ? '❤️' : '🤍'}</button>
-            <button className="lightbox-btn" onClick={() => { if (currentLightboxItem?.seed) { setParams(prev => ({ ...prev, seedMode: 'fixed', forcedSeed: currentLightboxItem.seed!.toString() })); setView('chat'); setActiveLightbox(null); toast.success(t.reuseSeed); } }} title={t.reuseSeed}>🎲</button>
+            <button className="lightbox-btn" onClick={() => { 
+                const seed = (currentLightboxItem as any)?.seed;
+                if (seed) { 
+                    setParams(prev => ({ ...prev, seedMode: 'fixed', forcedSeed: seed.toString() })); 
+                    setView('chat'); 
+                    setActiveLightbox(null); 
+                    toast.success(t.reuseSeed); 
+                } 
+            }} title={t.reuseSeed}>🎲</button>
             <button className="lightbox-btn" onClick={() => { if (currentLightboxItem) { handleEdit(currentLightboxItem.text || currentLightboxItem.prompt || ''); setActiveLightbox(null); } }} title={t.edit}>✎</button>
             <button className="lightbox-btn" onClick={() => downloadImage(getFullImageUrl(activeLightbox.url), `img-${activeLightbox.messageId}.png`)} title="Télécharger">💾</button>
             <button className="lightbox-btn close" onClick={() => setActiveLightbox(null)}>×</button>
