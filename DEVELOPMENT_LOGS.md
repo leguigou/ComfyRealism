@@ -1,8 +1,16 @@
 # Development Logs
 
-## Current Version: v.1.5.2
+## Current Version: v.1.5.3
 
 ---
+
+### v.1.5.3 (2026-05-24)
+- **Update Tab & UI Refinements**:
+    - **GitHub Update Checker**: New "Update" tab in settings to check for the latest versions on GitHub and view release notes.
+    - **Auto-Expanding Chat Input**: The chat input now grows automatically with the text content.
+    - **Mobile Layout Optimization**: Closer button placement on mobile to save screen real estate.
+    - **Enhanced Aesthetics**: Reduced transparency and added blur effects to the input container for a more premium feel.
+    - **Visual Cues**: Added a distinct red border to the clear button in the input.
 
 ### v.1.5.2 (2026-05-23)
 - **Chat Input Layout Optimization**:
