@@ -1,8 +1,23 @@
 # Development Logs
 
-## Current Version: v.1.5.2
+## Current Version: v.1.5.4
 
 ---
+
+### v.1.5.4 (2026-05-24)
+- **UI Polishing & Stability**:
+    - **Maximized Mobile Layout**: Pushed the options toggle button to the extreme left edge and reduced internal gaps to maximize input space on small screens.
+    - **Solid Aesthetics**: Increased background opacity to 99% for both input and toggle buttons for a more robust and professional look.
+    - **Backend Fixes**: Resolved a critical syntax error (variable redeclaration) in the update checker route that was causing server crashes.
+    - **Version Comparison Logic**: Implemented proper semver comparison to ensure the update checker only notifies when a truly newer version is available.
+
+### v.1.5.3 (2026-05-24)
+- **Update Tab & UI Refinements**:
+    - **GitHub Update Checker**: New "Update" tab in settings to check for the latest versions on GitHub and view release notes.
+    - **Auto-Expanding Chat Input**: The chat input now grows automatically with the text content.
+    - **Mobile Layout Optimization**: Closer button placement on mobile to save screen real estate.
+    - **Enhanced Aesthetics**: Reduced transparency and added blur effects to the input container for a more premium feel.
+    - **Visual Cues**: Added a distinct red border to the clear button in the input.
 
 ### v.1.5.2 (2026-05-23)
 - **Chat Input Layout Optimization**:

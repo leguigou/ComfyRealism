@@ -259,7 +259,7 @@ export const SettingsModal = ({
            <div className="settings-grid">
              <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                <label>{t.currentVersion}</label>
-               <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v.1.3.1</div>
+               <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v.1.5.4</div>
                <label>{t.devLogs}</label>
                <div className="logs-container" style={{
                  background: 'rgba(0,0,0,0.2)',
