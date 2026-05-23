@@ -126,7 +126,7 @@ function App() {
   const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [showSettings, setShowSettings] = useState(false);
-  const [activeTab, setActiveTab] = useState<'profile' | 'images' | 'comfy' | 'llm' | 'archives' | 'logs' | 'admin'>('images');
+  const [activeTab, setActiveTab] = useState<'profile' | 'images' | 'comfy' | 'llm' | 'archives' | 'logs' | 'update' | 'admin'>('images');
   
   const [input, setInput] = useState('');
   

@@ -20,6 +20,7 @@ import comfyRoutes from './src/routes/comfy';
 import llmRoutes from './src/routes/llm';
 import galleryRoutes from './src/routes/gallery';
 import miscRoutes from './src/routes/misc';
+import updateRoutes from './src/routes/updates';
 
 dotenv.config();
 
@@ -97,6 +98,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/comfy', comfyRoutes);
 app.use('/api/llm', llmRoutes);
 app.use('/api/gallery', galleryRoutes);
+app.use('/api/updates', updateRoutes);
 app.use('/api/image-files', miscRoutes);
 app.use('/api', miscRoutes); // For workflows and thumbnails
 

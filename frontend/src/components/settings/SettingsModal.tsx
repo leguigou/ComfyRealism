@@ -4,14 +4,14 @@ import type { GenParameters, User, Language, GalleryItem } from '../../types';
 import { RefreshIcon } from '../ui/Icons';
 import { MarkdownLoader } from '../ui/MarkdownLoader';
 import devLogsUrl from '../../assets/DEVELOPMENT_LOGS.md?url';
-import { formatBytes, getFullImageUrl } from '../../services/api';
+import { formatBytes, getFullImageUrl, API_BASE } from '../../services/api';
 import toast from 'react-hot-toast';
 
 interface SettingsModalProps {
   showSettings: boolean;
   setShowSettings: (show: boolean) => void;
-  activeTab: 'profile' | 'images' | 'comfy' | 'llm' | 'archives' | 'logs' | 'admin';
-  setActiveTab: (tab: 'profile' | 'images' | 'comfy' | 'llm' | 'archives' | 'logs' | 'admin') => void;
+  activeTab: 'profile' | 'images' | 'comfy' | 'llm' | 'archives' | 'logs' | 'update' | 'admin';
+  setActiveTab: (tab: 'profile' | 'images' | 'comfy' | 'llm' | 'archives' | 'logs' | 'update' | 'admin') => void;
   params: GenParameters;
   setParams: (params: GenParameters) => void;
   lang: Language;
@@ -181,6 +181,7 @@ export const SettingsModal = ({
           <button className={`tab-btn ${activeTab === 'llm' ? 'active' : ''}`} onClick={() => setActiveTab('llm')}>{t.tabLLM}</button>
           <button className={`tab-btn ${activeTab === 'archives' ? 'active' : ''}`} onClick={() => setActiveTab('archives')}>{t.tabArchives}</button>
           <button className={`tab-btn ${activeTab === 'logs' ? 'active' : ''}`} onClick={() => setActiveTab('logs')}>{t.tabLogs}</button>
+          <button className={`tab-btn ${activeTab === 'update' ? 'active' : ''}`} onClick={() => setActiveTab('update')}>{t.tabUpdate}</button>
           {currentUser?.isAdmin && (
             <button className={`tab-btn ${activeTab === 'admin' ? 'active' : ''}`} onClick={() => setActiveTab('admin')}>{t.tabAdmin}</button>
           )}
@@ -552,7 +553,110 @@ export const SettingsModal = ({
               </div>
             </div>
           )}
+
+          {activeTab === 'update' && <UpdateTab t={t} />}
         </div>
+      </div>
+    </div>
+  );
+};
+
+interface UpdateInfo {
+  currentVersion: string;
+  latestVersion?: string;
+  updateAvailable?: boolean;
+  releaseUrl?: string;
+  releaseNotes?: string;
+  publishedAt?: string;
+  error?: string;
+}
+
+const UpdateTab = ({ t }: { t: Record<string, string> }) => {
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const checkUpdate = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/updates/check`, { credentials: 'include' });
+      const data = await res.json();
+      setUpdateInfo(data);
+    } catch (err) {
+      console.error('Update check failed:', err);
+      setUpdateInfo({ currentVersion: '?', error: 'Impossible de contacter le serveur' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    checkUpdate();
+  }, []);
+
+  return (
+    <div className="settings-grid">
+      <div className="setting-item" style={{ gridColumn: 'span 2' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <label style={{ margin: 0 }}>{t.currentVersion}</label>
+          <button className="refresh-models-btn" onClick={checkUpdate} disabled={isLoading}>
+            {isLoading ? '...' : <RefreshIcon size={16} />}
+          </button>
+        </div>
+
+        {updateInfo && (
+          <div className="update-status-card" style={{
+            background: 'rgba(255, 255, 255, 0.05)',
+            padding: '1.5rem',
+            borderRadius: '12px',
+            border: `1px solid ${updateInfo.updateAvailable ? 'var(--accent)' : 'var(--border)'}`,
+            marginBottom: '1.5rem'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.6, marginBottom: '0.2rem' }}>Locale</div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>v{updateInfo.currentVersion}</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '0.8rem', opacity: 0.6, marginBottom: '0.2rem' }}>GitHub</div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: updateInfo.updateAvailable ? 'var(--accent)' : 'inherit' }}>
+                  {updateInfo.latestVersion ? `v${updateInfo.latestVersion}` : '---'}
+                </div>
+              </div>
+            </div>
+
+            {updateInfo.updateAvailable ? (
+              <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                <p style={{ color: 'var(--accent)', fontWeight: 'bold', marginBottom: '1rem' }}>✨ Une mise à jour est disponible !</p>
+                <a href={updateInfo.releaseUrl} target="_blank" rel="noopener noreferrer" className="action-btn-large" style={{ textDecoration: 'none', display: 'inline-block' }}>
+                  Voir sur GitHub
+                </a>
+              </div>
+            ) : updateInfo.latestVersion ? (
+              <p style={{ textAlign: 'center', opacity: 0.7, margin: '1rem 0 0' }}>✅ Vous utilisez la dernière version.</p>
+            ) : updateInfo.error ? (
+              <p style={{ textAlign: 'center', color: '#ff4b4b', margin: '1rem 0 0' }}>⚠️ {updateInfo.error}</p>
+            ) : null}
+          </div>
+        )}
+
+        {updateInfo?.releaseNotes && (
+          <>
+            <label>{t.devLogs} (Latest)</label>
+            <div className="logs-container" style={{
+              background: 'rgba(0,0,0,0.2)',
+              padding: '1rem',
+              borderRadius: '8px',
+              maxHeight: '300px',
+              overflowY: 'auto',
+              fontSize: '0.85rem',
+              lineHeight: '1.4'
+            }}>
+              <div className="markdown-logs">
+                <MarkdownLoader content={updateInfo.releaseNotes} />
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
