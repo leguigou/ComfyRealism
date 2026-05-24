@@ -1,8 +1,15 @@
 # Development Logs
 
-## Current Version: v.1.5.4
+## Current Version: v.1.5.5
 
 ---
+
+### v.1.5.5 (2026-05-24)
+- **Gallery Stability & Performance**:
+    - **Infinite Scroll Refactoring**: Replaced state-based tracking with high-performance Refs to eliminate race conditions and duplicated fetch requests.
+    - **Visual Stabilization**: Added reserved height for loaders and fixed aspect-ratios for gallery tiles to prevent layout shifts during scroll.
+    - **Duplicate Prevention**: Implemented a deep-filtering mechanism to ensure UI consistentcy and unique keys in the gallery grid.
+    - **Code Quality**: Cleaned up unused props and resolved all remaining TypeScript compilation warnings.
 
 ### v.1.5.4 (2026-05-24)
 - **UI Polishing & Stability**:
