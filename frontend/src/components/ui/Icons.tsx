@@ -50,3 +50,9 @@ export const XIcon = ({ size = 20, className }: IconProps) => (
     <line x1="6" y1="6" x2="18" y2="18"></line>
   </svg>
 );
+
+export const ChevronDownIcon = ({ size = 20, className }: IconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <polyline points="6 9 12 15 18 9"></polyline>
+  </svg>
+);
