@@ -2,9 +2,16 @@ import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
 
-const rootDir = path.join(__dirname, '..', '..', '..');
+// Project root is the parent of the backend directory if running from backend, 
+// or the current directory if running from the root.
+const backendDir = process.cwd().endsWith('backend') ? process.cwd() : path.join(process.cwd(), 'backend');
+const rootDir = path.resolve(backendDir, '..');
+
 export const imagesDir = path.join(rootDir, 'images');
 export const thumbnailsDir = path.join(imagesDir, 'thumbnails');
+
+console.log(`[ImageService] Images directory: ${imagesDir}`);
+console.log(`[ImageService] Thumbnails directory: ${thumbnailsDir}`);
 
 if (!fs.existsSync(imagesDir)) fs.mkdirSync(imagesDir, { recursive: true });
 if (!fs.existsSync(thumbnailsDir)) fs.mkdirSync(thumbnailsDir, { recursive: true });
