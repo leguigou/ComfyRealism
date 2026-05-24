@@ -101,6 +101,7 @@ export const SettingsModal = ({
   // Local states for textareas to allow manual save
   const [localNegativePrompt, setLocalNegativePrompt] = useState(params.negativePrompt);
   const [localLLMSystemMessage, setLocalLLMSystemMessage] = useState(params.llmSystemMessage);
+  const [modelSearch, setModelSearch] = useState('');
 
   useEffect(() => {
     if (showSettings) {
@@ -110,10 +111,15 @@ export const SettingsModal = ({
       setConfirmPassword('');
       setLocalNegativePrompt(params.negativePrompt);
       setLocalLLMSystemMessage(params.llmSystemMessage);
+      setModelSearch('');
     }
   }, [showSettings, currentUser, params.negativePrompt, params.llmSystemMessage]);
 
   if (!showSettings) return null;
+
+  const filteredModels = comfyModels.filter(m => 
+    m.toLowerCase().includes(modelSearch.toLowerCase())
+  );
 
   const handleUpdateProfile = async () => {
     if (newPassword && newPassword !== confirmPassword) {
@@ -354,14 +360,30 @@ export const SettingsModal = ({
               </div>
               <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                 <label>{t.checkpointModel}</label>
+                <div style={{ marginBottom: '0.8rem' }}>
+                  <input 
+                    type="text" 
+                    placeholder={t.searchModel}
+                    value={modelSearch}
+                    onChange={(e) => setModelSearch(e.target.value)}
+                    style={{ 
+                      width: '100%', 
+                      background: 'rgba(255,255,255,0.05)', 
+                      border: '1px solid var(--border)',
+                      borderRadius: '8px',
+                      padding: '0.6rem 1rem',
+                      fontSize: '0.9rem'
+                    }}
+                  />
+                </div>
                 <div className="model-select-group">
                   <select
                     value={params.comfyModel}
                     onChange={(e) => setParams({ ...params, comfyModel: e.target.value })}
                     className="model-select"
                   >
-                    {comfyModels.length > 0 ? (
-                      comfyModels.map(m => <option key={m} value={m}>{m}</option>)
+                    {filteredModels.length > 0 ? (
+                      filteredModels.map(m => <option key={m} value={m}>{m}</option>)
                     ) : (
                       <option value={params.comfyModel}>{params.comfyModel}</option>
                     )}

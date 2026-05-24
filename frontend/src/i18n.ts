@@ -89,6 +89,7 @@ export const translations = {
     negativePrompt: 'Prompt Négatif',
     rename: 'Renommer',
     deleteAll: 'Tout supprimer',
+    searchModel: 'Rechercher un modèle...',
     tabProfile: 'Profil',
     changeAvatar: 'Changer l\'avatar',
     deleteAvatar: 'Supprimer l\'avatar',
@@ -196,6 +197,7 @@ export const translations = {
     negativePrompt: 'Negative Prompt',
     rename: 'Rename',
     deleteAll: 'Delete All',
+    searchModel: 'Search model...',
 
     tabProfile: 'Profile',
     changeAvatar: 'Change Avatar',
