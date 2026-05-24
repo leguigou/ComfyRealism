@@ -33,7 +33,7 @@ interface ChatInterfaceProps {
   setFavoritesOnly: (val: boolean) => void;
   showArchivedInGallery: boolean;
   setShowArchivedInGallery: (val: boolean) => void;
-  setGalleryOffset: (val: number) => void;
+  resetGallery: () => void;
   setHasMoreGallery: (val: boolean) => void;
   lastImageElementRef: (node: HTMLDivElement) => void;
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -72,15 +72,13 @@ export const ChatInterface = ({
   setFavoritesOnly,
   showArchivedInGallery,
   setShowArchivedInGallery,
-  setGalleryOffset,
-  setHasMoreGallery,
+  resetGallery,
   lastImageElementRef,
   containerRef,
   textareaRef,
   messagesEndRef,
   params,
   setParams,
-  smoothScrollTo,
   handleScroll,
   downloadImage
 }: ChatInterfaceProps) => {
@@ -273,14 +271,14 @@ export const ChatInterface = ({
             <div className="gallery-header">
               <h2>{t.myContent}</h2>
               <div className="gallery-filters">
-                <button className={`gallery-filter-fav ${favoritesOnly ? 'active' : ''}`} onClick={() => { setFavoritesOnly(!favoritesOnly); setGalleryOffset(0); setHasMoreGallery(true); }}>
+                <button className={`gallery-filter-fav ${favoritesOnly ? 'active' : ''}`} onClick={() => { setFavoritesOnly(!favoritesOnly); resetGallery(); }}>
                   {favoritesOnly ? '❤️' : '🤍'} {t.favorites}
                 </button>
                 <div className="control-group">
-                  <button className={`control-pill ${!showArchivedInGallery ? 'active' : ''}`} onClick={() => { setShowArchivedInGallery(false); setGalleryOffset(0); setHasMoreGallery(true); }}>
+                  <button className={`control-pill ${!showArchivedInGallery ? 'active' : ''}`} onClick={() => { setShowArchivedInGallery(false); resetGallery(); }}>
                     {t.active}
                   </button>
-                  <button className={`control-pill ${showArchivedInGallery ? 'active' : ''}`} onClick={() => { setShowArchivedInGallery(true); setGalleryOffset(0); setHasMoreGallery(true); }}>
+                  <button className={`control-pill ${showArchivedInGallery ? 'active' : ''}`} onClick={() => { setShowArchivedInGallery(true); resetGallery(); }}>
                     {t.archived}
                   </button>
                 </div>

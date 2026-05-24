@@ -345,9 +345,9 @@ function App() {
   }, [activeTab, fetchAdminUsers]);
 
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
-  const [galleryOffset, setGalleryOffset] = useState(0);
   const [hasMoreGallery, setHasMoreGallery] = useState(true);
   const [isFetchingGallery, setIsFetchingGallery] = useState(false);
+  const isFetchingGalleryRef = useRef(false);
   const [showArchivedInGallery, setShowArchivedInGallery] = useState(false);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
@@ -559,43 +559,65 @@ function App() {
     setView('chat');
   }, [logout, setSessions, setCurrentSessionId, setMessages]);
 
+  const galleryOffsetRef = useRef(0);
   const fetchGallery = useCallback(async (isInitial = false) => {
-    if (isFetchingGallery || (!hasMoreGallery && !isInitial)) return;
+    if (isFetchingGalleryRef.current || (!hasMoreGallery && !isInitial)) return;
+    
+    isFetchingGalleryRef.current = true;
     setIsFetchingGallery(true);
-    const currentOffset = isInitial ? 0 : galleryOffset;
+    
+    const currentOffset = isInitial ? 0 : galleryOffsetRef.current;
     try {
       const res = await fetch(`${API_BASE}/api/gallery?limit=25&offset=${currentOffset}&includeArchived=${showArchivedInGallery}&favoritesOnly=${favoritesOnly}`, { credentials: 'include' });
       const data: GalleryItem[] = await res.json();
+      
       if (isInitial) {
         setGalleryItems(data);
-        setGalleryOffset(data.length);
+        galleryOffsetRef.current = data.length;
+        setHasMoreGallery(data.length === 25);
       } else if (data.length > 0) {
         setGalleryItems(prev => {
           const existingIds = new Set(prev.map(item => item.messageId));
           const uniqueNewData = data.filter(item => !existingIds.has(item.messageId));
           return [...prev, ...uniqueNewData];
         });
-        setGalleryOffset(prev => prev + data.length);
+        galleryOffsetRef.current += data.length;
+        setHasMoreGallery(data.length === 25);
+      } else {
+        setHasMoreGallery(false);
       }
-      setHasMoreGallery(data.length === 25);
-    } catch (err) { console.error('Error fetching gallery:', err); }
-    finally { setIsFetchingGallery(false); }
-  }, [galleryOffset, hasMoreGallery, isFetchingGallery, showArchivedInGallery, favoritesOnly]);
+    } catch (err) { 
+      console.error('Error fetching gallery:', err); 
+    } finally { 
+      setIsFetchingGallery(false); 
+      isFetchingGalleryRef.current = false;
+    }
+  }, [hasMoreGallery, showArchivedInGallery, favoritesOnly]);
 
   const observer = useRef<IntersectionObserver | null>(null);
   const lastImageElementRef = useCallback((node: HTMLDivElement) => {
     if (isFetchingGallery) return;
     if (observer.current) observer.current.disconnect();
+    
     observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMoreGallery) fetchGallery(false);
-    }, { rootMargin: '400px', threshold: 0 });
+      if (entries[0].isIntersecting && hasMoreGallery && !isFetchingGalleryRef.current) {
+        fetchGallery(false);
+      }
+    }, { rootMargin: '600px', threshold: 0.1 });
+    
     if (node) observer.current.observe(node);
   }, [isFetchingGallery, hasMoreGallery, fetchGallery]);
 
+  const resetGallery = useCallback(() => {
+    galleryOffsetRef.current = 0;
+    setGalleryItems([]);
+    setHasMoreGallery(true);
+    fetchGallery(true);
+  }, [fetchGallery]);
+
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (view === 'gallery') fetchGallery(true);
-  }, [view, showArchivedInGallery, favoritesOnly, fetchGallery]);
+    if (view === 'gallery') resetGallery();
+  }, [view, showArchivedInGallery, favoritesOnly, resetGallery]);
 
   const fetchLLMModels = useCallback(async () => {
     if (!params.llmUrl) return;
@@ -932,7 +954,7 @@ function App() {
           interruptGeneration={interruptGeneration} handleEdit={handleEdit} goToImage={goToImage} setActiveInfoId={setActiveInfoId} activeInfoId={activeInfoId}
           setMessageToDelete={setMessageToDelete} toggleFavorite={toggleFavorite} handleImageClick={handleImageClick} favoritedId={favoritedId}
           galleryItems={galleryItems} isFetchingGallery={isFetchingGallery} favoritesOnly={favoritesOnly} setFavoritesOnly={setFavoritesOnly}
-          showArchivedInGallery={showArchivedInGallery} setShowArchivedInGallery={setShowArchivedInGallery} setGalleryOffset={setGalleryOffset}
+          showArchivedInGallery={showArchivedInGallery} setShowArchivedInGallery={setShowArchivedInGallery} resetGallery={resetGallery}
           setHasMoreGallery={setHasMoreGallery} lastImageElementRef={lastImageElementRef} containerRef={containerRef} textareaRef={textareaRef}
           messagesEndRef={messagesEndRef} params={params} setParams={setParams} smoothScrollTo={smoothScrollTo} handleScroll={() => {}} downloadImage={downloadImage}
         />
