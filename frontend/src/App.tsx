@@ -19,7 +19,7 @@ import { useSessions } from './hooks/useSessions';
 import { useGeneration } from './hooks/useGeneration';
 import { useWebSocket } from './hooks/useWebSocket';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
-import { ComposeIcon, ChevronDownIcon } from './components/ui/Icons';
+import { ComposeIcon } from './components/ui/Icons';
 import toast, { Toaster } from 'react-hot-toast';
 
 function App() {
