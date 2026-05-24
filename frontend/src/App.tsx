@@ -515,20 +515,40 @@ function App() {
     }
   }, [isAuthenticated, fetchSessions, fetchComfyModels, fetchSettings, fetchWorkflows]);
 
-  const saveSettings = useCallback(async (newParams: GenParameters) => {
+  const lastSavedParamsRef = useRef<string>('');
+
+  const saveSettings = useCallback(async (newParams: GenParameters, silent = false) => {
     if (!isSettingsLoaded) return;
+    
+    // Stringify to compare content
+    const paramsString = JSON.stringify(newParams);
+    if (paramsString === lastSavedParamsRef.current) return;
+
     try {
-      await fetch(`${API_BASE}/api/settings`, {
+      const res = await fetch(`${API_BASE}/api/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newParams),
+        body: paramsString,
         credentials: 'include'
       });
+      if (res.ok) {
+        lastSavedParamsRef.current = paramsString;
+        if (!silent) {
+          toast.success(t.settingsSaved, { id: 'settings-save' });
+        }
+      }
     } catch (err) { console.error('Error saving settings:', err); }
-  }, [isSettingsLoaded]);
+  }, [isSettingsLoaded, t.settingsSaved]);
 
   useEffect(() => {
     if (!isAuthenticated || !isSettingsLoaded) return;
+    
+    // On first load after settings are fetched, initialize the ref without showing toast
+    if (!lastSavedParamsRef.current) {
+      lastSavedParamsRef.current = JSON.stringify(params);
+      return;
+    }
+
     const timer = setTimeout(() => saveSettings(params), 1000);
     return () => clearTimeout(timer);
   }, [params, isAuthenticated, isSettingsLoaded, saveSettings]);
