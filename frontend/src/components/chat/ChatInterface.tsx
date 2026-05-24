@@ -3,7 +3,7 @@ import './ChatInterface.css';
 import type { Message, Language, GalleryItem, GenParameters } from '../../types';
 import { WelcomeScreen } from './WelcomeScreen';
 import { MessageText } from './MessageText';
-import { InfoIcon, RefreshIcon, SendIcon, ChatIcon, PlusIcon, XIcon } from '../ui/Icons';
+import { InfoIcon, RefreshIcon, SendIcon, ChatIcon, PlusIcon, XIcon, ChevronDownIcon } from '../ui/Icons';
 import { getFullImageUrl, formatDuration } from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -44,6 +44,8 @@ interface ChatInterfaceProps {
   smoothScrollTo: (id: string) => void;
   handleScroll: () => void;
   downloadImage: (url: string, filename: string) => void;
+  showScrollBottom?: boolean;
+  onScrollToBottom?: () => void;
 }
 
 export const ChatInterface = ({
@@ -80,7 +82,9 @@ export const ChatInterface = ({
   params,
   setParams,
   handleScroll,
-  downloadImage
+  downloadImage,
+  showScrollBottom,
+  onScrollToBottom
 }: ChatInterfaceProps) => {
   const [showOptions, setShowOptions] = useState(false);
   
@@ -330,6 +334,11 @@ export const ChatInterface = ({
 
       {view === 'chat' && (
         <div className="input-container">
+          {showScrollBottom && (
+            <button className={`scroll-bottom-btn ${showOptions ? 'options-open' : ''}`} onClick={onScrollToBottom} title={lang === 'fr' ? 'Aller en bas' : 'Scroll to bottom'}>
+              <ChevronDownIcon size={24} />
+            </button>
+          )}
           {showOptions && (
             <div className="generation-options-drawer fadeIn">
               <div className="options-group">

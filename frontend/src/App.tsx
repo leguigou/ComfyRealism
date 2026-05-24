@@ -19,7 +19,7 @@ import { useSessions } from './hooks/useSessions';
 import { useGeneration } from './hooks/useGeneration';
 import { useWebSocket } from './hooks/useWebSocket';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
-import { ComposeIcon } from './components/ui/Icons';
+import { ComposeIcon, ChevronDownIcon } from './components/ui/Icons';
 import toast, { Toaster } from 'react-hot-toast';
 
 function App() {
@@ -156,6 +156,7 @@ function App() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const pendingAnchorRef = useRef<string | null>(null);
   const isAnchoringRef = useRef<boolean>(false);
+  const isProgrammaticScrollRef = useRef<boolean>(false);
 
   const smoothScrollTo = useCallback((elementId: string) => {
     if (pendingAnchorRef.current || isAnchoringRef.current) return;
@@ -464,6 +465,23 @@ function App() {
 
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
   const [backendError] = useState(false);
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
+
+  const handleScroll = useCallback(() => {
+    if (isProgrammaticScrollRef.current) return;
+    const container = containerRef.current;
+    if (!container) return;
+    
+    // Show button if we are more than 150px from the bottom
+    const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+    setShowScrollBottom(!isAtBottom);
+  }, []);
+
+  // Force scroll check when content changes
+  useEffect(() => {
+    const timer = setTimeout(handleScroll, 100);
+    return () => clearTimeout(timer);
+  }, [messages, view, handleScroll]);
 
   const fetchComfyModels = useCallback(async () => {
     setIsFetchingComfyModels(true);
@@ -502,18 +520,48 @@ function App() {
     finally { setIsSettingsLoaded(true); }
   }, []);
 
+  const fetchLLMModels = useCallback(async () => {
+    if (!params.llmUrl) return;
+    setIsFetchingModels(true);
+    setLlmStatus(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/llm/models`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ llmUrl: params.llmUrl }),
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (data.models) {
+        setLlmModels(data.models);
+        setLlmStatus({ type: 'success', msg: `${data.models.length} ${t.modelsFound}` });
+        if (data.models.length > 0 && !data.models.includes(params.llmModel)) {
+          setParams(p => ({ ...p, llmModel: data.models[0] }));
+        }
+      }
+    } catch (err) { setLlmStatus({ type: 'error', msg: 'Connexion échouée : ' + (err instanceof Error ? err.message : String(err)) }); }
+    finally { setIsFetchingModels(false); }
+  }, [params.llmUrl, params.llmModel, t.modelsFound]);
+
   useEffect(() => {
     if (isAuthenticated) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchSessions();
       // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchSettings();
+    }
+  }, [isAuthenticated, fetchSessions, fetchSettings]);
+
+  useEffect(() => {
+    if (isAuthenticated && showSettings) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchComfyModels();
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      fetchSettings();
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchWorkflows();
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchLLMModels();
     }
-  }, [isAuthenticated, fetchSessions, fetchComfyModels, fetchSettings, fetchWorkflows]);
+  }, [isAuthenticated, showSettings, fetchComfyModels, fetchWorkflows, fetchLLMModels]);
 
   const lastSavedParamsRef = useRef<string>('');
 
@@ -639,29 +687,6 @@ function App() {
   useEffect(() => {
     if (view === 'gallery') resetGallery();
   }, [view, showArchivedInGallery, favoritesOnly, resetGallery]);
-
-  const fetchLLMModels = useCallback(async () => {
-    if (!params.llmUrl) return;
-    setIsFetchingModels(true);
-    setLlmStatus(null);
-    try {
-      const res = await fetch(`${API_BASE}/api/llm/models`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ llmUrl: params.llmUrl }),
-        credentials: 'include'
-      });
-      const data = await res.json();
-      if (data.models) {
-        setLlmModels(data.models);
-        setLlmStatus({ type: 'success', msg: `${data.models.length} ${t.modelsFound}` });
-        if (data.models.length > 0 && !data.models.includes(params.llmModel)) {
-          setParams(p => ({ ...p, llmModel: data.models[0] }));
-        }
-      }
-    } catch (err) { setLlmStatus({ type: 'error', msg: 'Connexion échouée : ' + (err instanceof Error ? err.message : String(err)) }); }
-    finally { setIsFetchingModels(false); }
-  }, [params.llmUrl, params.llmModel, t.modelsFound]);
 
   const goToImage = useCallback((sessionId: string, messageId: string) => {
     setCurrentSessionId(sessionId);
@@ -796,19 +821,56 @@ function App() {
   }, [showSessionMenu]);
 
   useEffect(() => {
-    const handleVisualFeedback = (e: MouseEvent | TouchEvent) => {
-      const target = (e.target as HTMLElement).closest('button, .header-ai-toggle, .gallery-action-btn, .action-btn-icon, .dropdown-item, .image-fav-btn, .lightbox-btn');
-      if (target && !target.closest('.chat-header')) {
+    const feedbackTimeouts = new WeakMap<HTMLElement, any>();
+    let lastFeedbackTime = 0;
+
+    const handleVisualFeedback = (e: PointerEvent) => {
+      // Very short throttle for true rapid fire
+      const now = Date.now();
+      if (now - lastFeedbackTime < 50) return;
+      lastFeedbackTime = now;
+
+      // Select ANY interactive element that might need feedback
+      const target = (e.target as HTMLElement).closest('button, .header-ai-toggle, .gallery-action-btn, .action-btn-icon, .dropdown-item, .image-fav-btn, .lightbox-btn, .action-pill-btn, .scroll-bottom-btn, .picker-item, .control-pill') as HTMLElement;
+      
+      if (target) {
+        // 1. Clear existing timer
+        const existingTimeout = feedbackTimeouts.get(target);
+        if (existingTimeout) clearTimeout(existingTimeout);
+        
+        // 2. FORCE RESTART: Remove, reflow, then add
+        target.classList.remove('click-feedback');
+        void target.offsetWidth; // Trigger reflow
         target.classList.add('click-feedback');
-        setTimeout(() => target.classList.remove('click-feedback'), 500);
+        
+        // 3. Set removal timer
+        const timeout = setTimeout(() => {
+          target.classList.remove('click-feedback');
+          feedbackTimeouts.delete(target);
+        }, 400); // Matches animation duration
+        
+        feedbackTimeouts.set(target, timeout);
       }
     };
-    window.addEventListener('mousedown', handleVisualFeedback);
-    window.addEventListener('touchstart', handleVisualFeedback, { passive: true });
+
+    window.addEventListener('pointerdown', handleVisualFeedback, { capture: true, passive: true });
     return () => {
-      window.removeEventListener('mousedown', handleVisualFeedback);
-      window.removeEventListener('touchstart', handleVisualFeedback);
+      window.removeEventListener('pointerdown', handleVisualFeedback, { capture: true });
     };
+  }, []);
+
+  const onScrollToBottom = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    
+    isProgrammaticScrollRef.current = true;
+    setShowScrollBottom(false);
+    isAnchoringRef.current = false;
+    pendingAnchorRef.current = null;
+    
+    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    setTimeout(() => { if (container) container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' }); }, 100);
+    setTimeout(() => { isProgrammaticScrollRef.current = false; }, 1000);
   }, []);
 
   if (isAuthenticated === null) return (
@@ -980,7 +1042,8 @@ function App() {
           galleryItems={galleryItems} isFetchingGallery={isFetchingGallery} favoritesOnly={favoritesOnly} setFavoritesOnly={setFavoritesOnly}
           showArchivedInGallery={showArchivedInGallery} setShowArchivedInGallery={setShowArchivedInGallery} resetGallery={resetGallery}
           setHasMoreGallery={setHasMoreGallery} lastImageElementRef={lastImageElementRef} containerRef={containerRef} textareaRef={textareaRef}
-          messagesEndRef={messagesEndRef} params={params} setParams={setParams} smoothScrollTo={smoothScrollTo} handleScroll={() => {}} downloadImage={downloadImage}
+          messagesEndRef={messagesEndRef} params={params} setParams={setParams} smoothScrollTo={smoothScrollTo} handleScroll={handleScroll} downloadImage={downloadImage}
+          showScrollBottom={showScrollBottom} onScrollToBottom={onScrollToBottom}
         />
       </main>
       </div>

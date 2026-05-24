@@ -296,11 +296,11 @@
 
 .action-btn-icon:focus:not(:focus-visible) {
   outline: none;
-  background-color: var(--social-bg) !important;
-  border-color: var(--border) !important;
-  color: var(--text) !important;
-  transform: none !important;
-  box-shadow: none !important;
+  background-color: var(--social-bg);
+  border-color: var(--border);
+  color: var(--text);
+  transform: none;
+  box-shadow: none;
 }
 
 .action-btn-icon:focus:not(:focus-visible) * {
@@ -491,6 +491,15 @@
   border-color: var(--accent);
 }
 
+.options-toggle-btn:focus:not(:focus-visible) {
+  outline: none;
+  border-color: var(--border); /* Reset to default border when focused but not active */
+}
+
+.options-toggle-btn.active:focus:not(:focus-visible) {
+  border-color: var(--accent); /* Keep accent if actually active */
+}
+
 .input-wrapper {
   display: flex;
   align-items: flex-end;
@@ -498,6 +507,45 @@
   width: 100%;
   padding: 0 0.5rem; /* Symmetrical side padding for the whole wrapper on mobile */
   box-sizing: border-box;
+}
+
+.light .options-toggle-btn,
+.light .input-box {
+  background-color: rgba(255, 255, 255, 0.7);
+  color: var(--text-h);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.light .options-toggle-btn:hover {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+.light .input-box textarea {
+  color: var(--text-h);
+}
+
+.light .input-box textarea::placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.light .generation-options-drawer {
+  background-color: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.light .send-btn {
+  background-color: #e5e7eb; /* Gris clair */
+  color: #000000;
+}
+
+.light .send-btn:hover:not(:disabled) {
+  background-color: #d1d5db;
+}
+
+.light .send-btn:disabled {
+  background-color: #f3f4f6;
+  color: #9ca3af;
 }
 
 .input-box { 

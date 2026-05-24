@@ -11,6 +11,9 @@ if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
 const db = new Database(path.join(dataDir, 'history.db'));
 db.pragma('journal_mode = WAL');
+db.pragma('synchronous = NORMAL');
+db.pragma('temp_store = MEMORY');
+db.pragma('cache_size = -2000'); // ~2MB cache
 
 export const initDatabase = () => {
   db.exec(`
@@ -70,6 +73,12 @@ export const initDatabase = () => {
       id INTEGER PRIMARY KEY CHECK (id = 1),
       data TEXT NOT NULL
     );
+
+    CREATE INDEX IF NOT EXISTS idx_sessions_userId ON sessions(userId);
+    CREATE INDEX IF NOT EXISTS idx_messages_sessionId ON messages(sessionId);
+    CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp);
+    CREATE INDEX IF NOT EXISTS idx_queue_sessionId ON queue(sessionId);
+    CREATE INDEX IF NOT EXISTS idx_queue_status ON queue(status);
   `);
 
   // Migrations

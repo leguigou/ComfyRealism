@@ -1,8 +1,24 @@
 # Development Logs
 
-## Current Version: v.1.5.5
+## Current Version: v.1.5.7
 
 ---
+
+### v.1.5.7 (2026-05-24)
+- **UI Refinements & Navigation**:
+    - **Scroll to Bottom Button**: Added a new floating chevron button (`v`) that appears when scrolling up, allowing for an instant and smooth jump back to the latest messages.
+    - **Intelligent Positioning**: The scroll button dynamically shifts upwards when the generation options menu is opened to prevent overlapping and maintain accessibility.
+    - **Pixel-Perfect Alignment**: Refactored the button structure to share the same parent container as the options toggle, ensuring 100% precise vertical alignment on all screen sizes.
+    - **Light Theme Harmonization**: Redesigned the light mode aesthetic for the scroll button, "+" toggle, and input area to match the header's frosted glass style with appropriate light-gray and semi-transparent white backgrounds.
+    - **Robust Click Feedback**: Implemented a global green pulse animation (`click-feedback`) that overrides focus states and theme specifics, providing guaranteed visual confirmation for every interaction.
+    - **Responsive Fixes**: Resolved race conditions between momentum scrolling and programmatic "scroll to bottom" commands.
+
+### v.1.5.6 (2026-05-24)
+- **Performance & Loading Optimization**:
+    - **Database Indexes**: Added SQL indexes to `userId`, `sessionId`, and `timestamp` columns to significantly speed up history and gallery queries.
+    - **SQLite Tuning**: Optimized database pragmas (`WAL` mode, `NORMAL` synchronous, `MEMORY` temp store) for better concurrent read/write performance.
+    - **Deferred Initialization**: Refactored frontend startup to defer ComfyUI and LLM model scanning until the settings modal is opened. This reduces initial network congestion and speeds up the first "meaningful paint".
+    - **Responsive Loader**: Ensured the application becomes interactive as soon as the session list is ready, without waiting for external backend service scans.
 
 ### v.1.5.5 (2026-05-24)
 - **Gallery Stability & Performance**:
