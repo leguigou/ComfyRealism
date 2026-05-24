@@ -176,19 +176,28 @@ export const ChatInterface = ({
                     </div>
                   )}
                   {msg.imageUrl && (
-                    <div className="image-wrapper" onClick={() => handleImageClick({ 
-                      url: msg.imageUrl!, 
-                      thumbnailUrl: msg.thumbnailUrl,
-                      sessionId: currentSessionId!, 
-                      messageId: msg.id, 
-                      isFavorite: msg.isFavorite, 
-                      source: 'chat' 
-                    })}>
+                    <div className="image-wrapper" 
+                      style={{ 
+                        aspectRatio: (msg.width && msg.height) ? `${msg.width}/${msg.height}` : 'auto',
+                        width: '100%',
+                        maxWidth: msg.width ? `${msg.width}px` : '100%',
+                        minHeight: '100px'
+                      }}
+                      onClick={() => handleImageClick({ 
+                        url: msg.imageUrl!, 
+                        thumbnailUrl: msg.thumbnailUrl,
+                        sessionId: currentSessionId!, 
+                        messageId: msg.id, 
+                        isFavorite: msg.isFavorite, 
+                        source: 'chat' 
+                      })}
+                    >
                       <img 
                         src={getFullImageUrl(msg.thumbnailUrl || msg.imageUrl!)} 
                         alt="Generated" 
                         className="clickable-image" 
-                        onLoad={() => smoothScrollTo(`msg-${msg.id}`)}
+                        style={{ width: '100%', height: 'auto', display: 'block' }}
+                        // Removed onLoad scroll to prevent jumps during polling
                       />
                       <button 
                         className={`image-fav-btn ${msg.isFavorite ? 'active' : ''}`}
