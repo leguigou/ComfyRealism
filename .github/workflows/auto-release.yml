@@ -3,7 +3,7 @@ name: Auto Release from Logs
 on:
   push:
     tags:
-      - 'v.*' # Se déclenche pour les tags comme v.1.2.64
+      - 'v*' # Se déclenche pour les tags comme v.1.2.64 ou v1.5.7
 
 permissions:
   contents: write
