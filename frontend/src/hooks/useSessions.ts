@@ -46,14 +46,36 @@ export const useSessions = (view: 'chat' | 'gallery' | 'archives', isAuthenticat
       if (data.messages) {
         setMessages(prev => {
           const tempMessages = prev.filter(m => m.id.startsWith('temp-'));
-          const newMessages = data.messages.map((newMsg: Message) => {
+          
+          // Deep merge logic to prevent flickering
+          const updatedMessages = data.messages.map((newMsg: Message) => {
             const existingMsg = prev.find(m => m.id === newMsg.id);
-            if (existingMsg && existingMsg.duration !== undefined && (newMsg.duration === undefined || newMsg.duration === null)) {
-              return { ...newMsg, duration: existingMsg.duration };
+            if (!existingMsg) return newMsg;
+            
+            // If data hasn't changed significantly, keep existing reference
+            const hasImageUrlChanged = existingMsg.imageUrl !== newMsg.imageUrl;
+            const hasStatusChanged = existingMsg.status !== newMsg.status;
+            const hasTextChanged = existingMsg.text !== newMsg.text;
+
+            if (!hasImageUrlChanged && !hasStatusChanged && !hasTextChanged) {
+              return existingMsg;
             }
-            return newMsg;
+
+            // Merge duration if missing in new data but present in existing
+            const mergedDuration = (newMsg.duration === undefined || newMsg.duration === null) 
+              ? existingMsg.duration 
+              : newMsg.duration;
+
+            return { ...newMsg, duration: mergedDuration };
           });
-          return [...newMessages, ...tempMessages.filter(tm => !newMessages.some((nm: Message) => nm.role === tm.role && (nm.prompt === tm.text || nm.text === tm.text)))];
+
+          // Check if the overall messages list actually changed to avoid reference change
+          const isSameLength = updatedMessages.length === prev.filter(m => !m.id.startsWith('temp-')).length;
+          if (isSameLength && updatedMessages.every((m: Message, i: number) => m === prev[i])) {
+            return prev;
+          }
+
+          return [...updatedMessages, ...tempMessages.filter(tm => !updatedMessages.some((nm: Message) => nm.role === tm.role && (nm.prompt === tm.text || nm.text === tm.text)))];
         });
       }
     } catch (err) {
