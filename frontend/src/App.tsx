@@ -13,6 +13,7 @@ import { API_BASE, getFullImageUrl } from './services/api';
 import { Sidebar } from './components/sidebar/Sidebar';
 import { SettingsModal } from './components/settings/SettingsModal';
 import { ChatInterface } from './components/chat/ChatInterface';
+import { APP_CONFIG } from './config';
 import { useAuth } from './hooks/useAuth';
 import { useSessions } from './hooks/useSessions';
 import { useGeneration } from './hooks/useGeneration';
@@ -805,6 +806,9 @@ function App() {
         <div className="input-group"><label>{t.username}</label><input type="text" autoFocus value={loginUsername} onChange={(e) => setLoginUsername(e.target.value)} className={loginError ? 'error' : ''} /></div>
         <div className="input-group"><label>{t.password}</label><input type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className={loginError ? 'error' : ''} />{loginError && <p className="error-msg">{t.incorrectLogin}</p>}</div>
         <button type="submit" disabled={isLoginLoading}>{isLoginLoading ? '...' : t.login}</button>
+        <div style={{ marginTop: '1.5rem', textAlign: 'center', opacity: 0.3, fontSize: '0.7rem', letterSpacing: '0.05em' }}>
+          v.{APP_CONFIG.VERSION}
+        </div>
       </form>
     </div>
   );
