@@ -289,19 +289,28 @@ export const ChatInterface = ({
             <div className="gallery-grid">
               {galleryItems.map((item, index) => (
                 <div 
-                ref={galleryItems.length === index + 1 ? lastImageElementRef : undefined}
-                key={item.messageId} 
-                className="gallery-item" 
-                onClick={() => handleImageClick({ 
-                  url: item.imageUrl, 
-                  thumbnailUrl: item.thumbnailUrl,
-                  sessionId: item.sessionId, 
-                  messageId: item.messageId, 
-                  isFavorite: item.isFavorite, 
-                  source: 'gallery' 
-                })}
+                  ref={galleryItems.length === index + 1 ? lastImageElementRef : undefined}
+                  key={item.messageId} 
+                  className="gallery-item" 
+                  style={{ 
+                    aspectRatio: (item.width && item.height) ? `${item.width}/${item.height}` : 'auto',
+                    backgroundColor: 'var(--social-bg)'
+                  }}
+                  onClick={() => handleImageClick({ 
+                    url: item.imageUrl, 
+                    thumbnailUrl: item.thumbnailUrl,
+                    sessionId: item.sessionId, 
+                    messageId: item.messageId, 
+                    isFavorite: item.isFavorite, 
+                    source: 'gallery' 
+                  })}
                 >
-                  <img src={getFullImageUrl(item.thumbnailUrl || item.imageUrl)} alt={item.prompt} loading="lazy" />
+                  <img 
+                    src={getFullImageUrl(item.thumbnailUrl || item.imageUrl)} 
+                    alt={item.prompt} 
+                    loading="lazy" 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  />
                   <div className="gallery-item-actions">
                     <button 
                       className="gallery-action-btn"
