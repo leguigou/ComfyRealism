@@ -382,16 +382,16 @@ function App() {
       clickTimeoutRef.current = null;
       toggleFavorite(item.sessionId, item.messageId, item.isFavorite);
     } else {
-      setActiveLightbox({ 
-        url: item.url, 
-        thumbnailUrl: item.thumbnailUrl, 
-        sessionId: item.sessionId, 
-        messageId: item.messageId, 
-        source: item.source 
-      });
       clickTimeoutRef.current = window.setTimeout(() => {
         clickTimeoutRef.current = null;
-      }, 350);
+        setActiveLightbox({ 
+          url: item.url, 
+          thumbnailUrl: item.thumbnailUrl, 
+          sessionId: item.sessionId, 
+          messageId: item.messageId, 
+          source: item.source 
+        });
+      }, 300);
     }
   }, [toggleFavorite]);
 
