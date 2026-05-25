@@ -87,6 +87,8 @@ export const translations = {
     readMore: 'Voir plus',
     readLess: 'Voir moins',
     negativePrompt: 'Prompt Négatif',
+    sampler: 'Sampler',
+    scheduler: 'Scheduler',
     rename: 'Renommer',
     deleteAll: 'Tout supprimer',
     searchModel: 'Rechercher un modèle...',

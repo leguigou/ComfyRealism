@@ -55,6 +55,8 @@ export interface GenParameters {
   height: number;
   steps: number;
   cfg: number;
+  sampler?: string;
+  scheduler?: string;
   comfyUrl: string;
   comfyModel: string;
   llmUrl: string;

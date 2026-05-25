@@ -46,6 +46,8 @@ export const getWorkflow = (prompt: string, params?: any) => {
     if (params) {
       if (params.steps) workflow[nodes.ksampler].inputs.steps = params.steps;
       if (params.cfg) workflow[nodes.ksampler].inputs.cfg = params.cfg;
+      if (params.sampler) workflow[nodes.ksampler].inputs.sampler_name = params.sampler;
+      if (params.scheduler) workflow[nodes.ksampler].inputs.scheduler = params.scheduler;
     }
   }
 
