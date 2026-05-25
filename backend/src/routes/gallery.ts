@@ -12,7 +12,7 @@ router.get('/', authenticate, (req, res) => {
   const favoritesOnly = req.query.favoritesOnly === 'true';
   
   let query = `
-    SELECT m.sessionId, m.id as messageId, m.imageUrl, m.thumbnailUrl, m.prompt, m.text, m.timestamp, m.model, m.width, m.height, m.steps, m.cfg, m.workflow, m.seed, m.isFavorite, m.duration
+    SELECT m.sessionId, m.id as messageId, m.imageUrl, m.thumbnailUrl, m.prompt, m.text, m.timestamp, m.model, m.width, m.height, m.steps, m.cfg, m.workflow, m.seed, m.isFavorite, m.duration, m.sampler, m.scheduler
     FROM messages m JOIN sessions s ON m.sessionId = s.id
     WHERE m.imageUrl IS NOT NULL AND s.userId = ?
   `;

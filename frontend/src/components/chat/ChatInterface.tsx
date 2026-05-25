@@ -234,6 +234,7 @@ export const ChatInterface = ({
                       <p><strong>{t.date}:</strong> {new Date(msg.timestamp).toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-US')}</p>
                       <p><strong>{t.model}:</strong> {msg.model || t.unknown}</p>
                       <p><strong>{t.workflow}:</strong> {msg.workflow || t.unknown}</p>
+                      <p><strong>Sampler:</strong> {msg.sampler || t.unknown} | <strong>Scheduler:</strong> {msg.scheduler || t.unknown}</p>
                       <p><strong>{t.dimensions}:</strong> {msg.width}x{msg.height}</p>
                       <p><strong>{t.steps}:</strong> {msg.steps} | <strong>CFG:</strong> {msg.cfg} | <strong>{t.seed}:</strong> <span className="reusable-seed" title={t.reuseSeed} onClick={() => { 
                         setParams(prev => ({ ...prev, seedMode: 'fixed', forcedSeed: msg.seed?.toString() || '' }));
