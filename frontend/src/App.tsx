@@ -466,20 +466,39 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
   const [backendError] = useState(false);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
+  const scrollTimeoutRef = useRef<number | null>(null);
 
-  const handleScroll = useCallback(() => {
+  const handleScroll = useCallback((isUserScroll: boolean | React.UIEvent = false) => {
     if (isProgrammaticScrollRef.current) return;
     const container = containerRef.current;
     if (!container) return;
     
-    // Show button if we are more than 150px from the bottom
     const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
-    setShowScrollBottom(!isAtBottom);
+    
+    if (isAtBottom) {
+      setShowScrollBottom(false);
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+      return;
+    }
+
+    if (isUserScroll === true) {
+      setShowScrollBottom(false);
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+      
+      scrollTimeoutRef.current = window.setTimeout(() => {
+        if (containerRef.current) {
+           const atBottom = containerRef.current.scrollHeight - containerRef.current.scrollTop - containerRef.current.clientHeight < 150;
+           setShowScrollBottom(!atBottom);
+        }
+      }, 300);
+    } else {
+      setShowScrollBottom(true);
+    }
   }, []);
 
   // Force scroll check when content changes
   useEffect(() => {
-    const timer = setTimeout(handleScroll, 100);
+    const timer = setTimeout(() => handleScroll(false), 100);
     return () => clearTimeout(timer);
   }, [messages, view, handleScroll]);
 
@@ -597,9 +616,9 @@ function App() {
       return;
     }
 
-    const timer = setTimeout(() => saveSettings(params), 1000);
+    const timer = setTimeout(() => saveSettings(params, !showSettings), 1000);
     return () => clearTimeout(timer);
-  }, [params, isAuthenticated, isSettingsLoaded, saveSettings]);
+  }, [params, isAuthenticated, isSettingsLoaded, saveSettings, showSettings]);
 
   useEffect(() => {
     localStorage.setItem('lang', lang);

@@ -112,7 +112,7 @@ export const ChatInterface = ({
 
   return (
     <>
-      <div className="messages-container" ref={containerRef} onScroll={handleScroll}>
+      <div className="messages-container" ref={containerRef} onScroll={() => handleScroll(true)}>
         {view === 'chat' || view === 'archives' ? (
           <>
             {messages.length === 0 && (
