@@ -44,12 +44,17 @@ export const processQueue = async () => {
 
     const configPath = path.join(__dirname, '..', '..', 'workflows', (params?.workflowFile || 'workflow_lcm.json').replace('.json', '.config.json'));
     let saveNodeId = "99";
+    let ksamplerNodeId = "10";
     if (fs.existsSync(configPath)) {
       try {
         const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
         if (config.nodeMapping?.save) saveNodeId = config.nodeMapping.save;
+        if (config.nodeMapping?.ksampler) ksamplerNodeId = config.nodeMapping.ksampler;
       } catch (e) { }
     }
+
+    let sampler = workflow[ksamplerNodeId]?.inputs?.sampler_name || '';
+    let scheduler = workflow[ksamplerNodeId]?.inputs?.scheduler || '';
 
     let promptId = '';
     try {
@@ -128,7 +133,7 @@ export const processQueue = async () => {
     const imageUrl = `/api/image-files/${userId}/${fullWebpName}`;
     const thumbnailUrl = `/api/image-files/thumbnails/${userId}/${thumbWebpName}`;
     
-    db.prepare('UPDATE messages SET imageUrl = ?, thumbnailUrl = ?, status = ?, duration = ? WHERE id = ?').run(imageUrl, thumbnailUrl, 'completed', finalDuration, task.messageId);
+    db.prepare('UPDATE messages SET imageUrl = ?, thumbnailUrl = ?, status = ?, duration = ?, sampler = ?, scheduler = ? WHERE id = ?').run(imageUrl, thumbnailUrl, 'completed', finalDuration, sampler, scheduler, task.messageId);
     db.prepare('DELETE FROM queue WHERE id = ?').run(task.id);
     
     broadcastToSession(task.sessionId, { 
@@ -143,7 +148,9 @@ export const processQueue = async () => {
       steps: params.steps, 
       cfg: params.cfg, 
       workflow: params.workflowFile, 
-      seed: params.seed 
+      seed: params.seed,
+      sampler,
+      scheduler
     });
   } catch (error: any) {
     const errorMsg = error.message || 'Unexpected error';

@@ -54,6 +54,8 @@ export const initDatabase = () => {
       seed INTEGER,
       duration INTEGER,
       isFavorite INTEGER DEFAULT 0,
+      sampler TEXT,
+      scheduler TEXT,
       FOREIGN KEY (sessionId) REFERENCES sessions(id) ON DELETE CASCADE
     );
 
@@ -82,7 +84,7 @@ export const initDatabase = () => {
   `);
 
   // Migrations
-  const columnsToCheck = ['model', 'width', 'height', 'steps', 'cfg', 'workflow', 'status', 'thumbnailUrl', 'seed', 'duration', 'isFavorite'];
+  const columnsToCheck = ['model', 'width', 'height', 'steps', 'cfg', 'workflow', 'status', 'thumbnailUrl', 'seed', 'duration', 'isFavorite', 'sampler', 'scheduler'];
   columnsToCheck.forEach(col => {
     try {
       db.prepare(`SELECT ${col} FROM messages LIMIT 1`).get();

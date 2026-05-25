@@ -12,6 +12,8 @@ export interface Message {
   steps?: number;
   cfg?: number;
   seed?: number;
+  sampler?: string;
+  scheduler?: string;
   timestamp: number;
   status?: 'pending' | 'processing' | 'completed' | 'failed';
   isEnhancing?: boolean;
@@ -33,6 +35,8 @@ export interface GalleryItem {
   height?: number;
   steps?: number;
   cfg?: number;
+  sampler?: string;
+  scheduler?: string;
   duration?: number;
   isFavorite?: number;
 }
