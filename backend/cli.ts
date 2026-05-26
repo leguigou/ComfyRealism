@@ -4,15 +4,7 @@ import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 
-// Standardized path for both Docker and Local
-let dataDir: string;
-if (fs.existsSync('/app/data')) {
-  dataDir = '/app/data'; // Path used in Docker volume
-} else {
-  // Local path
-  dataDir = path.join(__dirname, 'data');
-}
-
+const dataDir = path.join(__dirname, 'data');
 const dbPath = path.join(dataDir, 'history.db');
 
 if (!fs.existsSync(dbPath)) {

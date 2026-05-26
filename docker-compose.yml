@@ -5,8 +5,8 @@ services:
     ports:
       - "3001:3001"
     volumes:
-      - ./backend/data:/app/data
-      - ./backend/workflows:/app/workflows
+      - ./backend/data:/app/backend/data
+      - ./backend/workflows:/app/backend/workflows
       - ./images:/images
     environment:
       - NODE_ENV=${NODE_ENV:-production}

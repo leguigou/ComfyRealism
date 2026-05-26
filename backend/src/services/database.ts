@@ -14,10 +14,8 @@ if (fs.existsSync('/app/data')) {
   dataDir = path.join(rootDir, 'data');
 }
 
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 const dbPath = path.join(dataDir, 'history.db');
-console.log(`[Database] Using database at: ${dbPath}`);
-
+console.log(`[Database] Initializing at: ${dbPath}`);
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 db.pragma('synchronous = NORMAL');
