@@ -1,6 +1,12 @@
 # Development Logs
 
-## Current Version: v1.5.8
+## Current Version: v1.5.9
+
+---
+
+### v1.5.9 (2026-05-26)
+- **Infrastructure & Maintenance**:
+    - **Docker Workflows Fix**: Resolved an issue where Docker volume mounts would shadow default workflows shipped in the image by backing them up during the build phase and restoring them automatically upon startup if missing.
 
 ---
 

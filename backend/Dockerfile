@@ -16,8 +16,8 @@ RUN npm install
 # Copy the rest of the code
 COPY . .
 
-# Create directories for data and images
-RUN mkdir -p data workflows
+# Create directories for data and images, and backup default workflows
+RUN mkdir -p data workflows && cp -r workflows default_workflows
 # Images will be at /images at root of container, matched by volume
 
 EXPOSE 3001

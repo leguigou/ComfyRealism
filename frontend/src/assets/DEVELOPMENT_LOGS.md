@@ -1,8 +1,45 @@
 # Development Logs
 
-## Current Version: v.1.5.5
+## Current Version: v1.5.9
 
 ---
+
+### v1.5.9 (2026-05-26)
+- **Infrastructure & Maintenance**:
+    - **Docker Workflows Fix**: Resolved an issue where Docker volume mounts would shadow default workflows shipped in the image by backing them up during the build phase and restoring them automatically upon startup if missing.
+
+---
+
+### v1.5.8 (2026-05-25)
+- **Settings & Control**:
+    - **Sampler & Scheduler Support**: Added ability to select Sampler (euler, dpmpp, lcm, etc.) and Scheduler (karras, normal, etc.) directly in settings.
+    - **Database Migration**: Automatically updated historical images with default sampler/scheduler information.
+- **UX & Interactions**:
+    - **Double-Click Favorite**: Images can now be favorited by double-clicking without opening the lightbox.
+    - **Smart Scroll Button**: The "Scroll to bottom" button now hides during active manual scrolling to improve visibility.
+    - **Quiet Auto-Save**: Removed the "Settings saved" toast when changes are made from the header or viewer (now only shows in settings modal).
+- **Infrastructure & Maintenance**:
+    - **Docker Fixes**: Standardized internal paths to `/app/backend` to fix database path issues in Docker/Dokploy environments.
+    - **CLI Robustness**: Fixed the admin CLI tool to reliably find the database in containerized environments.
+    - **GitHub Action**: Fixed auto-release trigger to work with both `v1.x.x` and `v.1.x.x` tag formats.
+
+---
+
+### v.1.5.7 (2026-05-24)
+- **UI Refinements & Navigation**:
+    - **Scroll to Bottom Button**: Added a new floating chevron button (`v`) that appears when scrolling up, allowing for an instant and smooth jump back to the latest messages.
+    - **Intelligent Positioning**: The scroll button dynamically shifts upwards when the generation options menu is opened to prevent overlapping and maintain accessibility.
+    - **Pixel-Perfect Alignment**: Refactored the button structure to share the same parent container as the options toggle, ensuring 100% precise vertical alignment on all screen sizes.
+    - **Light Theme Harmonization**: Redesigned the light mode aesthetic for the scroll button, "+" toggle, and input area to match the header's frosted glass style with appropriate light-gray and semi-transparent white backgrounds.
+    - **Robust Click Feedback**: Implemented a global green pulse animation (`click-feedback`) that overrides focus states and theme specifics, providing guaranteed visual confirmation for every interaction.
+    - **Responsive Fixes**: Resolved race conditions between momentum scrolling and programmatic "scroll to bottom" commands.
+
+### v.1.5.6 (2026-05-24)
+- **Performance & Loading Optimization**:
+    - **Database Indexes**: Added SQL indexes to `userId`, `sessionId`, and `timestamp` columns to significantly speed up history and gallery queries.
+    - **SQLite Tuning**: Optimized database pragmas (`WAL` mode, `NORMAL` synchronous, `MEMORY` temp store) for better concurrent read/write performance.
+    - **Deferred Initialization**: Refactored frontend startup to defer ComfyUI and LLM model scanning until the settings modal is opened. This reduces initial network congestion and speeds up the first "meaningful paint".
+    - **Responsive Loader**: Ensured the application becomes interactive as soon as the session list is ready, without waiting for external backend service scans.
 
 ### v.1.5.5 (2026-05-24)
 - **Gallery Stability & Performance**:
