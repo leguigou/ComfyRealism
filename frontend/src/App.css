@@ -256,6 +256,7 @@ div:focus:not(:focus-visible) {
   color: white;
   height: 100%;
   padding: 0 0.8rem;
+  border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
