@@ -1,6 +1,21 @@
 # Development Logs
 
-## Current Version: v.1.5.7
+## Current Version: v1.5.8
+
+---
+
+### v1.5.8 (2026-05-25)
+- **Settings & Control**:
+    - **Sampler & Scheduler Support**: Added ability to select Sampler (euler, dpmpp, lcm, etc.) and Scheduler (karras, normal, etc.) directly in settings.
+    - **Database Migration**: Automatically updated historical images with default sampler/scheduler information.
+- **UX & Interactions**:
+    - **Double-Click Favorite**: Images can now be favorited by double-clicking without opening the lightbox.
+    - **Smart Scroll Button**: The "Scroll to bottom" button now hides during active manual scrolling to improve visibility.
+    - **Quiet Auto-Save**: Removed the "Settings saved" toast when changes are made from the header or viewer (now only shows in settings modal).
+- **Infrastructure & Maintenance**:
+    - **Docker Fixes**: Standardized internal paths to `/app/backend` to fix database path issues in Docker/Dokploy environments.
+    - **CLI Robustness**: Fixed the admin CLI tool to reliably find the database in containerized environments.
+    - **GitHub Action**: Fixed auto-release trigger to work with both `v1.x.x` and `v.1.x.x` tag formats.
 
 ---
 
