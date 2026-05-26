@@ -708,12 +708,13 @@ function App() {
   }, [view, showArchivedInGallery, favoritesOnly, resetGallery]);
 
   const goToImage = useCallback((sessionId: string, messageId: string) => {
+    setMessages([]);
     setCurrentSessionId(sessionId);
     setView('chat');
     pendingAnchorRef.current = messageId;
     isAnchoringRef.current = true;
     setTimeout(() => { if (isAnchoringRef.current) isAnchoringRef.current = false; }, 5000);
-  }, [setCurrentSessionId]);
+  }, [setCurrentSessionId, setMessages]);
 
   useEffect(() => {
     if (view === 'chat' && pendingAnchorRef.current && messages.length > 0) {
@@ -851,9 +852,9 @@ function App() {
 
     const handleVisualFeedback = (e: PointerEvent) => {
       // Very short throttle for true rapid fire
-      const now = Date.now();
-      if (now - lastFeedbackTime < 50) return;
-      lastFeedbackTime = now;
+      const status = Date.now();
+      if (status - lastFeedbackTime < 50) return;
+      lastFeedbackTime = status;
 
       // Select ANY interactive element that might need feedback
       const target = (e.target as HTMLElement).closest('button, .header-ai-toggle, .gallery-action-btn, .action-btn-icon, .dropdown-item, .image-fav-btn, .lightbox-btn, .action-pill-btn, .scroll-bottom-btn, .picker-item, .control-pill') as HTMLElement;
@@ -1016,6 +1017,7 @@ function App() {
         sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} backendError={backendError} t={t}
         createNewSession={createNewSession} view={view} setView={setView} fetchGallery={fetchGallery}
         sessions={sessions} currentSessionId={currentSessionId} setCurrentSessionId={setCurrentSessionId}
+        setMessages={setMessages}
         renamingId={renamingId} setRenamingId={setRenamingId} renameValue={renameValue} setRenameValue={setRenameValue}
         renameSession={renameSession} toggleArchive={toggleArchive} deleteSession={deleteSession}
         setShowSettings={(show) => { setShowSettings(show); if (show) setSidebarOpen(false); }} 
