@@ -85,8 +85,6 @@ export const useSessions = (view: 'chat' | 'gallery' | 'archives', isAuthenticat
 
   useEffect(() => {
     if (currentSessionId && (view === 'chat' || view === 'archives')) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setMessages([]);
       fetchSessionDetails(currentSessionId);
     }
   }, [currentSessionId, view, fetchSessionDetails]);

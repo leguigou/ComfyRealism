@@ -15,6 +15,7 @@ interface SidebarProps {
   sessions: Session[];
   currentSessionId: string | null;
   setCurrentSessionId: (id: string | null) => void;
+  setMessages: (msgs: any[]) => void;
   renamingId: string | null;
   setRenamingId: (id: string | null) => void;
   renameValue: string;
@@ -45,6 +46,7 @@ export const Sidebar = ({
   sessions,
   currentSessionId,
   setCurrentSessionId,
+  setMessages,
   renamingId,
   setRenamingId,
   renameValue,
@@ -109,6 +111,7 @@ export const Sidebar = ({
                   setSidebarOpen(false);
                   return;
                 }
+                setMessages([]);
                 setCurrentSessionId(s.id); 
                 setView('chat'); 
                 setSidebarOpen(false); 
