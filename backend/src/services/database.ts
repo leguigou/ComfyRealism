@@ -5,8 +5,8 @@ import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
 
 // Ensure data directory exists in the backend folder
-const backendDir = process.cwd().endsWith('backend') ? process.cwd() : path.join(process.cwd(), 'backend');
-const dataDir = path.join(backendDir, 'data');
+const rootDir = path.join(__dirname, '..', '..');
+const dataDir = path.join(rootDir, 'data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
 const db = new Database(path.join(dataDir, 'history.db'));
