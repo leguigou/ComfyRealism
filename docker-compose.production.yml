@@ -1,6 +1,7 @@
 services:
   backend:
     image: ghcr.io/leguigou/comfyrealism-backend:latest
+    pull_policy: always
     container_name: comfy-realism-backend
     ports:
       - "3001:3001"
@@ -20,9 +21,11 @@ services:
 
   frontend:
     image: ghcr.io/leguigou/comfyrealism-frontend:latest
+    pull_policy: always
     container_name: comfy-realism-frontend
     ports:
       - "5173:80"
     depends_on:
       - backend
     restart: unless-stopped
+
