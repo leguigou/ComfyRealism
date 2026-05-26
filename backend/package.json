@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "ts-node-dev index.ts",
     "cli": "ts-node cli.ts",
+    "cache-breaker": "echo 1779785000",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
