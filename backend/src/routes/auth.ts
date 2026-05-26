@@ -15,8 +15,7 @@ router.post('/login', (req, res) => {
   }
 
   const user = db.prepare('SELECT * FROM users WHERE username = ?').get(submittedUsername) as any;
-  // SECURITY BYPASSED TEMPORARILY
-  if (!user) {
+  if (!user || !bcrypt.compareSync(submittedPassword, user.password)) {
     return res.status(401).json({ error: 'Invalid username or password' });
   }
 
