@@ -26,8 +26,9 @@ export const useGeneration = (
     }
   };
 
-  const handleSend = useCallback(async (textToSend: string, isRegeneration = false) => {
-    if (!textToSend.trim() || !currentSessionId) return;
+  const handleSend = useCallback(async (textToSend: string, isRegeneration = false, targetSessionId?: string) => {
+    const activeSessionId = targetSessionId || currentSessionId;
+    if (!textToSend.trim() || !activeSessionId) return;
 
     if (!isRegeneration) {
       const userMsg: Message = { id: `temp-${Math.random().toString(36).substring(7)}`, role: 'user', text: textToSend, timestamp: Date.now() };
@@ -104,7 +105,7 @@ export const useGeneration = (
         body: JSON.stringify({ 
           prompt: finalPrompt, 
           originalPrompt: textToSend,
-          sessionId: currentSessionId,
+          sessionId: activeSessionId,
           clientId: clientIdRef.current,
           isRegeneration: isRegeneration,
           params: { 
