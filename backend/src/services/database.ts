@@ -9,7 +9,9 @@ const rootDir = path.join(__dirname, '..', '..');
 const dataDir = path.join(rootDir, 'data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
-const db = new Database(path.join(dataDir, 'history.db'));
+const dbPath = path.join(dataDir, 'history.db');
+console.log(`[Database] Initializing at: ${dbPath}`);
+const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 db.pragma('synchronous = NORMAL');
 db.pragma('temp_store = MEMORY');
