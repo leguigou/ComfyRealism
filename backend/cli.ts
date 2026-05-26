@@ -4,15 +4,33 @@ import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 
-const dataDir = path.join(__dirname, 'data');
-const dbPath = path.join(dataDir, 'history.db');
+// Exhaustive search for the database file to handle any Docker/Dokploy folder structure
+const possiblePaths = [
+  path.join(__dirname, 'data', 'history.db'),
+  path.join(__dirname, '..', 'data', 'history.db'),
+  '/app/data/history.db',
+  '/app/backend/data/history.db',
+  path.join(process.cwd(), 'data', 'history.db'),
+  path.join(process.cwd(), 'backend', 'data', 'history.db')
+];
 
-if (!fs.existsSync(dbPath)) {
-  console.error(`Error: Database not found at ${dbPath}`);
-  console.log('Available files in data directory:', fs.existsSync(dataDir) ? fs.readdirSync(dataDir) : 'Data directory not found');
+let dbPath = '';
+for (const p of possiblePaths) {
+  if (fs.existsSync(p)) {
+    dbPath = p;
+    break;
+  }
+}
+
+if (!dbPath) {
+  console.error(`Error: Database (history.db) not found in any of the expected locations:`);
+  possiblePaths.forEach(p => console.log(` - ${p}`));
+  console.log('Current __dirname:', __dirname);
+  console.log('Current process.cwd():', process.cwd());
   process.exit(1);
 }
 
+console.log(`[CLI] Using database found at: ${dbPath}`);
 const db = new Database(dbPath);
 
 const usage = `
