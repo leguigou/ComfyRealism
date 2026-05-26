@@ -4,12 +4,21 @@ import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
 
-// Ensure data directory exists in the backend folder
-const rootDir = path.join(__dirname, '..', '..');
-const dataDir = path.join(rootDir, 'data');
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+// Standardized path for both Docker and Local
+let dataDir: string;
+if (fs.existsSync('/app/data')) {
+  dataDir = '/app/data'; // Path used in Docker volume
+} else {
+  // Local path
+  const rootDir = path.join(__dirname, '..', '..');
+  dataDir = path.join(rootDir, 'data');
+}
 
-const db = new Database(path.join(dataDir, 'history.db'));
+if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+const dbPath = path.join(dataDir, 'history.db');
+console.log(`[Database] Using database at: ${dbPath}`);
+
+const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 db.pragma('synchronous = NORMAL');
 db.pragma('temp_store = MEMORY');
