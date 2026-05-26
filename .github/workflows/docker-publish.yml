@@ -32,13 +32,17 @@ jobs:
         with:
           context: ./backend
           push: true
-          # We force lowercase for the repository name to comply with Docker tag standards
-          tags: ghcr.io/${{ github.repository_owner }}/comfyrealism-backend:latest
+          # We force lowercase for the repository owner to comply with Docker standards
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/comfyrealism-backend:latest
+            ghcr.io/${{ github.repository_owner }}/comfyrealism-backend:${{ github.ref_name }}
 
       - name: Build and push Frontend
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           push: true
-          # We force lowercase for the repository name to comply with Docker tag standards
-          tags: ghcr.io/${{ github.repository_owner }}/comfyrealism-frontend:latest
+          # We force lowercase for the repository owner to comply with Docker standards
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/comfyrealism-frontend:latest
+            ghcr.io/${{ github.repository_owner }}/comfyrealism-frontend:${{ github.ref_name }}
