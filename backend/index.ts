@@ -5,6 +5,27 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { WebSocket, WebSocketServer } from 'ws';
 import { v4 as uuidv4 } from 'uuid';
+import fs from 'fs';
+import path from 'path';
+
+// Restore default workflows if obscured by empty volume mount
+const workflowsDir = path.join(__dirname, 'workflows');
+const defaultWorkflowsDir = path.join(__dirname, 'default_workflows');
+
+if (fs.existsSync(defaultWorkflowsDir) && fs.existsSync(workflowsDir)) {
+  const defaultFiles = fs.readdirSync(defaultWorkflowsDir);
+  for (const file of defaultFiles) {
+    const targetPath = path.join(workflowsDir, file);
+    if (!fs.existsSync(targetPath)) {
+      try {
+        fs.copyFileSync(path.join(defaultWorkflowsDir, file), targetPath);
+        console.log(`[Init] Restored default workflow file: ${file}`);
+      } catch (err) {
+        console.error(`[Init] Failed to restore default workflow file: ${file}`, err);
+      }
+    }
+  }
+}
 
 import { initDatabase } from './src/services/database';
 import { initQueue } from './src/services/queue';
