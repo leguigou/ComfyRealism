@@ -4,8 +4,7 @@ import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 
-const rootDir = __dirname;
-const dataDir = path.join(rootDir, 'data');
+const dataDir = path.join(__dirname, 'data');
 const dbPath = path.join(dataDir, 'history.db');
 
 if (!fs.existsSync(dbPath)) {
