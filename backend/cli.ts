@@ -4,11 +4,14 @@ import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 
-const dataDir = path.join(__dirname, 'data');
+const backendDir = process.cwd().endsWith('backend') ? process.cwd() : path.join(process.cwd(), 'backend');
+const dataDir = path.join(backendDir, 'data');
 const dbPath = path.join(dataDir, 'history.db');
 
 if (!fs.existsSync(dbPath)) {
   console.error(`Error: Database not found at ${dbPath}`);
+  console.log('Current working directory:', process.cwd());
+  console.log('Available files in data directory:', fs.existsSync(dataDir) ? fs.readdirSync(dataDir) : 'Data directory not found');
   process.exit(1);
 }
 
