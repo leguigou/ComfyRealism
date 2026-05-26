@@ -6,8 +6,10 @@ import bcrypt from 'bcryptjs';
 
 // Standardized path for both Docker and Local
 let dataDir: string;
-if (fs.existsSync('/app/data')) {
-  dataDir = '/app/data'; // Path used in Docker volume
+if (fs.existsSync('/app/backend/data')) {
+  dataDir = '/app/backend/data'; // Path used in Docker volume
+} else if (fs.existsSync('/app/data')) {
+  dataDir = '/app/data'; // Legacy path support
 } else {
   // Local path
   const rootDir = path.join(__dirname, '..', '..');
