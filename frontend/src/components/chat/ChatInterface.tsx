@@ -42,7 +42,7 @@ interface ChatInterfaceProps {
   params: GenParameters;
   setParams: React.Dispatch<React.SetStateAction<GenParameters>>;
   smoothScrollTo: (id: string) => void;
-  handleScroll: () => void;
+  handleScroll: (isUserScroll?: boolean | React.UIEvent) => void;
   downloadImage: (url: string, filename: string) => void;
   showScrollBottom?: boolean;
   onScrollToBottom?: () => void;
