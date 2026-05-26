@@ -781,12 +781,18 @@ function App() {
     link.click();
   }, []);
 
-  const onHandleSend = useCallback((override?: string, regen?: boolean) => {
+  const onHandleSend = useCallback(async (override?: string, regen?: boolean) => {
     const text = override !== undefined ? override : input;
     if (!text.trim()) return;
-    handleSend(text, regen);
+
+    let targetSessionId = currentSessionId;
+    if (!targetSessionId) {
+      targetSessionId = await createNewSession();
+    }
+
+    handleSend(text, regen, targetSessionId);
     if (override === undefined) setInput('');
-  }, [handleSend, input]);
+  }, [handleSend, input, currentSessionId, createNewSession]);
 
   const onInputChange = useCallback((val: string) => setInput(val), []);
 
