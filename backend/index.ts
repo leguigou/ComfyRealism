@@ -89,20 +89,22 @@ wss.on('connection', (ws) => {
   });
 });
 
-// API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/history', historyRoutes);
-app.use('/api/generate', generationRoutes);
-app.use('/api/settings', settingsRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/comfy', comfyRoutes);
-app.use('/api/llm', llmRoutes);
-app.use('/api/gallery', galleryRoutes);
-app.use('/api/updates', updateRoutes);
-app.use('/api/image-files', miscRoutes);
-app.use('/api', miscRoutes); // For workflows and thumbnails
+// API Routes - Mounted at both /api and / for proxy compatibility
+const apiRouter = express.Router();
+apiRouter.use('/auth', authRoutes);
+apiRouter.use('/history', historyRoutes);
+apiRouter.use('/generate', generationRoutes);
+apiRouter.use('/settings', settingsRoutes);
+apiRouter.use('/users', userRoutes);
+apiRouter.use('/comfy', comfyRoutes);
+apiRouter.use('/llm', llmRoutes);
+apiRouter.use('/gallery', galleryRoutes);
+apiRouter.use('/updates', updateRoutes);
+apiRouter.use('/image-files', miscRoutes);
+apiRouter.use('/', miscRoutes); // For thumbnails and root health checks
 
-app.get('/', (req, res) => res.json({ status: 'online', service: 'ComfyRealism Backend' }));
+app.use('/api', apiRouter);
+app.use('/', apiRouter);
 
 // Global error handlers
 process.on('uncaughtException', (err) => {
