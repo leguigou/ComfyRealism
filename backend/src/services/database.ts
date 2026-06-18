@@ -12,9 +12,11 @@ if (fs.existsSync('/app/backend/data')) {
   dataDir = '/app/data'; // Legacy path support
 } else {
   // Local path
-  const rootDir = path.join(__dirname, '..', '..');
-  dataDir = path.join(rootDir, 'data');
+  const backendDir = process.cwd().endsWith('backend') ? process.cwd() : path.join(process.cwd(), 'backend');
+  dataDir = path.join(backendDir, 'data');
 }
+
+if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
 const dbPath = path.join(dataDir, 'history.db');
 console.log(`[Database] Initializing at: ${dbPath}`);

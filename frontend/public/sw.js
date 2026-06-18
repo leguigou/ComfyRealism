@@ -1,7 +1,5 @@
-const CACHE_NAME = 'comfy-realism-v1.5.8';
+const CACHE_NAME = 'comfy-realism-v1.5.10';
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
   '/manifest.json',
   '/favicon.svg',
   '/icons.svg'
@@ -28,29 +26,39 @@ self.addEventListener('activate', (event) => {
         })
       );
     }).then(() => self.clients.claim())
+      .then(() => self.clients.matchAll({ type: 'window', includeUncontrolled: true }))
+      .then((clients) => {
+        clients.forEach((client) => {
+          if (client.url && 'navigate' in client) {
+            client.navigate(client.url);
+          }
+        });
+      })
   );
 });
 
-// Fetch event: Network-first for API, Cache-first for assets
+// Fetch event: never intercept API, network-first for app assets.
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Skip cross-origin and API requests (always network)
-  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) {
+  if (
+    event.request.method !== 'GET' ||
+    url.origin !== self.location.origin ||
+    url.pathname.startsWith('/api/') ||
+    url.pathname === '/sw.js'
+  ) {
     return;
   }
 
   event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        return response || fetch(event.request).then((fetchResponse) => {
-          // Optional: cache new static assets on the fly
-          if (event.request.method === 'GET' && fetchResponse.status === 200) {
-            const cacheCopy = fetchResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, cacheCopy));
-          }
-          return fetchResponse;
-        });
+    fetch(event.request)
+      .then((fetchResponse) => {
+        if (fetchResponse.status === 200) {
+          const cacheCopy = fetchResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, cacheCopy));
+        }
+        return fetchResponse;
       })
+      .catch(() => caches.match(event.request))
   );
 });
