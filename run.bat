@@ -23,7 +23,7 @@ taskkill /f /fi "WINDOWTITLE eq ComfyRealism Frontend" >nul 2>&1
 echo [3/3] Demarrage de ComfyRealism...
 
 :: Start Backend
-start "ComfyRealism Backend" cmd /k "cd backend && npm run dev"
+start "ComfyRealism Backend" cmd /k "cd backend && npm run build && npm run start"
 
 :: Start Frontend
 start "ComfyRealism Frontend" cmd /k "cd frontend && npm run dev"

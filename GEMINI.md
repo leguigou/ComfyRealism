@@ -11,7 +11,7 @@ This workspace is a full-stack application connecting a React chat interface to 
     - **Header Logic**: The `chat-header` must remain visible when near the bottom of the page (50px threshold) to prevent flickering feedback loops.
 - **Verification**: 
     - When fixing generation issues, always verify the connection to `http://127.0.0.1:8188` first.
-    - When implementing code changes, always verify the status of the live application at `http://sweethome.deloffre.fr:55200/`.
+    - When implementing code changes, always verify the status of the live application through the configured external URL when one is provided.
 - **Quality**: Always run `npm run lint` and `npx tsc` in the `frontend` directory after changes. Use `.cmd` suffix on Windows.
 
 ## Tech Stack
