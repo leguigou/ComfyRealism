@@ -105,7 +105,6 @@ export const SettingsModal = ({
 
   useEffect(() => {
     if (showSettings) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEditUsername(currentUser?.username || '');
       setNewPassword('');
       setConfirmPassword('');

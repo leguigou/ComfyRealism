@@ -2,25 +2,12 @@ export const getApiBase = () => {
   // 1. Priority: Environment variable
   if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
 
-  const { protocol, hostname, port } = window.location;
-
-  // 2. Production Path Routing
-  if (hostname !== 'localhost' && hostname !== '127.0.0.1' && (!port || port === '80' || port === '443')) {
-    return `${protocol}//${hostname}`;
-  }
-
-  // 3. Fallback for local development
-  if (port === '5173' || port === '5174' || !port) {
-    return `${protocol}//${hostname}:3001`;
-  }
-  
-  // 4. Smart mapping for external access
-  if (port.endsWith('00') && port.length >= 5) {
-    const apiPort = (parseInt(port) + 1).toString();
-    return `${protocol}//${hostname}:${apiPort}`;
-  }
-
-  return `${protocol}//${hostname}:3001`;
+  // For all standard deployments and local dev, we now rely on path-based routing (/api)
+  // This means the API is accessed on the EXACT same host and port as the frontend.
+  // This completely eliminates CORS and Cross-Origin HTTP Cookie blocking issues.
+  // In dev mode: Vite Proxy handles /api -> 127.0.0.1:3001
+  // In prod mode: Nginx/Traefik handles /api -> backend:3001
+  return '';
 };
 
 export const API_BASE = getApiBase();

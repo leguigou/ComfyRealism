@@ -10,7 +10,17 @@ const router = express.Router();
 
 router.post('/generate', authenticate, async (req, res) => {
   try {
+    const user = (req as any).user;
     const { prompt, originalPrompt, sessionId, params } = req.body;
+    if (typeof prompt !== 'string' || !prompt.trim() || !sessionId) {
+      return res.status(400).json({ success: false, error: 'Prompt and sessionId are required' });
+    }
+
+    const session = db.prepare('SELECT id FROM sessions WHERE id = ? AND userId = ?').get(sessionId, user.id);
+    if (!session) {
+      return res.status(403).json({ success: false, error: 'Unauthorized session' });
+    }
+
     const timestamp = Date.now();
     const messageId = uuidv4();
     const userMessageId = uuidv4();

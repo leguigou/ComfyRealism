@@ -2,8 +2,51 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import db from '../services/database';
 import { authenticate } from '../middleware/auth';
+import net from 'net';
 
 const router = express.Router();
+
+const getCookieOptions = (req: express.Request, includeMaxAge = true) => {
+  const isProd = process.env.NODE_ENV === 'production';
+  const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
+
+  const cookieOptions: any = {
+    httpOnly: true,
+    signed: true,
+    path: '/'
+  };
+
+  if (includeMaxAge) {
+    cookieOptions.maxAge = 30 * 24 * 60 * 60 * 1000;
+  }
+
+  if (isProd) {
+    const rawHost = (req.headers['x-forwarded-host'] as string) || req.headers.host || '';
+    const hostname = rawHost.split(':')[0];
+
+    if (hostname !== 'localhost' && !net.isIP(hostname)) {
+      const parts = hostname.split('.');
+      if (parts.length >= 2) {
+        cookieOptions.domain = `.${parts.slice(-2).join('.')}`;
+      }
+    }
+  }
+
+  if (isHttps) {
+    cookieOptions.sameSite = 'none';
+    cookieOptions.secure = true;
+  } else {
+    cookieOptions.sameSite = 'lax';
+    cookieOptions.secure = false;
+  }
+
+  return cookieOptions;
+};
+
+const getLegacyAuthCookieOptions = (req: express.Request) => ({
+  ...getCookieOptions(req, false),
+  path: '/api/auth'
+});
 
 router.post('/login', (req, res) => {
   const { username, password } = req.body;
@@ -19,27 +62,8 @@ router.post('/login', (req, res) => {
     return res.status(401).json({ error: 'Invalid username or password' });
   }
 
-  const isProd = process.env.NODE_ENV === 'production';
-  const cookieOptions: any = { 
-    httpOnly: true, 
-    signed: true, 
-    maxAge: 30 * 24 * 60 * 60 * 1000 
-  };
-
-  if (isProd) {
-    cookieOptions.sameSite = 'none';
-    cookieOptions.secure = true;
-    const host = (req.headers['x-forwarded-host'] as string) || req.headers.host || '';
-    const parts = host.split('.');
-    if (parts.length >= 2) {
-      const domain = `.${parts.slice(-2).join('.')}`;
-      cookieOptions.domain = domain;
-    }
-  } else {
-    cookieOptions.sameSite = 'lax';
-  }
-
-  res.cookie('userId', user.id, cookieOptions);
+  res.clearCookie('userId', getLegacyAuthCookieOptions(req));
+  res.cookie('userId', user.id, getCookieOptions(req));
   return res.json({ success: true, user: { username: user.username, isAdmin: user.isAdmin === 1, avatarUrl: user.avatarUrl } });
 });
 
@@ -49,7 +73,7 @@ router.get('/me', authenticate, (req, res) => {
 });
 
 router.get('/check', (req, res) => {
-  const userId = req.signedCookies.userId;
+  const userId = req.signedCookies.userId || req.cookies.userId;
   if (!userId) return res.json({ authenticated: false });
   const user = db.prepare('SELECT username, isAdmin, avatarUrl FROM users WHERE id = ?').get(userId) as any;
   if (!user) return res.json({ authenticated: false });
@@ -57,7 +81,8 @@ router.get('/check', (req, res) => {
 });
 
 router.post('/logout', (req, res) => { 
-  res.clearCookie('userId'); 
+  res.clearCookie('userId', getLegacyAuthCookieOptions(req));
+  res.clearCookie('userId', getCookieOptions(req, false)); 
   res.json({ success: true }); 
 });
 
