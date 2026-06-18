@@ -3,8 +3,52 @@ import bcrypt from 'bcryptjs';
 import db from '../services/database';
 import { authenticate } from '../middleware/auth';
 import { CookieOptions, User } from '../types';
+import net from 'net';
 
 const router = Router();
+
+const getCookieOptions = (req: Request, includeMaxAge = true) => {
+  const isProd = process.env.NODE_ENV === 'production';
+  const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
+
+  const cookieOptions: CookieOptions = {
+    httpOnly: true,
+    signed: true,
+    path: '/',
+    sameSite: 'lax',
+  };
+
+  if (includeMaxAge) {
+    cookieOptions.maxAge = 30 * 24 * 60 * 60 * 1000;
+  }
+
+  if (isProd) {
+    const rawHost = (req.headers['x-forwarded-host'] as string) || req.headers.host || '';
+    const hostname = rawHost.split(':')[0];
+
+    if (hostname !== 'localhost' && !net.isIP(hostname)) {
+      const parts = hostname.split('.');
+      if (parts.length >= 2) {
+        cookieOptions.domain = `.${parts.slice(-2).join('.')}`;
+      }
+    }
+  }
+
+  if (isHttps) {
+    cookieOptions.sameSite = 'none';
+    cookieOptions.secure = true;
+  } else {
+    cookieOptions.sameSite = 'lax';
+    cookieOptions.secure = false;
+  }
+
+  return cookieOptions;
+};
+
+const getLegacyAuthCookieOptions = (req: Request) => ({
+  ...getCookieOptions(req, false),
+  path: '/api/auth',
+});
 
 router.post('/login', (req: Request, res: Response) => {
   const { username, password } = req.body;
@@ -18,25 +62,8 @@ router.post('/login', (req: Request, res: Response) => {
     return res.status(401).json({ error: 'Invalid username or password' });
   }
 
-  const isProd = process.env.NODE_ENV === 'production';
-  const cookieOptions: CookieOptions = { 
-    httpOnly: true,
-    signed: true,
-    maxAge: 30 * 24 * 60 * 60 * 1000,
-    sameSite: 'lax',
-  };
-
-  if (isProd) {
-    cookieOptions.sameSite = 'none';
-    cookieOptions.secure = true;
-    const host: string = (req.headers['x-forwarded-host'] as string) || req.headers.host || '';
-    const parts = host.split('.');
-    if (parts.length >= 2) {
-      cookieOptions.domain = `.${parts.slice(-2).join('.')}`;
-    }
-  }
-
-  res.cookie('userId', user.id, cookieOptions as any);
+  res.clearCookie('userId', getLegacyAuthCookieOptions(req) as any);
+  res.cookie('userId', user.id, getCookieOptions(req) as any);
   return res.json({
     success: true,
     user: { username: user.username, isAdmin: user.isAdmin === 1, avatarUrl: user.avatarUrl },
@@ -49,7 +76,7 @@ router.get('/me', authenticate, (req: Request, res: Response) => {
 });
 
 router.get('/check', (req: Request, res: Response) => {
-  const userId = req.signedCookies.userId;
+  const userId = req.signedCookies.userId || req.cookies?.userId;
   if (!userId) {
     return res.json({ authenticated: false });
   }
@@ -63,8 +90,9 @@ router.get('/check', (req: Request, res: Response) => {
   });
 });
 
-router.post('/logout', (_req: Request, res: Response) => {
-  res.clearCookie('userId');
+router.post('/logout', (req: Request, res: Response) => {
+  res.clearCookie('userId', getLegacyAuthCookieOptions(req) as any);
+  res.clearCookie('userId', getCookieOptions(req, false) as any);
   res.json({ success: true });
 });
 

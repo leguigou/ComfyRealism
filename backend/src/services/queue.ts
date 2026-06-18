@@ -50,7 +50,8 @@ export const processQueue = async () => {
     
     console.log(`[Queue] Submitting to ComfyUI at ${targetComfyUrl}...`);
 
-    const configPath = path.join(__dirname, '..', '..', 'workflows', (params.workflowFile || 'workflow_lcm.json').replace('.json', '.config.json'));
+    const backendDir = process.cwd().endsWith('backend') ? process.cwd() : path.join(process.cwd(), 'backend');
+    const configPath = path.join(backendDir, 'workflows', (params.workflowFile || 'workflow_lcm.json').replace('.json', '.config.json'));
     let saveNodeId = "99";
     let ksamplerNodeId = "10";
     if (fs.existsSync(configPath)) {

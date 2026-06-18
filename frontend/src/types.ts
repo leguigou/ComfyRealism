@@ -35,6 +35,7 @@ export interface GalleryItem {
   height?: number;
   steps?: number;
   cfg?: number;
+  seed?: number;
   sampler?: string;
   scheduler?: string;
   duration?: number;

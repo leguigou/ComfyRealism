@@ -30,7 +30,8 @@ export const getEffectiveComfyUrl = (): ComfyUrlResult => {
 
 export const getWorkflow = (prompt: string, params?: Partial<GenerationParams>) => {
   const workflowFile = params?.workflowFile || 'workflow_lcm.json';
-  const fullPath = path.join(__dirname, '..', '..', 'workflows', workflowFile);
+  const backendDir = process.cwd().endsWith('backend') ? process.cwd() : path.join(process.cwd(), 'backend');
+  const fullPath = path.join(backendDir, 'workflows', workflowFile);
   const configPath = fullPath.replace('.json', '.config.json');
   
   if (!fs.existsSync(fullPath)) throw new Error(`Fichier workflow introuvable : ${workflowFile}`);
