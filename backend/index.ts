@@ -50,7 +50,11 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ noServer: true });
 
 const PORT = Number(process.env.PORT) || 3001;
-const AUTH_SECRET = process.env.AUTH_SECRET || 'fallback_secret';
+const AUTH_SECRET = process.env.AUTH_SECRET;
+if (!AUTH_SECRET) {
+  console.error('[Fatal] AUTH_SECRET is not set. Use a strong random string in your .env');
+  process.exit(1);
+}
 
 // Initialize Services
 initDatabase();
