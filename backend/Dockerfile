@@ -11,7 +11,7 @@ WORKDIR /app/backend
 
 # Copy package files first for better caching
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 # Copy the rest of the code
 COPY . .
@@ -20,7 +20,8 @@ COPY . .
 RUN mkdir -p data workflows && cp -r workflows default_workflows
 # Images will be at /images at root of container, matched by volume
 
+RUN npm run build && npm prune --omit=dev
+
 EXPOSE 3001
 
-# Run in dev mode using ts-node-dev (as currently used in the project)
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "start"]

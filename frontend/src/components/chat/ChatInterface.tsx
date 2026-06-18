@@ -179,10 +179,8 @@ export const ChatInterface = ({
                   )}
                   {msg.imageUrl && (
                     <div className="image-wrapper" 
-                      style={{ 
+                      style={{
                         aspectRatio: (msg.width && msg.height) ? `${msg.width}/${msg.height}` : 'auto',
-                        width: '100%',
-                        maxWidth: msg.width ? `${msg.width}px` : '100%',
                         minHeight: '100px'
                       }}
                       onClick={() => handleImageClick({ 
