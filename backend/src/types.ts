@@ -108,7 +108,8 @@ export interface ComfyHistoryEntry {
 export interface CookieOptions {
   httpOnly: boolean;
   signed: boolean;
-  maxAge: number;
+  maxAge?: number;
+  path?: string;
   sameSite: 'lax' | 'none' | 'strict';
   secure?: boolean;
   domain?: string;

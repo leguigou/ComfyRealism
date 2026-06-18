@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 COPY backend/package*.json ./
-RUN npm install
+RUN npm ci
 
 COPY backend/ .
 RUN npx tsc
@@ -24,7 +24,7 @@ WORKDIR /app/backend
 
 # Install runtime deps only
 COPY backend/package*.json ./
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 
 # Compiled JS goes to ./dist/ — __dirname resolves there
 COPY --from=build /app/dist ./dist

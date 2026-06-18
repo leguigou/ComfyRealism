@@ -85,6 +85,13 @@ export const initDatabase = () => {
       data TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS user_settings (
+      userId TEXT PRIMARY KEY,
+      data TEXT NOT NULL,
+      updatedAt INTEGER NOT NULL,
+      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+    );
+
     CREATE INDEX IF NOT EXISTS idx_sessions_userId ON sessions(userId);
     CREATE INDEX IF NOT EXISTS idx_messages_sessionId ON messages(sessionId);
     CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp);

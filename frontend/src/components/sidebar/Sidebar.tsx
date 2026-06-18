@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import './Sidebar.css';
-import type { Session, Language, Theme, User } from '../../types';
+import type { Session, Language, Theme, User, Message } from '../../types';
 import { getFullImageUrl } from '../../services/api';
 
 interface SidebarProps {
@@ -15,7 +15,7 @@ interface SidebarProps {
   sessions: Session[];
   currentSessionId: string | null;
   setCurrentSessionId: (id: string | null) => void;
-  setMessages: (msgs: any[]) => void;
+  setMessages: (msgs: Message[]) => void;
   renamingId: string | null;
   setRenamingId: (id: string | null) => void;
   renameValue: string;

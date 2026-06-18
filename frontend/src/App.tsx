@@ -218,7 +218,6 @@ function App() {
   const lastTouchPos = useRef<{ x: number, y: number } | null>(null);
 
   // Clear HD state and zoom when lightbox closes
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!activeLightbox) {
       if (hdLoaded !== null) setHdLoaded(null);
@@ -341,7 +340,6 @@ function App() {
 
   useEffect(() => {
     if (activeTab === 'admin') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchAdminUsers();
     }
   }, [activeTab, fetchAdminUsers]);
@@ -564,20 +562,15 @@ function App() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchSessions();
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchSettings();
     }
   }, [isAuthenticated, fetchSessions, fetchSettings]);
 
   useEffect(() => {
     if (isAuthenticated && showSettings) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchComfyModels();
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchWorkflows();
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchLLMModels();
     }
   }, [isAuthenticated, showSettings, fetchComfyModels, fetchWorkflows, fetchLLMModels]);
@@ -657,8 +650,16 @@ function App() {
     const currentOffset = isInitial ? 0 : galleryOffsetRef.current;
     try {
       const res = await fetch(`${API_BASE}/api/gallery?limit=25&offset=${currentOffset}&includeArchived=${showArchivedInGallery}&favoritesOnly=${favoritesOnly}`, { credentials: 'include' });
-      const data: GalleryItem[] = await res.json();
-      
+      if (!res.ok) {
+        throw new Error(`Failed to fetch gallery: ${res.status} ${res.statusText}`);
+      }
+      const data = await res.json();
+
+      if (!Array.isArray(data)) {
+        console.error('Gallery API did not return an array:', data);
+        return;
+      }
+
       if (isInitial) {
         setGalleryItems(data);
         galleryOffsetRef.current = data.length;
@@ -774,7 +775,7 @@ function App() {
   }, [activeLightbox, messages, galleryItems, currentSessionId]);
 
   const downloadImage = useCallback(async (url: string, filename: string) => {
-    const res = await fetch(url);
+    const res = await fetch(url, { credentials: 'include' });
     const blob = await res.blob();
     const link = document.createElement('a');
     link.href = window.URL.createObjectURL(blob);
@@ -786,7 +787,7 @@ function App() {
     const text = override !== undefined ? override : input;
     if (!text.trim()) return;
 
-    let targetSessionId = currentSessionId;
+    let targetSessionId: string | undefined = currentSessionId ?? undefined;
     if (!targetSessionId) {
       targetSessionId = await createNewSession();
     }
@@ -847,7 +848,7 @@ function App() {
   }, [showSessionMenu]);
 
   useEffect(() => {
-    const feedbackTimeouts = new WeakMap<HTMLElement, any>();
+    const feedbackTimeouts = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
     let lastFeedbackTime = 0;
 
     const handleVisualFeedback = (e: PointerEvent) => {
@@ -946,7 +947,7 @@ function App() {
             <button className="lightbox-btn" onClick={() => { goToImage(activeLightbox.sessionId, activeLightbox.messageId); setActiveLightbox(null); }} title={t.viewInChat}>💬</button>
             <button className={`lightbox-btn favorite ${currentLightboxItem?.isFavorite ? 'active' : ''}`} onClick={() => toggleFavorite(activeLightbox.sessionId, activeLightbox.messageId, currentLightboxItem?.isFavorite)} title={t.favorites}>{currentLightboxItem?.isFavorite ? '❤️' : '🤍'}</button>
             <button className="lightbox-btn" onClick={() => { 
-                const seed = (currentLightboxItem as any)?.seed;
+                const seed = currentLightboxItem?.seed;
                 if (seed) { 
                     setParams(prev => ({ ...prev, seedMode: 'fixed', forcedSeed: seed.toString() })); 
                     setView('chat'); 

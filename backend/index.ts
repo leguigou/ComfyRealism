@@ -9,8 +9,9 @@ import fs from 'fs';
 import path from 'path';
 
 // Restore default workflows if obscured by empty volume mount
-const workflowsDir = path.join(__dirname, 'workflows');
-const defaultWorkflowsDir = path.join(__dirname, 'default_workflows');
+const backendDir = process.cwd().endsWith('backend') ? process.cwd() : path.join(process.cwd(), 'backend');
+const workflowsDir = path.join(backendDir, 'workflows');
+const defaultWorkflowsDir = path.join(backendDir, 'default_workflows');
 
 if (fs.existsSync(defaultWorkflowsDir) && fs.existsSync(workflowsDir)) {
   const defaultFiles = fs.readdirSync(defaultWorkflowsDir);
@@ -55,6 +56,9 @@ if (!AUTH_SECRET) {
   console.error('[Fatal] AUTH_SECRET is not set. Use a strong random string in your .env');
   process.exit(1);
 }
+
+// Trust proxy for correct IP and protocol detection behind Traefik/Nginx
+app.set('trust proxy', 1);
 
 // Initialize Services
 initDatabase();
