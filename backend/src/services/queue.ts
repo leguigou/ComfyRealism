@@ -3,64 +3,72 @@ import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import fs from 'fs';
 import sharp from 'sharp';
+import { WebSocket, WebSocketServer } from 'ws';
 import db from './database';
 import { getEffectiveComfyUrl, getWorkflow, parseComfyError } from './comfy';
 import { imagesDir, thumbnailsDir } from './image';
+import { QueueTask, GenerationParams, ComfyHistoryEntry } from '../types';
 
 let isProcessingQueue = false;
-let wss: any = null;
+let wss: WebSocketServer | null = null;
 
-export const setWss = (wsServer: any) => {
+export const setWss = (wsServer: WebSocketServer) => {
   wss = wsServer;
 };
 
-export const broadcastToSession = (sessionId: string, data: any) => {
+export const broadcastToSession = (sessionId: string, data: Record<string, unknown>) => {
   if (!wss) return;
   const payload = JSON.stringify({ type: 'queue_update', sessionId, ...data });
-  wss.clients.forEach((client: any) => { 
-    if (client.readyState === 1) client.send(payload); // 1 = OPEN
+  wss.clients.forEach((client: WebSocket) => { 
+    if (client.readyState === WebSocket.OPEN) client.send(payload);
   });
 };
 
 export const processQueue = async () => {
+  // Claim the lock BEFORE checking the DB — prevents TOCTOU race
+  // where two concurrent calls both see isProcessingQueue === false
   if (isProcessingQueue) return;
-  let task: any = null;
+  isProcessingQueue = true;
+
+  let task: QueueTask | null = null;
   try {
-    task = db.prepare('SELECT * FROM queue WHERE status = ? ORDER BY createdAt ASC LIMIT 1').get('pending');
-    if (!task) return;
+    task = db.prepare('SELECT * FROM queue WHERE status = ? ORDER BY createdAt ASC LIMIT 1').get('pending') as QueueTask | undefined ?? null;
+    if (!task) {
+      isProcessingQueue = false;
+      return;
+    }
     
     console.log(`[Queue] Starting task for message ${task.messageId}...`);
-    isProcessingQueue = true;
     db.prepare('UPDATE queue SET status = ? WHERE id = ?').run('processing', task.id);
     db.prepare('UPDATE messages SET status = ? WHERE id = ?').run('processing', task.messageId);
     broadcastToSession(task.sessionId, { messageId: task.messageId, status: 'processing' });
 
-    const params = JSON.parse(task.params);
+    const params: GenerationParams = JSON.parse(task.params);
     const workflow = getWorkflow(task.prompt, params);
     const dynamicCfg = getEffectiveComfyUrl();
-    const targetComfyUrl = params?.comfyUrl || dynamicCfg.url;
+    const targetComfyUrl = params.comfyUrl || dynamicCfg.url;
     
     console.log(`[Queue] Submitting to ComfyUI at ${targetComfyUrl}...`);
 
-    const configPath = path.join(__dirname, '..', '..', 'workflows', (params?.workflowFile || 'workflow_lcm.json').replace('.json', '.config.json'));
+    const configPath = path.join(__dirname, '..', '..', 'workflows', (params.workflowFile || 'workflow_lcm.json').replace('.json', '.config.json'));
     let saveNodeId = "99";
     let ksamplerNodeId = "10";
     if (fs.existsSync(configPath)) {
       try {
-        const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        const config: { nodeMapping?: { save?: string; ksampler?: string } } = JSON.parse(fs.readFileSync(configPath, 'utf8'));
         if (config.nodeMapping?.save) saveNodeId = config.nodeMapping.save;
         if (config.nodeMapping?.ksampler) ksamplerNodeId = config.nodeMapping.ksampler;
-      } catch (e) { }
+      } catch (e) { /* use defaults */ }
     }
 
-    let sampler = workflow[ksamplerNodeId]?.inputs?.sampler_name || '';
-    let scheduler = workflow[ksamplerNodeId]?.inputs?.scheduler || '';
+    const sampler: string = workflow[ksamplerNodeId]?.inputs?.sampler_name || '';
+    const scheduler: string = workflow[ksamplerNodeId]?.inputs?.scheduler || '';
 
     let promptId = '';
     try {
       const response = await axios.post(`${targetComfyUrl}/prompt`, { prompt: workflow, client_id: uuidv4() }, { timeout: 10000 });
       promptId = response.data.prompt_id;
-    } catch (err: any) { 
+    } catch (err: unknown) { 
       throw new Error(`Submission failed: ${parseComfyError(err)}`); 
     }
 
@@ -77,20 +85,21 @@ export const processQueue = async () => {
       let hResp;
       try { 
         hResp = await axios.get(`${targetComfyUrl}/history/${promptId}`, { timeout: 5000 }); 
-      } catch (err: any) { 
-        console.warn(`[Queue] Polling attempt failed: ${err.message}`); 
+      } catch (err: unknown) { 
+        console.warn(`[Queue] Polling attempt failed: ${(err as Error).message}`); 
         await new Promise(r => setTimeout(r, 2000)); 
         continue; 
       }
       
-      const history = hResp.data[promptId];
+      const history: ComfyHistoryEntry | undefined = hResp.data[promptId];
       if (history) {
         if (history.status?.status_str === 'error' || (history.status?.completed && !history.outputs)) {
-          const errMsg = history.status?.messages?.[0]?.[1]?.message || 'ComfyUI execution error';
+          const errMsg = (history.status?.messages?.[0]?.[1] as { message?: string } | undefined)?.message || 'ComfyUI execution error';
           throw new Error(`Execution failed: ${errMsg}`);
         }
-        if (history.outputs?.[saveNodeId]?.images?.[0]) {
-          filename = history.outputs[saveNodeId].images[0].filename;
+        const nodeOutput = history.outputs?.[saveNodeId];
+        if (nodeOutput?.images?.length) {
+          filename = String(nodeOutput.images[0].filename);
           finished = true;
         }
       }
@@ -111,11 +120,11 @@ export const processQueue = async () => {
     let imgResp;
     try {
       imgResp = await axios.get(`${targetComfyUrl}/view`, { params: { filename }, responseType: 'arraybuffer', timeout: 15000 });
-    } catch (err: any) { 
+    } catch (err: unknown) { 
       throw new Error(`Failed to retrieve image: ${parseComfyError(err)}`); 
     }
     
-    const sessionRecord = db.prepare('SELECT userId FROM sessions WHERE id = ?').get(task.sessionId) as any;
+    const sessionRecord = db.prepare('SELECT userId FROM sessions WHERE id = ?').get(task.sessionId) as { userId: string } | undefined;
     const userId = sessionRecord?.userId || 'unknown';
     const userImagesDir = path.join(imagesDir, userId);
     const userThumbnailsDir = path.join(thumbnailsDir, userId);
@@ -150,10 +159,10 @@ export const processQueue = async () => {
       workflow: params.workflowFile, 
       seed: params.seed,
       sampler,
-      scheduler
+      scheduler,
     });
-  } catch (error: any) {
-    const errorMsg = error.message || 'Unexpected error';
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : 'Unexpected error';
     console.error(`[Queue] Fatal error for task ${task?.messageId}:`, errorMsg);
     if (task) {
       db.prepare('UPDATE messages SET status = ?, text = ? WHERE id = ?').run('failed', errorMsg, task.messageId);
@@ -166,7 +175,7 @@ export const processQueue = async () => {
   }
 };
 
-export const initQueue = (wsServer: any) => {
+export const initQueue = (wsServer: WebSocketServer) => {
   setWss(wsServer);
   setInterval(processQueue, 2000);
 };
