@@ -1,6 +1,7 @@
 import express from 'express';
 import axios from 'axios';
 import { authenticate } from '../middleware/auth';
+import { ServiceUrlError, validateServiceUrl } from '../security/service-url';
 
 const router = express.Router();
 
@@ -9,7 +10,8 @@ router.post('/enhance-prompt', authenticate, async (req, res) => {
     const { prompt, llmUrl, llmModel, systemMessage } = req.body;
     if (!llmUrl || !llmModel) return res.status(400).json({ error: 'LLM configuration missing' });
     
-    const response = await axios.post(`${llmUrl}/v1/chat/completions`, {
+    const targetUrl = validateServiceUrl(llmUrl, 'LLM');
+    const response = await axios.post(`${targetUrl}/v1/chat/completions`, {
       model: llmModel,
       messages: [
         { role: "system", content: systemMessage || "You are a professional stable diffusion prompt engineer. Transform user's ideas into highly detailed English prompts. Output JSON with 'positive' and 'negative' keys." }, 
@@ -83,25 +85,30 @@ router.post('/enhance-prompt', authenticate, async (req, res) => {
     }
 
     res.json({ enhancedPrompt: result.positive, negativePrompt: result.negative });
-  } catch (error: any) { 
+  } catch (error: any) {
+    if (error instanceof ServiceUrlError) return res.status(error.statusCode).json({ error: error.message });
     res.status(500).json({ error: 'LLM Error: ' + (error.response?.data?.error?.message || error.message) }); 
   }
 });
 
 router.post('/models', authenticate, async (req, res) => {
   try {
-    const response = await axios.get(`${req.body.llmUrl}/v1/models`, { timeout: 5000 });
+    const targetUrl = validateServiceUrl(req.body.llmUrl, 'LLM');
+    const response = await axios.get(`${targetUrl}/v1/models`, { timeout: 5000 });
     res.json({ models: response.data.data.map((m: any) => m.id) });
-  } catch (error: any) { 
+  } catch (error: any) {
+    if (error instanceof ServiceUrlError) return res.status(error.statusCode).json({ error: error.message });
     res.status(500).json({ error: 'Failed to fetch models' }); 
   }
 });
 
 router.post('/check', authenticate, async (req, res) => {
   try {
-    const response = await axios.get(`${req.body.llmUrl}/v1/models`, { timeout: 3000 });
+    const targetUrl = validateServiceUrl(req.body.llmUrl, 'LLM');
+    const response = await axios.get(`${targetUrl}/v1/models`, { timeout: 3000 });
     res.json({ success: true, count: response.data.data?.length || 0 });
-  } catch (error: any) { 
+  } catch (error: any) {
+    if (error instanceof ServiceUrlError) return res.status(error.statusCode).json({ success: false, error: error.message });
     res.status(500).json({ success: false, error: 'LLM connection failed: ' + (error.response?.data?.error?.message || error.message) }); 
   }
 });

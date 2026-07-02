@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import db from './database';
 import { GenerationParams, WorkflowNodeMapping } from '../types';
+import { validateServiceUrl } from '../security/service-url';
 
 export const getComfyWsUrl = (httpUrl: string) => {
   return httpUrl.replace(/^http/, 'ws') + '/ws';
@@ -28,11 +29,27 @@ export const getEffectiveComfyUrl = (): ComfyUrlResult => {
   return { url: 'http://127.0.0.1:8188', source: 'Default' };
 };
 
+export const getTargetComfyUrl = (requestedUrl?: string) => {
+  const configured = getEffectiveComfyUrl();
+  const target = configured.source === 'Environment'
+    ? configured.url
+    : requestedUrl || configured.url;
+  return validateServiceUrl(target, 'ComfyUI');
+};
+
 export const getWorkflow = (prompt: string, params?: Partial<GenerationParams>) => {
   const workflowFile = params?.workflowFile || 'workflow_lcm.json';
   const backendDir = process.cwd().endsWith('backend') ? process.cwd() : path.join(process.cwd(), 'backend');
-  const fullPath = path.join(backendDir, 'workflows', workflowFile);
-  const configPath = fullPath.replace('.json', '.config.json');
+  const workflowsDir = path.resolve(backendDir, 'workflows');
+  const fullPath = path.resolve(workflowsDir, workflowFile);
+  if (
+    path.basename(workflowFile) !== workflowFile
+    || !workflowFile.endsWith('.json')
+    || !fullPath.startsWith(workflowsDir + path.sep)
+  ) {
+    throw new Error('Fichier workflow invalide');
+  }
+  const configPath = fullPath.replace(/\.json$/, '.config.json');
   
   if (!fs.existsSync(fullPath)) throw new Error(`Fichier workflow introuvable : ${workflowFile}`);
   

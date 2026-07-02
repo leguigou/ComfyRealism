@@ -6,7 +6,7 @@ Ce document explique comment installer et faire fonctionner ComfyRealism sur un 
 
 Avant de commencer, assurez-vous que les éléments suivants sont installés sur votre serveur :
 
-1. **Node.js** (v18 ou supérieur) & **npm**.
+1. **Node.js** (v22 ou supérieur) & **npm**.
 2. **ComfyUI** : L'instance doit être accessible via une URL (ex: `http://127.0.0.1:8188`).
 3. **Ollama** (Optionnel) : Si vous souhaitez utiliser l'optimisation de prompt par IA en local.
 4. **PM2** (Recommandé) : Pour maintenir l'application active en arrière-plan.
@@ -26,13 +26,13 @@ Copiez les fichiers du projet sur votre serveur, puis accédez au répertoire ra
 **Pour le Backend :**
 ```bash
 cd backend
-npm install
+npm ci
 ```
 
 **Pour le Frontend :**
 ```bash
 cd ../frontend
-npm install
+npm ci
 ```
 
 ### 3. Configuration de l'Environnement
@@ -42,7 +42,12 @@ Créez un fichier `.env` dans le dossier `backend/` :
 # backend/.env
 PORT=3001
 APP_PASSWORD=votre_mot_de_passe_securise
-SESSION_SECRET=une_cle_aleatoire_tres_longue
+AUTH_SECRET=une_cle_aleatoire_d_au_moins_32_caracteres
+COMFY_URL=http://127.0.0.1:8188
+# Origines de services additionnelles, séparées par des virgules :
+SERVICE_URL_ALLOWLIST=http://127.0.0.1:11434
+# Autoriser chaque utilisateur authentifié à saisir sa propre URL LLM :
+ALLOW_USER_LLM_URLS=false
 ```
 
 ### 4. Build du Frontend
@@ -51,7 +56,7 @@ Pour des performances optimales sur un serveur, il est conseillé de compiler le
 cd frontend
 npm run build
 ```
-*Note : Pour l'instant, le backend sert les fichiers de développement. Pour une production stricte, il faudrait configurer Nginx ou adapter Express pour servir le dossier `frontend/dist`.*
+*Pour Docker, le fichier `frontend/nginx.conf` sert le frontend et relaie `/api` vers le backend.*
 
 ---
 
@@ -77,7 +82,7 @@ pm2 start npm --name "comfy-frontend" -- run dev -- --host
 
 1. **Pare-feu** : Ouvrez les ports `3000` (Frontend) et `3001` (Backend) sur votre serveur.
 2. **Configuration ComfyUI** : Dans les paramètres de l'application (une fois lancée), assurez-vous de renseigner l'IP réelle de votre instance ComfyUI si elle n'est pas sur le même serveur.
-3. **Configuration Backend** : Dans le frontend, si le backend n'est pas sur `localhost`, modifiez la variable `API_BASE` dans `App.tsx` pour pointer vers l'IP de votre serveur.
+3. **Configuration Backend** : Pour un frontend réellement séparé du backend, définissez `VITE_API_URL` au moment du build et ajoutez son origine à `CORS_ORIGINS`.
 
 ---
 

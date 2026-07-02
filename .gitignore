@@ -9,5 +9,7 @@ images/
 backend/images/
 frontend/node_modules/
 backend/node_modules/
+.test-runtime/
+backend/.test-runtime/
 .DS_Store
 .gemini/agents/

@@ -33,18 +33,28 @@ Une application full-stack moderne et élégante pour générer des images via u
 ### Méthode 1 : Docker Production (Recommandé)
 Utilise les images pré-construites pour un déploiement ultra-rapide.
 ```bash
+cp .env.example .env
+# Remplacez APP_PASSWORD et AUTH_SECRET avant le premier lancement.
 docker-compose -f docker-compose.production.yml up -d
 ```
 
 ### Méthode 2 : Docker Développement (Local)
 Construit les images localement à partir du code source.
 ```bash
+cp .env.example .env
+# Remplacez APP_PASSWORD et AUTH_SECRET avant le premier lancement.
 docker-compose up --build -d
 ```
 
+Les URL ComfyUI et LLM personnalisées sont refusées par défaut si leur origine
+n'est pas connue du serveur. Ajoutez les origines supplémentaires, séparées par
+des virgules, dans `SERVICE_URL_ALLOWLIST`. Si chaque utilisateur doit pouvoir
+configurer librement sa propre URL LLM, définissez `ALLOW_USER_LLM_URLS=true`.
+
 ### Méthode 3 : Lancement Manuel (Windows)
 1. **Prérequis** : Node.js (v22+) et ComfyUI (port 8188).
-2. **Lancement** : Double-cliquez sur `run.bat`.
+2. Copiez `backend/.env.example` vers `backend/.env`, puis remplacez les secrets.
+3. **Lancement** : Double-cliquez sur `run.bat`.
 
 ## 📂 Structure du Projet
 
