@@ -4,21 +4,26 @@ import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
 
-// Standardized path for both Docker and Local
-let dataDir: string;
-if (fs.existsSync('/app/backend/data')) {
-  dataDir = '/app/backend/data'; // Path used in Docker volume
-} else if (fs.existsSync('/app/data')) {
-  dataDir = '/app/data'; // Legacy path support
+// Standardized path for Docker, local development, and isolated tests.
+let dbPath: string;
+if (process.env.DATABASE_PATH) {
+  dbPath = path.resolve(process.env.DATABASE_PATH);
 } else {
-  // Local path
-  const backendDir = process.cwd().endsWith('backend') ? process.cwd() : path.join(process.cwd(), 'backend');
-  dataDir = path.join(backendDir, 'data');
+  let dataDir: string;
+  if (fs.existsSync('/app/backend/data')) {
+    dataDir = '/app/backend/data';
+  } else if (fs.existsSync('/app/data')) {
+    dataDir = '/app/data';
+  } else {
+    const backendDir = process.cwd().endsWith('backend') ? process.cwd() : path.join(process.cwd(), 'backend');
+    dataDir = path.join(backendDir, 'data');
+  }
+  dbPath = path.join(dataDir, 'history.db');
 }
 
+const dataDir = path.dirname(dbPath);
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
-const dbPath = path.join(dataDir, 'history.db');
 console.log(`[Database] Initializing at: ${dbPath}`);
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
@@ -130,10 +135,13 @@ export const initDatabase = () => {
   }
 
   // Default Admin
-  const APP_PASSWORD = process.env.APP_PASSWORD || 'comfy';
   const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as any;
 
   if (userCount.count === 0) {
+    const APP_PASSWORD = process.env.APP_PASSWORD;
+    if (!APP_PASSWORD || APP_PASSWORD.trim().length < 12) {
+      throw new Error('APP_PASSWORD must contain at least 12 characters when creating the first admin user.');
+    }
     console.log('[Migration] Creating default admin user...');
     const adminId = uuidv4();
     const passwordHash = bcrypt.hashSync(APP_PASSWORD.trim(), 10);

@@ -7,7 +7,9 @@ import sharp from 'sharp';
 const backendDir = process.cwd().endsWith('backend') ? process.cwd() : path.join(process.cwd(), 'backend');
 const rootDir = path.resolve(backendDir, '..');
 
-export const imagesDir = path.join(rootDir, 'images');
+export const imagesDir = process.env.IMAGES_DIR
+  ? path.resolve(process.env.IMAGES_DIR)
+  : path.join(rootDir, 'images');
 export const thumbnailsDir = path.join(imagesDir, 'thumbnails');
 
 console.log(`[ImageService] Images directory: ${imagesDir}`);
@@ -27,16 +29,20 @@ export const generateThumbnail = async (originalPath: string, thumbPath: string)
 };
 
 export const deleteFiles = (files: { imageUrl?: string; thumbnailUrl?: string }[]) => {
+  const resolvedImagesDir = path.resolve(imagesDir);
+
   files.forEach(file => {
     try {
       if (file.imageUrl && file.imageUrl.startsWith('/api/image-files/')) {
         const relativePath = decodeURIComponent(file.imageUrl.replace('/api/image-files/', '').split('?')[0]);
-        const imgPath = path.join(imagesDir, relativePath);
+        const imgPath = path.resolve(imagesDir, relativePath);
+        if (!imgPath.startsWith(resolvedImagesDir + path.sep)) return;
         if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
       }
       if (file.thumbnailUrl && file.thumbnailUrl.startsWith('/api/image-files/')) {
         const relativePath = decodeURIComponent(file.thumbnailUrl.replace('/api/image-files/', '').split('?')[0]);
-        const thumbPath = path.join(imagesDir, relativePath);
+        const thumbPath = path.resolve(imagesDir, relativePath);
+        if (!thumbPath.startsWith(resolvedImagesDir + path.sep)) return;
         if (fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
       }
     } catch (err) {
