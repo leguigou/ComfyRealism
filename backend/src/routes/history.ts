@@ -40,10 +40,13 @@ router.patch('/:id', authenticate, (req, res) => {
 
 router.delete('/:id', authenticate, (req, res) => {
   const user = (req as any).user;
+  const session = db.prepare('SELECT id FROM sessions WHERE id = ? AND userId = ?').get(req.params.id, user.id);
+  if (!session) return res.status(404).json({ error: 'Session not found' });
+
   const messages = db.prepare('SELECT imageUrl, thumbnailUrl FROM messages WHERE sessionId = ? AND imageUrl IS NOT NULL').all(req.params.id) as any[];
   deleteFiles(messages);
   
-  db.prepare('DELETE FROM sessions WHERE id = ? AND userId = ?').run(req.params.id, user.id);
+  db.prepare('DELETE FROM sessions WHERE id = ?').run(req.params.id);
   res.json({ success: true });
 });
 

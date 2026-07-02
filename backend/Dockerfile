@@ -35,7 +35,7 @@ COPY workflows ./dist/workflows
 COPY workflows ./workflows
 
 # Backup of default workflows for restore-on-empty-volume
-RUN mkdir -p ./dist/data && cp -r ./dist/workflows ./dist/default_workflows
+RUN mkdir -p ./dist/data && cp -r ./dist/workflows ./default_workflows
 
 EXPOSE 3001
 

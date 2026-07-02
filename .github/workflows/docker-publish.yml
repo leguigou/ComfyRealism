@@ -4,13 +4,48 @@ on:
   push:
     branches: [ "main" ]
     tags: [ 'v*' ]
+  pull_request:
+    branches: [ "main" ]
 
 env:
   # Force GitHub Actions to use Node.js 24 to avoid deprecation warnings
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Check backend
+        working-directory: ./backend
+        run: |
+          npm ci
+          npm test
+          npm run build
+
+      - name: Check frontend
+        working-directory: ./frontend
+        run: |
+          npm ci
+          npm run lint
+          npm test
+          npm run build
+
   build-and-push:
+    needs: quality
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
