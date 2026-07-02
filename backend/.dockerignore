@@ -1,5 +1,11 @@
 node_modules
-npm-debug.log
-data
-images
+dist
 .env
+.env.*
+!.env.example
+data
+*.db
+*.db-shm
+*.db-wal
+npm-debug.log*
+.test-runtime

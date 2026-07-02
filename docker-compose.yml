@@ -7,13 +7,16 @@ services:
     volumes:
       - ./backend/data:/app/backend/data
       - ./backend/workflows:/app/backend/workflows
-      - ./images:/images
+      - ./images:/app/images
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=${PORT:-3001}
       - COMFY_URL=${COMFY_URL:-http://host.docker.internal:8188}
-      - APP_PASSWORD=${APP_PASSWORD:-comfy}
-      - AUTH_SECRET=${AUTH_SECRET:-fallback_secret}
+      - APP_PASSWORD=${APP_PASSWORD:?Set APP_PASSWORD in .env}
+      - AUTH_SECRET=${AUTH_SECRET:?Set AUTH_SECRET in .env}
+      - CORS_ORIGINS=${CORS_ORIGINS:-}
+      - SERVICE_URL_ALLOWLIST=${SERVICE_URL_ALLOWLIST:-}
+      - ALLOW_USER_LLM_URLS=${ALLOW_USER_LLM_URLS:-false}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped

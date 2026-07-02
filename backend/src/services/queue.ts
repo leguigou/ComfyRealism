@@ -5,22 +5,32 @@ import fs from 'fs';
 import sharp from 'sharp';
 import { WebSocket, WebSocketServer } from 'ws';
 import db from './database';
-import { getEffectiveComfyUrl, getWorkflow, parseComfyError } from './comfy';
+import { getTargetComfyUrl, getWorkflow, parseComfyError } from './comfy';
 import { imagesDir, thumbnailsDir } from './image';
 import { QueueTask, GenerationParams, ComfyHistoryEntry } from '../types';
 
 let isProcessingQueue = false;
 let wss: WebSocketServer | null = null;
+const websocketUsers = new WeakMap<WebSocket, string>();
 
 export const setWss = (wsServer: WebSocketServer) => {
   wss = wsServer;
 };
 
+export const registerWebSocketUser = (client: WebSocket, userId: string) => {
+  websocketUsers.set(client, userId);
+};
+
 export const broadcastToSession = (sessionId: string, data: Record<string, unknown>) => {
   if (!wss) return;
+  const session = db.prepare('SELECT userId FROM sessions WHERE id = ?').get(sessionId) as { userId: string } | undefined;
+  if (!session) return;
+
   const payload = JSON.stringify({ type: 'queue_update', sessionId, ...data });
   wss.clients.forEach((client: WebSocket) => { 
-    if (client.readyState === WebSocket.OPEN) client.send(payload);
+    if (client.readyState === WebSocket.OPEN && websocketUsers.get(client) === session.userId) {
+      client.send(payload);
+    }
   });
 };
 
@@ -45,13 +55,13 @@ export const processQueue = async () => {
 
     const params: GenerationParams = JSON.parse(task.params);
     const workflow = getWorkflow(task.prompt, params);
-    const dynamicCfg = getEffectiveComfyUrl();
-    const targetComfyUrl = params.comfyUrl || dynamicCfg.url;
+    const targetComfyUrl = getTargetComfyUrl(params.comfyUrl);
     
     console.log(`[Queue] Submitting to ComfyUI at ${targetComfyUrl}...`);
 
     const backendDir = process.cwd().endsWith('backend') ? process.cwd() : path.join(process.cwd(), 'backend');
-    const configPath = path.join(backendDir, 'workflows', (params.workflowFile || 'workflow_lcm.json').replace('.json', '.config.json'));
+    const workflowFile = path.basename(params.workflowFile || 'workflow_lcm.json');
+    const configPath = path.join(backendDir, 'workflows', workflowFile.replace(/\.json$/, '.config.json'));
     let saveNodeId = "99";
     let ksamplerNodeId = "10";
     if (fs.existsSync(configPath)) {

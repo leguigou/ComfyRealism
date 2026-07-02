@@ -3,8 +3,9 @@ import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 import db from '../services/database';
 import { authenticate } from '../middleware/auth';
-import { getEffectiveComfyUrl, parseComfyError } from '../services/comfy';
+import { getTargetComfyUrl } from '../services/comfy';
 import { broadcastToSession, processQueue } from '../services/queue';
+import { ServiceUrlError } from '../security/service-url';
 
 const router = express.Router();
 
@@ -21,6 +22,8 @@ router.post('/generate', authenticate, async (req, res) => {
       return res.status(403).json({ success: false, error: 'Unauthorized session' });
     }
 
+    const comfyUrl = getTargetComfyUrl(params?.comfyUrl);
+    const safeParams = { ...params, comfyUrl };
     const timestamp = Date.now();
     const messageId = uuidv4();
     const userMessageId = uuidv4();
@@ -42,7 +45,7 @@ router.post('/generate', authenticate, async (req, res) => {
     insertMsg.run(messageId, sessionId, 'bot', enhancedText, displayPrompt, null, timestamp, model, params?.width || 896, params?.height || 1152, params?.steps || 8, params?.cfg || 1.1, workflowFile, 'pending', seed);
     
     db.prepare('INSERT INTO queue (messageId, prompt, originalPrompt, sessionId, params, status, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)')
-      .run(messageId, prompt, originalPrompt, sessionId, JSON.stringify({ ...params, seed }), 'pending', timestamp);
+      .run(messageId, prompt, originalPrompt, sessionId, JSON.stringify({ ...safeParams, seed }), 'pending', timestamp);
     
     db.prepare('UPDATE sessions SET title = ?, updatedAt = ? WHERE id = ? AND title = \'New Chat\'').run(displayPrompt.substring(0, 30), timestamp, sessionId);
     db.prepare('UPDATE sessions SET updatedAt = ? WHERE id = ?').run(timestamp, sessionId);
@@ -52,6 +55,7 @@ router.post('/generate', authenticate, async (req, res) => {
     // Start processing immediately
     processQueue();
   } catch (error: any) {
+    if (error instanceof ServiceUrlError) return res.status(error.statusCode).json({ success: false, error: error.message });
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -59,11 +63,11 @@ router.post('/generate', authenticate, async (req, res) => {
 router.post('/interrupt', authenticate, async (req, res) => {
   try {
     const user = (req as any).user;
-    const currentCfg = getEffectiveComfyUrl();
+    const targetUrl = getTargetComfyUrl(req.body.params?.comfyUrl);
     
     // 1. Send interrupt to ComfyUI
     try {
-      await axios.post(`${req.body.params?.comfyUrl || currentCfg.url}/interrupt`);
+      await axios.post(`${targetUrl}/interrupt`);
     } catch (e) {
       console.warn('[Interrupt] ComfyUI interrupt call failed (might be already idle)');
     }
@@ -101,6 +105,7 @@ router.post('/interrupt', authenticate, async (req, res) => {
 
     res.json({ success: true });
   } catch (error: any) {
+    if (error instanceof ServiceUrlError) return res.status(error.statusCode).json({ error: error.message });
     console.error('[Interrupt] Error:', error);
     res.status(500).json({ error: 'Failed to interrupt' });
   }

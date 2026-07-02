@@ -1,11 +1,11 @@
 export interface User {
-  id: number;
+  id: string;
   username: string;
   password: string;
   isAdmin: number; // SQLite uses 0/1
   avatarUrl: string | null;
   storageLimit: number | null;
-  createdAt: string;
+  createdAt: number;
 }
 
 export interface SanitizedUser {
@@ -38,7 +38,7 @@ export interface Message {
 
 export interface Session {
   id: string;
-  userId: number;
+  userId: string;
   title: string;
   createdAt: number;
   updatedAt: number;
