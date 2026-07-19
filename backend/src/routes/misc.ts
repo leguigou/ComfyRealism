@@ -1,9 +1,13 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
+import axios from 'axios';
+import { randomUUID } from 'crypto';
 import { authenticate } from '../middleware/auth';
 import { imagesDir, thumbnailsDir, generateThumbnail } from '../services/image';
 import { analyzeWorkflow, sanitizeWorkflowFilename } from '../services/workflow-import';
+import { getTargetComfyUrl, getWorkflow, parseComfyError } from '../services/comfy';
+import { ServiceUrlError } from '../security/service-url';
 
 const router = express.Router();
 
@@ -20,7 +24,6 @@ const canAccessUserFiles = (req: express.Request, userId: string) => {
 const sendFileIfInside = (res: express.Response, baseDir: string, filePath: string) => {
   const resolvedBase = path.resolve(baseDir);
   const resolvedPath = path.resolve(filePath);
-
   if (!resolvedPath.startsWith(resolvedBase + path.sep)) return res.status(400).send('Invalid path');
   if (!fs.existsSync(resolvedPath)) return res.status(404).send('Not found');
   return res.sendFile(resolvedPath);
@@ -74,7 +77,7 @@ router.get('/thumbnails/:filename', authenticate, async (req, res) => {
 
 router.get('/workflows', authenticate, (_req, res) => {
   const files = fs.readdirSync(getWorkflowsDir()).filter(f => f.endsWith('.json') && !f.endsWith('.config.json'));
-  res.json(files);
+  res.json(files.sort());
 });
 
 router.post('/workflows/analyze', authenticate, (req, res) => {
@@ -92,6 +95,7 @@ router.post('/workflows', authenticate, (req, res) => {
     const workflow = req.body?.workflow;
     const overwrite = req.body?.overwrite === true;
     const analysis = analyzeWorkflow(workflow);
+    const nodeMapping = { ...analysis.nodeMapping, ...(req.body?.nodeMapping || {}) };
     const workflowsDir = getWorkflowsDir();
     const workflowPath = path.join(workflowsDir, filename);
     const configPath = workflowPath.replace(/\.json$/, '.config.json');
@@ -101,11 +105,38 @@ router.post('/workflows', authenticate, (req, res) => {
     }
 
     fs.writeFileSync(workflowPath, JSON.stringify(workflow, null, 2), 'utf8');
-    fs.writeFileSync(configPath, JSON.stringify({ nodeMapping: analysis.nodeMapping }, null, 2), 'utf8');
-
-    res.status(201).json({ success: true, filename, analysis });
+    fs.writeFileSync(configPath, JSON.stringify({ nodeMapping }, null, 2), 'utf8');
+    res.status(201).json({ success: true, filename, analysis: { ...analysis, nodeMapping } });
   } catch (error) {
     res.status(400).json({ success: false, error: error instanceof Error ? error.message : 'Import impossible' });
+  }
+});
+
+router.post('/workflows/test', authenticate, async (req, res) => {
+  try {
+    const filename = sanitizeWorkflowFilename(String(req.body?.filename || ''));
+    const targetUrl = getTargetComfyUrl(req.body?.comfyUrl);
+    const prompt = String(req.body?.prompt || 'A simple test image');
+    const workflow = getWorkflow(prompt, {
+      workflowFile: filename,
+      comfyModel: req.body?.comfyModel,
+      negativePrompt: req.body?.negativePrompt || '',
+      width: Number(req.body?.width) || 512,
+      height: Number(req.body?.height) || 512,
+      steps: Number(req.body?.steps) || 4,
+      cfg: Number(req.body?.cfg) || 1,
+      seed: Number.isFinite(Number(req.body?.seed)) ? Number(req.body.seed) : 1,
+      sampler: req.body?.sampler,
+      scheduler: req.body?.scheduler,
+    });
+    const response = await axios.post(`${targetUrl}/prompt`, {
+      prompt: workflow,
+      client_id: randomUUID(),
+    }, { timeout: 10000 });
+    res.json({ success: true, promptId: response.data?.prompt_id, number: response.data?.number });
+  } catch (error: any) {
+    if (error instanceof ServiceUrlError) return res.status(error.statusCode).json({ success: false, error: error.message });
+    res.status(400).json({ success: false, error: parseComfyError(error) });
   }
 });
 
