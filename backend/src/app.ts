@@ -34,7 +34,7 @@ export const createApp = (authSecret: string) => {
     next();
   });
   app.use(cors((req, callback) => callback(null, corsOptions(req))));
-  app.use(express.json());
+  app.use(express.json({ limit: '10mb' }));
   app.use(cookieParser(authSecret));
 
   const apiRouter = express.Router();
