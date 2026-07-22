@@ -363,6 +363,49 @@
   background-color: currentColor;
 }
 
+.random-selection-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.4rem 0 0.65rem;
+}
+
+.random-selection-summary > span {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  padding: 0.28rem 0.52rem;
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+  background: var(--accent-bg);
+  color: var(--text);
+  font-size: 0.7rem;
+  line-height: 1.2;
+}
+
+.random-selection-summary strong {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.random-selection-summary strong::after { content: ':'; }
+.random-selection-summary > span > span {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.generation-live-timer {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--text);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.68;
+}
+
 /* Input Area */
 .input-container { 
   padding: 1rem 1.5rem 2rem; 
@@ -388,6 +431,54 @@
   pointer-events: auto; /* Re-enable clicks for the input box */
 }
 
+.random-prompts-options {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.random-prompts-quickbar {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.1rem 0 0.25rem;
+  scrollbar-width: thin;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+}
+
+.random-prompt-chip {
+  flex: 0 0 auto;
+  min-height: 44px;
+  max-width: 210px;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  scroll-snap-align: start;
+}
+
+.random-prompt-chip:hover,
+.random-prompt-chip:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.random-prompt-chip-name,
+.random-prompt-chip-slug {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.random-prompt-chip-name { font-size: 0.8rem; font-weight: 700; }
+.random-prompt-chip-slug { margin-top: 0.12rem; color: var(--accent); font-size: 0.7rem; }
+
+.light .random-prompt-chip { background: rgba(255, 255, 255, 0.65); }
+
 /* Options Drawer */
 .generation-options-drawer {
   background-color: rgba(33, 33, 33, 0.8);
@@ -400,6 +491,9 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  max-height: min(58vh, 520px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .options-group {
@@ -604,6 +698,44 @@
   box-shadow: 0 0 15px rgba(16, 163, 127, 0.2);
 }
 
+.prompt-editor {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+}
+
+.prompt-highlight-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  color: transparent;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  pointer-events: none;
+}
+
+.prompt-random-code {
+  border-radius: 0.35em;
+  background: rgba(139, 92, 246, 0.28);
+  color: transparent;
+  box-shadow: inset 0 0 0 1px rgba(167, 139, 250, 0.42);
+  font: inherit;
+}
+
+.light .prompt-random-code {
+  background: rgba(109, 40, 217, 0.14);
+  color: transparent;
+  box-shadow: inset 0 0 0 1px rgba(109, 40, 217, 0.25);
+}
+
 @keyframes ai-glow {
   0% { border-color: #10a37f; box-shadow: 0 0 10px rgba(16, 163, 127, 0.4); }
   33% { border-color: #8e44ad; box-shadow: 0 0 15px rgba(142, 68, 173, 0.4); }
@@ -618,6 +750,8 @@
   outline: none; 
   color: var(--text-h); 
   font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: normal;
   resize: none; 
   font-family: inherit; 
   max-height: 350px;
@@ -628,6 +762,26 @@
   display: block;
   min-height: 1.4em; /* Ensure it at least shows one line */
   box-sizing: border-box; /* Important for height calculations */
+  position: relative;
+  z-index: 1;
+}
+
+.input-box.has-random-code textarea {
+  color: var(--text-h);
+  caret-color: var(--text-h);
+}
+
+.input-box.has-random-code textarea::selection {
+  background: rgba(59, 130, 246, 0.38);
+  color: var(--text-h);
+}
+
+.prompt-editor textarea {
+  scrollbar-width: none;
+}
+
+.prompt-editor textarea::-webkit-scrollbar {
+  display: none;
 }
 
 .input-box.has-text textarea {

@@ -1,6 +1,7 @@
 import express from 'express';
 import db from '../services/database';
 import { authenticate } from '../middleware/auth';
+import { withParsedRandomSelections } from '../services/message-metadata';
 
 const router = express.Router();
 
@@ -12,7 +13,7 @@ router.get('/', authenticate, (req, res) => {
   const favoritesOnly = req.query.favoritesOnly === 'true';
   
   let query = `
-    SELECT m.sessionId, m.id as messageId, m.imageUrl, m.thumbnailUrl, m.prompt, m.text, m.timestamp, m.model, m.width, m.height, m.steps, m.cfg, m.workflow, m.seed, m.isFavorite, m.duration, m.sampler, m.scheduler
+    SELECT m.sessionId, m.id as messageId, m.imageUrl, m.thumbnailUrl, m.prompt, m.text, m.timestamp, m.model, m.width, m.height, m.steps, m.cfg, m.workflow, m.seed, m.isFavorite, m.duration, m.sampler, m.scheduler, m.randomSelections
     FROM messages m JOIN sessions s ON m.sessionId = s.id
     WHERE m.imageUrl IS NOT NULL AND s.userId = ?
   `;
@@ -29,8 +30,8 @@ router.get('/', authenticate, (req, res) => {
   query += ` ORDER BY m.timestamp DESC LIMIT ? OFFSET ?`;
   params.push(limit, offset);
   
-  const results = db.prepare(query).all(...params);
-  res.json(results);
+  const results = db.prepare(query).all(...params) as Record<string, unknown>[];
+  res.json(results.map(withParsedRandomSelections));
 });
 
 export default router;

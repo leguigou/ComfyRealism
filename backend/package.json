@@ -1,6 +1,5 @@
 {
   "name": "backend",
-  "version": "1.5.10",
   "main": "index.js",
   "scripts": {
     "dev": "ts-node-dev index.ts",
