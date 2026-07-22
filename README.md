@@ -2,66 +2,128 @@
 
 [![Build and Publish Docker Images](https://github.com/leguigou/ComfyRealism/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/leguigou/ComfyRealism/actions/workflows/docker-publish.yml)
 
-Une application full-stack moderne et élégante pour générer des images via une interface de chat connectée à un backend ComfyUI.
+Interface web multi-utilisateur pour générer, organiser et consulter des images avec ComfyUI. Le projet associe un frontend React à une API Express, une base SQLite et un suivi en temps réel par WebSocket.
 
-## ✨ Fonctionnalités
+Version actuelle : `1.5.11`
 
-### 👤 Système Multi-Utilisateur
-- **Isolément des Données** : Chaque utilisateur dispose de son propre répertoire d'images (`images/<user_id>`) et de miniatures.
-- **Sécurité** : Authentification robuste avec mots de passe hachés (Bcrypt).
-- **Administration** : Panneau dédié pour gérer les utilisateurs, réinitialiser les mots de passe et surveiller l'utilisation de l'espace disque.
+## Fonctionnalités
 
-### 💬 Expérience Chat & UI
-- **Interface Intuitive** : Une expérience fluide type ChatGPT pour interagir avec vos modèles d'image.
-- **Défilement Cinématique** : Animation de défilement ultra-douce (Cubic Easing) qui suit intelligemment l'apparition des nouvelles images.
-- **Auto-Nettoyage** : La suppression d'un message ou d'une session dans l'interface efface physiquement les fichiers `.webp` et miniatures du disque.
-- **Thèmes & Responsive** : Modes Sombre et Clair avec contrastes optimisés, parfaitement adapté aux mobiles.
+- interface de chat responsive en français et en anglais ;
+- génération ComfyUI avec suivi de la file, annulation et reprise par polling ;
+- workflows JSON personnalisables, checkpoints, dimensions, seed, steps, CFG, sampler et scheduler ;
+- amélioration facultative des prompts via une API compatible OpenAI ou Ollama ;
+- historique, galerie, favoris, archives et visionneuse mobile ;
+- conversion automatique des images et miniatures en WebP ;
+- comptes isolés, administration des utilisateurs et mots de passe hachés ;
+- thèmes clair et sombre, installation PWA et contrôle des mises à jour.
 
-### 🎨 Génération & Médias
-- **Format Optimisé** : Toutes les images et miniatures sont converties automatiquement au format **WebP** pour un chargement rapide et un gain de place.
-- **Miniatures à la volée** : Recréation automatique des miniatures si elles manquent.
-- **Génération Dynamique** : Support complet pour ComfyUI avec polling en temps réel et minuteur de génération.
-- **Galerie "Mes contenus"** : Parcourez l'historique complet de vos créations avec filtres (Actif/Archivé).
+## Installation recommandée avec Docker
 
-### 🛠️ Paramètres Avancés
-- **Contrôle Précis** : Sélection des Checkpoints, Dimensions, Steps, CFG, Seed, Negative Prompt.
-- **Workflows Flexibles** : Gestion et sélection de fichiers Workflows JSON personnalisés directement depuis l'interface.
-- **🤖 Optimisation IA (LLM)** : Option pour reformuler vos prompts via une API LLM compatible OpenAI/Ollama (le "Prompt Enhancement").
+Prérequis : Docker, Docker Compose et une instance ComfyUI accessible.
 
-## 🚀 Installation & Lancement
-
-### Méthode 1 : Docker Production (Recommandé)
-Utilise les images pré-construites pour un déploiement ultra-rapide.
 ```bash
+git clone https://github.com/leguigou/ComfyRealism.git
+cd ComfyRealism
 cp .env.example .env
-# Remplacez APP_PASSWORD et AUTH_SECRET avant le premier lancement.
-docker-compose -f docker-compose.production.yml up -d
+docker compose -f docker-compose.production.yml up -d
 ```
 
-### Méthode 2 : Docker Développement (Local)
-Construit les images localement à partir du code source.
-```bash
-cp .env.example .env
-# Remplacez APP_PASSWORD et AUTH_SECRET avant le premier lancement.
-docker-compose up --build -d
+Avant le premier démarrage, remplacez impérativement dans `.env` :
+
+```dotenv
+APP_PASSWORD=un-mot-de-passe-administrateur-fort
+AUTH_SECRET=une-cle-aleatoire-d-au-moins-32-caracteres
+COMFY_URL=http://host.docker.internal:8188
 ```
 
-Les URL ComfyUI et LLM personnalisées sont refusées par défaut si leur origine
-n'est pas connue du serveur. Ajoutez les origines supplémentaires, séparées par
-des virgules, dans `SERVICE_URL_ALLOWLIST`. Si chaque utilisateur doit pouvoir
-configurer librement sa propre URL LLM, définissez `ALLOW_USER_LLM_URLS=true`.
+L’application est ensuite disponible sur <http://localhost:5173>. L’API écoute sur <http://localhost:3001>.
 
-### Méthode 3 : Lancement Manuel (Windows)
-1. **Prérequis** : Node.js (v22+) et ComfyUI (port 8188).
-2. Copiez `backend/.env.example` vers `backend/.env`, puis remplacez les secrets.
-3. **Lancement** : Double-cliquez sur `run.bat`.
+Pour construire les images depuis le code local :
 
-## 📂 Structure du Projet
+```bash
+docker compose up --build -d
+```
 
-- `/frontend` : Interface React + Vite + TypeScript.
-- `/backend` : Serveur Express + SQLite (better-sqlite3).
-- `/images` : Stockage des générations (isolé par utilisateur).
-- `DEVELOPMENT_LOGS.md` : Historique détaillé des versions.
+## Configuration
 
-## 📝 Crédits
-Développé pour offrir une interface simplifiée et puissante exploitant toute la flexibilité de ComfyUI.
+| Variable | Rôle | Valeur par défaut |
+| --- | --- | --- |
+| `APP_PASSWORD` | Mot de passe du premier administrateur | obligatoire |
+| `AUTH_SECRET` | Signature des cookies, 32 caractères minimum | obligatoire |
+| `COMFY_URL` | URL de ComfyUI vue depuis le backend | `http://host.docker.internal:8188` |
+| `CORS_ORIGINS` | Origines frontend supplémentaires, séparées par des virgules | vide |
+| `SERVICE_URL_ALLOWLIST` | Origines ComfyUI/LLM supplémentaires autorisées | vide |
+| `ALLOW_USER_LLM_URLS` | Autorise chaque utilisateur à définir librement son URL LLM | `false` |
+| `PORT` | Port de l’API | `3001` |
+
+Les URL de services personnalisées sont refusées si leur origine n’est pas connue du serveur. Ajoutez les origines nécessaires dans `SERVICE_URL_ALLOWLIST`, ou activez `ALLOW_USER_LLM_URLS` si ce comportement est volontaire.
+
+## Développement local
+
+Prérequis : Node.js 22 ou plus récent, npm et ComfyUI.
+
+Installez les dépendances :
+
+```bash
+cd backend
+npm ci
+cd ../frontend
+npm ci
+```
+
+Lancez ensuite le backend et le frontend dans deux terminaux :
+
+```bash
+# Terminal 1
+cd backend
+npm run dev
+```
+
+```bash
+# Terminal 2
+cd frontend
+npm run dev
+```
+
+Sous Windows, `run.bat` compile et lance automatiquement les deux services. Le script `run.sh` fournit le même raccourci sous Linux et macOS.
+
+## Vérifications
+
+```bash
+cd backend
+npm test
+npm run build
+
+cd ../frontend
+npm test
+npm run lint
+npm run build
+```
+
+## Structure et données
+
+- `frontend/` : application React, Vite et TypeScript ;
+- `backend/` : API Express, WebSocket et SQLite ;
+- `backend/workflows/` : workflows ComfyUI et leurs configurations ;
+- `backend/data/history.db` : base de données persistante ;
+- `images/` : images et miniatures, isolées par utilisateur.
+
+Avec Docker, ces trois derniers emplacements sont montés depuis l’hôte. Sauvegardez régulièrement `backend/data`, `backend/workflows` et `images`.
+
+## Maintenance Docker
+
+```bash
+# Afficher les journaux
+docker compose -f docker-compose.production.yml logs -f
+
+# Télécharger et redémarrer la dernière version
+docker compose -f docker-compose.production.yml pull
+docker compose -f docker-compose.production.yml up -d
+
+# Arrêter les services sans supprimer les données
+docker compose -f docker-compose.production.yml down
+```
+
+## Licence
+
+Le backend est déclaré sous licence ISC. Vérifiez les licences propres à ComfyUI, aux modèles et aux workflows utilisés.
