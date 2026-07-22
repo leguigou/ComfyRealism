@@ -322,7 +322,7 @@ export const ChatInterface = ({
                   )}
                   <div className={`message-actions ${msg.imageUrl ? 'has-image' : ''}`}>
                     <button className="action-btn-icon edit" onClick={() => { 
-                      const textToEdit = msg.role === 'user' ? (msg.text || '') : (msg.prompt || msg.text || '');
+                      const textToEdit = msg.role === 'user' ? (msg.text || '') : (msg.text || msg.prompt || '');
                       handleEdit(textToEdit); 
                     }} title={t.edit}>✎</button>
                     {msg.imageUrl && (
