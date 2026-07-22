@@ -4,8 +4,6 @@
 
 Interface web multi-utilisateur pour générer, organiser et consulter des images avec ComfyUI. Le projet associe un frontend React à une API Express, une base SQLite et un suivi en temps réel par WebSocket.
 
-Version actuelle : `1.5.11`
-
 ## Fonctionnalités
 
 - interface de chat responsive en français et en anglais ;
