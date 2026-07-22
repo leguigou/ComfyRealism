@@ -1,4 +1,4 @@
-const CACHE_NAME = 'comfy-realism-v1.5.10';
+const CACHE_NAME = 'comfy-realism-v__APP_VERSION__';
 const ASSETS_TO_CACHE = [
   '/manifest.json',
   '/favicon.svg',

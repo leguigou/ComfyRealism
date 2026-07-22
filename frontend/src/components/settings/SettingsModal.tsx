@@ -1,24 +1,55 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './SettingsModal.css';
-import type { GenParameters, User, Language, GalleryItem } from '../../types';
-import { RefreshIcon } from '../ui/Icons';
+import type { GenParameters, User, Language, GalleryItem, RandomPromptList } from '../../types';
+import { normalizeRandomSlug } from '../../utils/randomPrompts';
+import { RefreshIcon, XIcon } from '../ui/Icons';
 import { MarkdownLoader } from '../ui/MarkdownLoader';
-import devLogsUrl from '../../assets/DEVELOPMENT_LOGS.md?url';
 import { formatBytes, getFullImageUrl, API_BASE } from '../../services/api';
-import { APP_CONFIG } from '../../config';
 import toast from 'react-hot-toast';
+
+interface WorkflowMappingData {
+  filename: string;
+  nodeMapping: Record<string, string | undefined>;
+  nodes: Array<{ id: string; classType: string; title: string; inputs: string[] }>;
+  samplerCount: number;
+  generationDefaults?: Partial<{ width: number; height: number; steps: number; cfg: number; sampler: string; scheduler: string }>;
+}
+
+const workflowMappingKeys = ['checkpoint', 'diffusionModel', 'positive', 'negative', 'ksampler', 'latent', 'save'] as const;
+
+type SettingsTab = SettingsModalProps['activeTab'];
+
+const SettingsTabIcon = ({ tab }: { tab: SettingsTab }) => {
+  const paths: Record<SettingsTab, React.ReactNode> = {
+    profile: <><circle cx="12" cy="8" r="3" /><path d="M5.5 20a6.5 6.5 0 0 1 13 0" /></>,
+    images: <><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="8.5" cy="9" r="1.5" /><path d="m4 17 5-5 4 4 2-2 5 4" /></>,
+    random: <><path d="M4 7h3c4 0 4 10 8 10h5" /><path d="m17 14 3 3-3 3" /><path d="M4 17h3c1.5 0 2.5-1.5 3.5-3" /><path d="M14 7h6m-3-3 3 3-3 3" /></>,
+    comfy: <><path d="M12 2v3m0 14v3M4.93 4.93l2.12 2.12m9.9 9.9 2.12 2.12M2 12h3m14 0h3M4.93 19.07l2.12-2.12m9.9-9.9 2.12-2.12" /><circle cx="12" cy="12" r="4" /></>,
+    llm: <><rect x="4" y="5" width="16" height="14" rx="3" /><path d="M8 10h.01M12 10h.01M16 10h.01M8 14h8M9 2v3m6-3v3" /></>,
+    archives: <><rect x="4" y="7" width="16" height="13" rx="2" /><path d="M3 4h18v4H3zm6 8h6" /></>,
+    update: <><path d="M20 7v5h-5" /><path d="M18.5 16a8 8 0 1 1 .8-9L20 12" /></>,
+    admin: <><path d="M12 3 4.5 6v5c0 4.8 3.2 8.5 7.5 10 4.3-1.5 7.5-5.2 7.5-10V6z" /><path d="m9 12 2 2 4-4" /></>
+  };
+
+  return (
+    <svg className="settings-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {paths[tab]}
+    </svg>
+  );
+};
 
 interface SettingsModalProps {
   showSettings: boolean;
   setShowSettings: (show: boolean) => void;
-  activeTab: 'profile' | 'images' | 'comfy' | 'llm' | 'archives' | 'logs' | 'update' | 'admin';
-  setActiveTab: (tab: 'profile' | 'images' | 'comfy' | 'llm' | 'archives' | 'logs' | 'update' | 'admin') => void;
+  activeTab: 'profile' | 'images' | 'random' | 'comfy' | 'llm' | 'archives' | 'update' | 'admin';
+  setActiveTab: (tab: 'profile' | 'images' | 'random' | 'comfy' | 'llm' | 'archives' | 'update' | 'admin') => void;
   params: GenParameters;
   setParams: (params: GenParameters) => void;
   lang: Language;
   t: Record<string, string>;
   currentUser: User | null;
   comfyModels: string[];
+  diffusionModels: string[];
   isFetchingComfyModels: boolean;
   fetchComfyModels: () => void;
   comfyStatus: { type: 'success' | 'error', msg: string } | null;
@@ -26,6 +57,7 @@ interface SettingsModalProps {
   isCheckingComfy: boolean;
   comfyCheckStatus: { type: 'success' | 'error', msg: string } | null;
   availableWorkflows: string[];
+  fetchWorkflows: () => void;
   llmModels: string[];
   isFetchingModels: boolean;
   fetchLLMModels: () => void;
@@ -61,6 +93,7 @@ export const SettingsModal = ({
   t,
   currentUser,
   comfyModels,
+  diffusionModels,
   isFetchingComfyModels,
   fetchComfyModels,
   comfyStatus,
@@ -68,6 +101,7 @@ export const SettingsModal = ({
   isCheckingComfy,
   comfyCheckStatus,
   availableWorkflows,
+  fetchWorkflows,
   llmModels,
   isFetchingModels,
   fetchLLMModels,
@@ -102,6 +136,14 @@ export const SettingsModal = ({
   const [localNegativePrompt, setLocalNegativePrompt] = useState(params.negativePrompt);
   const [localLLMSystemMessage, setLocalLLMSystemMessage] = useState(params.llmSystemMessage);
   const [modelSearch, setModelSearch] = useState('');
+  const [isImportingWorkflow, setIsImportingWorkflow] = useState(false);
+  const [workflowToReplace, setWorkflowToReplace] = useState<string | null>(null);
+  const [workflowMapping, setWorkflowMapping] = useState<WorkflowMappingData | null>(null);
+  const [mappingDraft, setMappingDraft] = useState<Record<string, string>>({});
+  const [isSavingMapping, setIsSavingMapping] = useState(false);
+  const workflowFileInputRef = useRef<HTMLInputElement>(null);
+  const activeTabButtonRef = useRef<HTMLButtonElement>(null);
+  const hydratedProfilesRef = useRef('');
 
   useEffect(() => {
     if (showSettings) {
@@ -114,11 +156,227 @@ export const SettingsModal = ({
     }
   }, [showSettings, currentUser, params.negativePrompt, params.llmSystemMessage]);
 
+  useEffect(() => {
+    if (!showSettings || activeTab !== 'comfy' || !params.workflowFile) return;
+    let cancelled = false;
+    setWorkflowMapping(null);
+    fetch(`${API_BASE}/api/workflows/${encodeURIComponent(params.workflowFile)}/mapping`, { credentials: 'include' })
+      .then(async response => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Mapping unavailable');
+        if (!cancelled) {
+          setWorkflowMapping(data);
+          setMappingDraft(Object.fromEntries(workflowMappingKeys.map(key => [key, data.nodeMapping?.[key] || ''])));
+        }
+      })
+      .catch(error => {
+        if (!cancelled) console.error('Error fetching workflow mapping:', error);
+      });
+    return () => { cancelled = true; };
+  }, [showSettings, activeTab, params.workflowFile]);
+
+  useEffect(() => {
+    if (!showSettings) return;
+    const favoritesWithWorkflow = (params.favoriteModels || []).filter(favorite => favorite.workflowFile);
+    const signature = favoritesWithWorkflow.map(favorite => `${favorite.modelType || 'checkpoint'}:${favorite.model}:${favorite.workflowFile}`).sort().join('|');
+    if (!signature || hydratedProfilesRef.current === signature) return;
+    hydratedProfilesRef.current = signature;
+
+    const workflowFiles = [...new Set(favoritesWithWorkflow.map(favorite => favorite.workflowFile))];
+    Promise.all(workflowFiles.map(async filename => {
+      const response = await fetch(`${API_BASE}/api/workflows/${encodeURIComponent(filename)}/mapping`, { credentials: 'include' });
+      if (!response.ok) return [filename, undefined] as const;
+      const data = await response.json();
+      return [filename, data.generationDefaults] as const;
+    })).then(entries => {
+      const defaultsByWorkflow = new Map(entries);
+      const favoriteModels = (params.favoriteModels || []).map(favorite => ({
+        ...favorite,
+        generationDefaults: defaultsByWorkflow.get(favorite.workflowFile) || favorite.generationDefaults
+      }));
+      setParams({ ...params, favoriteModels });
+    }).catch(error => console.error('Error hydrating model defaults:', error));
+  }, [showSettings, params, setParams]);
+
+  useEffect(() => {
+    if (!showSettings) return;
+    const frame = window.requestAnimationFrame(() => {
+      activeTabButtonRef.current?.scrollIntoView({ block: 'nearest', inline: 'center' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeTab, showSettings]);
+
   if (!showSettings) return null;
 
-  const filteredModels = comfyModels.filter(m => 
+  const visibleModels = params.comfyModelType === 'diffusion' ? diffusionModels : comfyModels;
+  const filteredModels = visibleModels.filter(m =>
     m.toLowerCase().includes(modelSearch.toLowerCase())
   );
+
+  const favoriteModels = params.favoriteModels || [];
+  const activeFavorite = favoriteModels.find(item => (
+    item.model === params.comfyModel && (item.modelType || 'checkpoint') === params.comfyModelType
+  ));
+  const activeDefaults = activeFavorite?.generationDefaults;
+
+  const selectFavoriteModel = (model: string, workflowFile?: string, modelType: 'checkpoint' | 'diffusion' = 'checkpoint') => {
+    const favorite = favoriteModels.find(item => item.model === model && (item.modelType || 'checkpoint') === modelType);
+    setParams({
+      ...params,
+      comfyModel: model,
+      comfyModelType: modelType,
+      workflowFile: workflowFile || params.workflowFile,
+      ...(favorite?.generationDefaults || {})
+    });
+  };
+
+  const toggleFavoriteModel = (model: string, modelType: 'checkpoint' | 'diffusion' = params.comfyModelType) => {
+    const existing = favoriteModels.some(item => item.model === model && (item.modelType || 'checkpoint') === modelType);
+    setParams({
+      ...params,
+      favoriteModels: existing
+        ? favoriteModels.filter(item => !(item.model === model && (item.modelType || 'checkpoint') === modelType))
+        : [...favoriteModels, { model, workflowFile: '', modelType }]
+    });
+  };
+
+  const updateFavoriteWorkflow = async (model: string, modelType: 'checkpoint' | 'diffusion', workflowFile: string) => {
+    let generationDefaults = undefined;
+    if (workflowFile) {
+      try {
+        const response = await fetch(`${API_BASE}/api/workflows/${encodeURIComponent(workflowFile)}/mapping`, { credentials: 'include' });
+        if (response.ok) generationDefaults = (await response.json()).generationDefaults;
+      } catch (error) {
+        console.error('Error reading workflow defaults:', error);
+      }
+    }
+    const isActiveModel = params.comfyModel === model && params.comfyModelType === modelType;
+    setParams({
+      ...params,
+      workflowFile: isActiveModel && workflowFile ? workflowFile : params.workflowFile,
+      ...(isActiveModel && generationDefaults ? generationDefaults : {}),
+      favoriteModels: favoriteModels.map(item => (
+        item.model === model && (item.modelType || 'checkpoint') === modelType
+          ? { ...item, workflowFile, generationDefaults }
+          : item
+      ))
+    });
+  };
+
+  const resetModelParameter = (key: 'width' | 'height' | 'steps' | 'cfg' | 'sampler' | 'scheduler') => {
+    const defaultValue = activeDefaults?.[key];
+    if (defaultValue === undefined) return;
+    setParams({ ...params, [key]: defaultValue });
+  };
+
+  const switchModelType = (modelType: 'checkpoint' | 'diffusion') => {
+    const targetModels = modelType === 'diffusion' ? diffusionModels : comfyModels;
+    setModelSearch('');
+    setParams({
+      ...params,
+      comfyModelType: modelType,
+      comfyModel: targetModels.includes(params.comfyModel) ? params.comfyModel : (targetModels[0] || '')
+    });
+  };
+
+  const getModelDisplayName = (model: string) => (
+    model.split(/[\\/]/).pop()?.replace(/\.(safetensors|ckpt|pt)$/i, '') || model
+  );
+
+  const handleImportWorkflow = async (file?: File) => {
+    if (!file) return;
+    const uploadedFilename = file.name.endsWith('.json') ? file.name : `${file.name}.json`;
+    const filename = workflowToReplace || uploadedFilename;
+    const exists = availableWorkflows.includes(filename);
+    if (exists && !window.confirm(t.confirmReplaceWorkflow)) {
+      if (workflowFileInputRef.current) workflowFileInputRef.current.value = '';
+      return;
+    }
+
+    setIsImportingWorkflow(true);
+    try {
+      const workflow = JSON.parse(await file.text());
+      const response = await fetch(`${API_BASE}/api/workflows`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ filename, workflow, overwrite: exists })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || t.workflowImportFailed);
+      setParams({
+        ...params,
+        workflowFile: data.filename,
+        favoriteModels: favoriteModels.map(favorite => (
+          favorite.workflowFile === data.filename
+            ? { ...favorite, generationDefaults: data.generationDefaults }
+            : favorite
+        ))
+      });
+      await fetchWorkflows();
+      toast.success(exists ? t.workflowUpdated : t.workflowImported);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t.workflowImportFailed);
+    } finally {
+      setIsImportingWorkflow(false);
+      setWorkflowToReplace(null);
+      if (workflowFileInputRef.current) workflowFileInputRef.current.value = '';
+    }
+  };
+
+  const handleDeleteWorkflow = async (filename: string) => {
+    if (!window.confirm(`${t.confirmDeleteWorkflow} ${filename} ?`)) return;
+    try {
+      const response = await fetch(`${API_BASE}/api/workflows/${encodeURIComponent(filename)}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || t.workflowDeleteFailed);
+
+      const remaining = availableWorkflows.filter(workflow => workflow !== filename);
+      setParams({
+        ...params,
+        workflowFile: params.workflowFile === filename ? (remaining[0] || '') : params.workflowFile,
+        favoriteModels: favoriteModels.map(favorite => (
+          favorite.workflowFile === filename ? { ...favorite, workflowFile: '' } : favorite
+        ))
+      });
+      await fetchWorkflows();
+      toast.success(t.workflowDeleted);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t.workflowDeleteFailed);
+    }
+  };
+
+  const handleSaveWorkflowMapping = async () => {
+    if (!params.workflowFile) return;
+    setIsSavingMapping(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/workflows/${encodeURIComponent(params.workflowFile)}/mapping`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ nodeMapping: mappingDraft })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || t.mappingSaveFailed);
+      setWorkflowMapping(current => current ? { ...current, nodeMapping: data.nodeMapping } : current);
+      setParams({
+        ...params,
+        favoriteModels: favoriteModels.map(favorite => (
+          favorite.workflowFile === params.workflowFile
+            ? { ...favorite, generationDefaults: data.generationDefaults }
+            : favorite
+        ))
+      });
+      toast.success(t.mappingSaved);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t.mappingSaveFailed);
+    } finally {
+      setIsSavingMapping(false);
+    }
+  };
 
   const handleUpdateProfile = async () => {
     if (newPassword && newPassword !== confirmPassword) {
@@ -151,6 +409,29 @@ export const SettingsModal = ({
     // The App.tsx saveSettings will pick up the change and show a toast
   };
 
+  const updateRandomList = (id: string, patch: Partial<RandomPromptList>) => {
+    setParams({
+      ...params,
+      randomPromptLists: params.randomPromptLists.map(list => list.id === id ? { ...list, ...patch } : list)
+    });
+  };
+
+  const addRandomList = () => {
+    const id = `random-${Date.now()}`;
+    setParams({
+      ...params,
+      randomPromptLists: [
+        ...params.randomPromptLists,
+        { id, name: t.newRandomList, slug: `R-List-${params.randomPromptLists.length + 1}`, values: [], enabled: true }
+      ]
+    });
+  };
+
+  const removeRandomList = (id: string) => {
+    if (!window.confirm(t.confirmDeleteRandomList)) return;
+    setParams({ ...params, randomPromptLists: params.randomPromptLists.filter(list => list.id !== id) });
+  };
+
   const handleSelectAvatar = async (url: string) => {
     const result = await updateProfile({ avatarUrl: url });
     if (result.success) {
@@ -175,25 +456,108 @@ export const SettingsModal = ({
   // Sort gallery: favorites first
   const sortedGallery = [...galleryItems].sort((a, b) => (b.isFavorite || 0) - (a.isFavorite || 0));
 
+  const settingsTabs: Array<{ id: SettingsTab; label: string }> = [
+    { id: 'profile', label: t.tabProfile },
+    { id: 'images', label: t.tabImages },
+    { id: 'random', label: t.tabRandom },
+    { id: 'comfy', label: t.tabComfy },
+    { id: 'llm', label: t.tabLLM },
+    { id: 'archives', label: t.tabArchives },
+    { id: 'update', label: t.tabUpdate },
+    ...(currentUser?.isAdmin ? [{ id: 'admin' as const, label: t.tabAdmin }] : [])
+  ];
+
   return (
     <div className="settings-modal-overlay" onClick={() => setShowSettings(false)}>
-      <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
-        <button className="settings-close-btn" onClick={() => setShowSettings(false)}>×</button>
-        <h3>{t.settings}</h3>            
-        <div className="settings-tabs">
-          <button className={`tab-btn ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')}>{t.tabProfile}</button>
-          <button className={`tab-btn ${activeTab === 'images' ? 'active' : ''}`} onClick={() => setActiveTab('images')}>{t.tabImages}</button>
-          <button className={`tab-btn ${activeTab === 'comfy' ? 'active' : ''}`} onClick={() => setActiveTab('comfy')}>{t.tabComfy}</button>
-          <button className={`tab-btn ${activeTab === 'llm' ? 'active' : ''}`} onClick={() => setActiveTab('llm')}>{t.tabLLM}</button>
-          <button className={`tab-btn ${activeTab === 'archives' ? 'active' : ''}`} onClick={() => setActiveTab('archives')}>{t.tabArchives}</button>
-          <button className={`tab-btn ${activeTab === 'logs' ? 'active' : ''}`} onClick={() => setActiveTab('logs')}>{t.tabLogs}</button>
-          <button className={`tab-btn ${activeTab === 'update' ? 'active' : ''}`} onClick={() => setActiveTab('update')}>{t.tabUpdate}</button>
-          {currentUser?.isAdmin && (
-            <button className={`tab-btn ${activeTab === 'admin' ? 'active' : ''}`} onClick={() => setActiveTab('admin')}>{t.tabAdmin}</button>
-          )}
-        </div>
+      <div className="settings-modal settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title" onClick={(e) => e.stopPropagation()}>
+        <header className="settings-header">
+          <div>
+            <h3 id="settings-title">{t.settings}</h3>
+            <p>{t.settingsSubtitle}</p>
+          </div>
+          <button className="settings-close-btn" onClick={() => setShowSettings(false)} aria-label={t.close || 'Close'}>
+            <XIcon size={19} />
+          </button>
+        </header>
 
-        <div className="tab-content">
+        <div className="settings-layout">
+          <nav className="settings-tabs" aria-label={t.settings}>
+            {settingsTabs.map(tab => (
+              <button
+                key={tab.id}
+                ref={activeTab === tab.id ? activeTabButtonRef : undefined}
+                type="button"
+                className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+                aria-current={activeTab === tab.id ? 'page' : undefined}
+              >
+                <SettingsTabIcon tab={tab.id} />
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </nav>
+
+          <main className="tab-content">
+          {activeTab === 'random' && (
+            <section className="random-lists-settings">
+              <div className="random-lists-intro">
+                <div>
+                  <h4>{t.randomListsTitle}</h4>
+                  <p>{t.randomListsHelp}</p>
+                </div>
+                <button type="button" className="random-list-add" onClick={addRandomList}>+ {t.addRandomList}</button>
+              </div>
+
+              <div className="random-list-stack">
+                {params.randomPromptLists.map(list => {
+                  const duplicateSlug = params.randomPromptLists.some(other => other.id !== list.id && other.slug.toLowerCase() === list.slug.toLowerCase());
+                  return (
+                    <article className="random-list-card" key={list.id}>
+                      <div className="random-list-card-header">
+                        <input
+                          className="random-list-name"
+                          value={list.name}
+                          onChange={event => updateRandomList(list.id, { name: event.target.value })}
+                          aria-label={t.listName}
+                          placeholder={t.listName}
+                        />
+                        <label className="random-list-enabled">
+                          <input type="checkbox" checked={list.enabled} onChange={event => updateRandomList(list.id, { enabled: event.target.checked })} />
+                          <span>{t.active}</span>
+                        </label>
+                        <button type="button" className="random-list-delete" onClick={() => removeRandomList(list.id)} title={t.delete}>×</button>
+                      </div>
+                      <div className="random-list-fields">
+                        <label>
+                          <span>{t.randomSlug}</span>
+                          <div className={`random-slug-input ${duplicateSlug ? 'invalid' : ''}`}>
+                            <span>[</span>
+                            <input
+                              value={list.slug}
+                              onChange={event => updateRandomList(list.id, { slug: normalizeRandomSlug(event.target.value) })}
+                              placeholder="R-Color"
+                            />
+                            <span>]</span>
+                          </div>
+                          {duplicateSlug && <small>{t.duplicateSlug}</small>}
+                        </label>
+                        <label>
+                          <span>{t.randomValues}</span>
+                          <textarea
+                            rows={6}
+                            value={list.values.join('\n')}
+                            onChange={event => updateRandomList(list.id, { values: event.target.value.split(/\r?\n/) })}
+                            placeholder={t.randomValuesPlaceholder}
+                          />
+                          <small>{list.values.filter(value => value.trim()).length} {t.values}</small>
+                        </label>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+          )}
           {activeTab === 'profile' && (
             <div className="profile-edit-section">
               <div className="avatar-edit-container">
@@ -261,40 +625,32 @@ export const SettingsModal = ({
             </div>
           )}
 
-          {activeTab === 'logs' && (
-           <div className="settings-grid">
-             <div className="setting-item" style={{ gridColumn: 'span 2' }}>
-               <label>{t.currentVersion}</label>
-               <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '1rem' }}>v.{APP_CONFIG.VERSION}</div>
-               <label>{t.devLogs}</label>
-               <div className="logs-container" style={{
-                 background: 'rgba(0,0,0,0.2)',
-                 padding: '1rem',
-                 borderRadius: '8px',
-                 maxHeight: '400px',
-                 overflowY: 'auto',
-                 fontSize: '0.85rem',
-                 lineHeight: '1.4',
-                 fontFamily: 'inherit'
-               }}>
-                 <div className="markdown-logs">
-                   <MarkdownLoader url={devLogsUrl} />
-                 </div>
-               </div>
-             </div>
-           </div>
-          )}
-
           {activeTab === 'images' && (
             <>
               <div className="settings-row-2">
                 <div className="setting-item">
                   <label>{t.width}</label>
-                  <input type="number" value={params.width} onChange={(e) => setParams({ ...params, width: Number(e.target.value) })} step={64} />
+                  <div className="parameter-with-reset">
+                    <input type="number" value={params.width} onChange={(e) => setParams({ ...params, width: Number(e.target.value) })} step={64} />
+                    {activeDefaults?.width !== undefined && (
+                      <button type="button" onClick={() => resetModelParameter('width')} disabled={params.width === activeDefaults.width} title={`${t.resetToModelDefault}: ${activeDefaults.width}`}>↺</button>
+                    )}
+                  </div>
+                  {activeDefaults?.width !== undefined && params.width !== activeDefaults.width && (
+                    <small className="parameter-default-hint">{t.defaultValue}: {activeDefaults.width}</small>
+                  )}
                 </div>
                 <div className="setting-item">
                   <label>{t.height}</label>
-                  <input type="number" value={params.height} onChange={(e) => setParams({ ...params, height: Number(e.target.value) })} step={64} />
+                  <div className="parameter-with-reset">
+                    <input type="number" value={params.height} onChange={(e) => setParams({ ...params, height: Number(e.target.value) })} step={64} />
+                    {activeDefaults?.height !== undefined && (
+                      <button type="button" onClick={() => resetModelParameter('height')} disabled={params.height === activeDefaults.height} title={`${t.resetToModelDefault}: ${activeDefaults.height}`}>↺</button>
+                    )}
+                  </div>
+                  {activeDefaults?.height !== undefined && params.height !== activeDefaults.height && (
+                    <small className="parameter-default-hint">{t.defaultValue}: {activeDefaults.height}</small>
+                  )}
                 </div>
               </div>
               <div className="format-presets">
@@ -305,52 +661,84 @@ export const SettingsModal = ({
               <div className="settings-row-2" style={{ marginTop: '1.5rem' }}>
                 <div className="setting-item">
                   <label>{t.steps}</label>
-                  <input type="number" value={params.steps} onChange={(e) => setParams({ ...params, steps: Number(e.target.value) })} min={1} max={50} />
+                  <div className="parameter-with-reset">
+                    <input type="number" value={params.steps} onChange={(e) => setParams({ ...params, steps: Number(e.target.value) })} min={1} max={50} />
+                    {activeDefaults?.steps !== undefined && (
+                      <button type="button" onClick={() => resetModelParameter('steps')} disabled={params.steps === activeDefaults.steps} title={`${t.resetToModelDefault}: ${activeDefaults.steps}`}>↺</button>
+                    )}
+                  </div>
+                  {activeDefaults?.steps !== undefined && params.steps !== activeDefaults.steps && (
+                    <small className="parameter-default-hint">{t.defaultValue}: {activeDefaults.steps}</small>
+                  )}
                 </div>
                 <div className="setting-item">
                   <label>{t.cfg}</label>
-                  <input type="number" value={params.cfg} onChange={(e) => setParams({ ...params, cfg: Number(e.target.value) })} step={0.1} min={1} max={20} />
+                  <div className="parameter-with-reset">
+                    <input type="number" value={params.cfg} onChange={(e) => setParams({ ...params, cfg: Number(e.target.value) })} step={0.1} min={0} max={20} />
+                    {activeDefaults?.cfg !== undefined && (
+                      <button type="button" onClick={() => resetModelParameter('cfg')} disabled={params.cfg === activeDefaults.cfg} title={`${t.resetToModelDefault}: ${activeDefaults.cfg}`}>↺</button>
+                    )}
+                  </div>
+                  {activeDefaults?.cfg !== undefined && params.cfg !== activeDefaults.cfg && (
+                    <small className="parameter-default-hint">{t.defaultValue}: {activeDefaults.cfg}</small>
+                  )}
                 </div>
               </div>
               <div className="settings-row-2" style={{ marginTop: '1.5rem' }}>
                 <div className="setting-item">
                   <label>{t.sampler}</label>
-                  <select value={params.sampler || 'euler'} onChange={(e) => setParams({ ...params, sampler: e.target.value })}>
-                    <option value="euler">euler</option>
-                    <option value="euler_ancestral">euler_ancestral</option>
-                    <option value="heun">heun</option>
-                    <option value="heunpp2">heunpp2</option>
-                    <option value="dpm_2">dpm_2</option>
-                    <option value="dpm_2_ancestral">dpm_2_ancestral</option>
-                    <option value="lms">lms</option>
-                    <option value="dpm_fast">dpm_fast</option>
-                    <option value="dpm_adaptive">dpm_adaptive</option>
-                    <option value="dpmpp_2s_ancestral">dpmpp_2s_ancestral</option>
-                    <option value="dpmpp_sde">dpmpp_sde</option>
-                    <option value="dpmpp_sde_gpu">dpmpp_sde_gpu</option>
-                    <option value="dpmpp_2m">dpmpp_2m</option>
-                    <option value="dpmpp_2m_sde">dpmpp_2m_sde</option>
-                    <option value="dpmpp_2m_sde_gpu">dpmpp_2m_sde_gpu</option>
-                    <option value="dpmpp_3m_sde">dpmpp_3m_sde</option>
-                    <option value="dpmpp_3m_sde_gpu">dpmpp_3m_sde_gpu</option>
-                    <option value="ddpm">ddpm</option>
-                    <option value="lcm">lcm</option>
-                    <option value="ddim">ddim</option>
-                    <option value="uni_pc">uni_pc</option>
-                    <option value="uni_pc_bh2">uni_pc_bh2</option>
-                  </select>
+                  <div className="parameter-with-reset">
+                    <select value={params.sampler || 'euler'} onChange={(e) => setParams({ ...params, sampler: e.target.value })}>
+                      <option value="euler">euler</option>
+                      <option value="euler_ancestral">euler_ancestral</option>
+                      <option value="heun">heun</option>
+                      <option value="heunpp2">heunpp2</option>
+                      <option value="dpm_2">dpm_2</option>
+                      <option value="dpm_2_ancestral">dpm_2_ancestral</option>
+                      <option value="lms">lms</option>
+                      <option value="dpm_fast">dpm_fast</option>
+                      <option value="dpm_adaptive">dpm_adaptive</option>
+                      <option value="dpmpp_2s_ancestral">dpmpp_2s_ancestral</option>
+                      <option value="dpmpp_sde">dpmpp_sde</option>
+                      <option value="dpmpp_sde_gpu">dpmpp_sde_gpu</option>
+                      <option value="dpmpp_2m">dpmpp_2m</option>
+                      <option value="dpmpp_2m_sde">dpmpp_2m_sde</option>
+                      <option value="dpmpp_2m_sde_gpu">dpmpp_2m_sde_gpu</option>
+                      <option value="dpmpp_3m_sde">dpmpp_3m_sde</option>
+                      <option value="dpmpp_3m_sde_gpu">dpmpp_3m_sde_gpu</option>
+                      <option value="ddpm">ddpm</option>
+                      <option value="lcm">lcm</option>
+                      <option value="ddim">ddim</option>
+                      <option value="uni_pc">uni_pc</option>
+                      <option value="uni_pc_bh2">uni_pc_bh2</option>
+                    </select>
+                    {activeDefaults?.sampler !== undefined && (
+                      <button type="button" onClick={() => resetModelParameter('sampler')} disabled={params.sampler === activeDefaults.sampler} title={`${t.resetToModelDefault}: ${activeDefaults.sampler}`}>↺</button>
+                    )}
+                  </div>
+                  {activeDefaults?.sampler !== undefined && params.sampler !== activeDefaults.sampler && (
+                    <small className="parameter-default-hint">{t.defaultValue}: {activeDefaults.sampler}</small>
+                  )}
                 </div>
                 <div className="setting-item">
                   <label>{t.scheduler}</label>
-                  <select value={params.scheduler || 'normal'} onChange={(e) => setParams({ ...params, scheduler: e.target.value })}>
-                    <option value="normal">normal</option>
-                    <option value="karras">karras</option>
-                    <option value="exponential">exponential</option>
-                    <option value="sgm_uniform">sgm_uniform</option>
-                    <option value="simple">simple</option>
-                    <option value="ddim_uniform">ddim_uniform</option>
-                    <option value="beta">beta</option>
-                  </select>
+                  <div className="parameter-with-reset">
+                    <select value={params.scheduler || 'normal'} onChange={(e) => setParams({ ...params, scheduler: e.target.value })}>
+                      <option value="normal">normal</option>
+                      <option value="karras">karras</option>
+                      <option value="exponential">exponential</option>
+                      <option value="sgm_uniform">sgm_uniform</option>
+                      <option value="simple">simple</option>
+                      <option value="ddim_uniform">ddim_uniform</option>
+                      <option value="beta">beta</option>
+                    </select>
+                    {activeDefaults?.scheduler !== undefined && (
+                      <button type="button" onClick={() => resetModelParameter('scheduler')} disabled={params.scheduler === activeDefaults.scheduler} title={`${t.resetToModelDefault}: ${activeDefaults.scheduler}`}>↺</button>
+                    )}
+                  </div>
+                  {activeDefaults?.scheduler !== undefined && params.scheduler !== activeDefaults.scheduler && (
+                    <small className="parameter-default-hint">{t.defaultValue}: {activeDefaults.scheduler}</small>
+                  )}
                 </div>
               </div>
               <div className="settings-grid" style={{ marginTop: '1.5rem' }}>
@@ -400,6 +788,89 @@ export const SettingsModal = ({
               </div>
               <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                 <label>{t.checkpointModel}</label>
+                <div className="favorite-model-library">
+                  <div className="favorite-model-library-header">
+                    <div>
+                      <strong>★ {t.favoriteModels}</strong>
+                      <span>{t.favoriteModelsHelp}</span>
+                    </div>
+                    <span className="favorite-count">{favoriteModels.length}</span>
+                  </div>
+                  {favoriteModels.length > 0 ? (
+                    <div className="favorite-model-list">
+                      {favoriteModels.map((favorite) => (
+                        <div
+                          key={`${favorite.modelType || 'checkpoint'}:${favorite.model}`}
+                          className={`favorite-model-card ${params.comfyModel === favorite.model && params.comfyModelType === (favorite.modelType || 'checkpoint') ? 'active' : ''}`}
+                        >
+                          <button
+                            type="button"
+                            className="favorite-model-select"
+                            onClick={() => selectFavoriteModel(favorite.model, favorite.workflowFile, favorite.modelType || 'checkpoint')}
+                            title={favorite.model}
+                          >
+                            <span className="favorite-model-name">{getModelDisplayName(favorite.model)}</span>
+                            <span className="favorite-model-path">
+                              {favorite.modelType === 'diffusion' ? t.diffusionModels : t.checkpoints} · {favorite.model}
+                            </span>
+                          </button>
+                          <div className="favorite-workflow-editor">
+                            <label htmlFor={`workflow-${favorite.model}`}>{t.associatedWorkflow}</label>
+                            <select
+                              id={`workflow-${favorite.model}`}
+                              value={favorite.workflowFile}
+                              onChange={(e) => updateFavoriteWorkflow(favorite.model, favorite.modelType || 'checkpoint', e.target.value)}
+                            >
+                              <option value="">{t.noWorkflowAssigned}</option>
+                              {favorite.workflowFile && !availableWorkflows.includes(favorite.workflowFile) && (
+                                <option value={favorite.workflowFile}>{favorite.workflowFile}</option>
+                              )}
+                              {availableWorkflows.map(workflow => (
+                                <option key={workflow} value={workflow}>{workflow}</option>
+                              ))}
+                            </select>
+                          </div>
+                          {favorite.generationDefaults && (
+                            <div className="favorite-model-defaults" title={t.defaultsFromWorkflow}>
+                              <span>{favorite.generationDefaults.width ?? '—'} × {favorite.generationDefaults.height ?? '—'}</span>
+                              <span>{favorite.generationDefaults.steps ?? '—'} {t.steps.toLowerCase()}</span>
+                              <span>CFG {favorite.generationDefaults.cfg ?? '—'}</span>
+                              <span>{favorite.generationDefaults.sampler ?? '—'}</span>
+                              <span>{favorite.generationDefaults.scheduler ?? '—'}</span>
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            className="favorite-model-remove"
+                            onClick={() => toggleFavoriteModel(favorite.model, favorite.modelType || 'checkpoint')}
+                            title={t.removeFromFavorites}
+                            aria-label={`${t.removeFromFavorites}: ${favorite.model}`}
+                          >
+                            ★
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="favorite-model-empty">{t.noFavoriteModels}</p>
+                  )}
+                </div>
+                <div className="model-type-toggle" role="group" aria-label={t.modelType}>
+                  <button
+                    type="button"
+                    className={params.comfyModelType === 'checkpoint' ? 'active' : ''}
+                    onClick={() => switchModelType('checkpoint')}
+                  >
+                    {t.checkpoints} <span>{comfyModels.length}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={params.comfyModelType === 'diffusion' ? 'active' : ''}
+                    onClick={() => switchModelType('diffusion')}
+                  >
+                    {t.diffusionModels} <span>{diffusionModels.length}</span>
+                  </button>
+                </div>
                 <div style={{ marginBottom: '0.8rem' }}>
                   <input 
                     type="text" 
@@ -416,18 +887,9 @@ export const SettingsModal = ({
                     }}
                   />
                 </div>
-                <div className="model-select-group">
-                  <select
-                    value={params.comfyModel}
-                    onChange={(e) => setParams({ ...params, comfyModel: e.target.value })}
-                    className="model-select"
-                  >
-                    {filteredModels.length > 0 ? (
-                      filteredModels.map(m => <option key={m} value={m}>{m}</option>)
-                    ) : (
-                      <option value={params.comfyModel}>{params.comfyModel}</option>
-                    )}
-                  </select>
+                <div className="model-browser">
+                  <div className="model-browser-toolbar">
+                    <span>{filteredModels.length} {t.modelsFound}</span>
                   <button
                     className="refresh-models-btn"
                     onClick={fetchComfyModels}
@@ -436,6 +898,38 @@ export const SettingsModal = ({
                   >
                     {isFetchingComfyModels ? '...' : <RefreshIcon size={16} />}
                   </button>
+                  </div>
+                  <div className="model-browser-list">
+                    {filteredModels.length > 0 ? filteredModels.map(model => {
+                      const isFavorite = favoriteModels.some(item => item.model === model && (item.modelType || 'checkpoint') === params.comfyModelType);
+                      const isSelected = params.comfyModel === model;
+                      return (
+                        <div key={model} className={`model-browser-row ${isSelected ? 'selected' : ''}`}>
+                          <button
+                            type="button"
+                            className="model-browser-select"
+                            onClick={() => {
+                              const favorite = favoriteModels.find(item => item.model === model && (item.modelType || 'checkpoint') === params.comfyModelType);
+                              selectFavoriteModel(model, favorite?.workflowFile, params.comfyModelType);
+                            }}
+                            title={model}
+                          >
+                            <span>{getModelDisplayName(model)}</span>
+                            <small>{model}</small>
+                          </button>
+                          <button
+                            type="button"
+                            className={`model-favorite-toggle ${isFavorite ? 'active' : ''}`}
+                            onClick={() => toggleFavoriteModel(model, params.comfyModelType)}
+                            title={isFavorite ? t.removeFromFavorites : t.addToFavorites}
+                            aria-label={`${isFavorite ? t.removeFromFavorites : t.addToFavorites}: ${model}`}
+                          >
+                            {isFavorite ? '★' : '☆'}
+                          </button>
+                        </div>
+                      );
+                    }) : <p className="model-browser-empty">{t.noModelsFound}</p>}
+                  </div>
                 </div>
                 {comfyStatus && <p className={`llm-status-msg ${comfyStatus.type}`}>{comfyStatus.msg}</p>}
               </div>
@@ -452,6 +946,100 @@ export const SettingsModal = ({
                     <option value={params.workflowFile}>{params.workflowFile}</option>
                   )}
                 </select>
+                {currentUser?.isAdmin && (
+                  <div className="workflow-manager">
+                    <div className="workflow-manager-header">
+                      <div>
+                        <strong>{t.apiWorkflows}</strong>
+                        <span>{t.apiWorkflowHelp}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="workflow-import-btn"
+                        onClick={() => { setWorkflowToReplace(null); workflowFileInputRef.current?.click(); }}
+                        disabled={isImportingWorkflow}
+                      >
+                        {isImportingWorkflow ? '…' : `＋ ${t.importWorkflow}`}
+                      </button>
+                      <input
+                        ref={workflowFileInputRef}
+                        type="file"
+                        accept="application/json,.json"
+                        hidden
+                        onChange={(event) => handleImportWorkflow(event.target.files?.[0])}
+                      />
+                    </div>
+                    <div className="workflow-manager-list">
+                      {availableWorkflows.map(workflow => (
+                        <div key={workflow} className={params.workflowFile === workflow ? 'active' : ''}>
+                          <button type="button" onClick={() => setParams({ ...params, workflowFile: workflow })}>
+                            <span>{workflow}</span>
+                            <small>{params.workflowFile === workflow ? t.active : t.apiWorkflow}</small>
+                          </button>
+                          <button
+                            type="button"
+                            className="workflow-replace-btn"
+                            onClick={() => { setWorkflowToReplace(workflow); workflowFileInputRef.current?.click(); }}
+                            title={t.replaceWorkflowHelp}
+                          >
+                            ↻
+                          </button>
+                          <button
+                            type="button"
+                            className="workflow-delete-btn"
+                            onClick={() => handleDeleteWorkflow(workflow)}
+                            title={t.delete}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    {workflowMapping && (
+                      <div className="workflow-mapping-panel">
+                        <div className="workflow-mapping-title">
+                          <div>
+                            <strong>{t.workflowMapping}</strong>
+                            <span>{t.workflowMappingHelp}</span>
+                          </div>
+                          <div className="mapping-health">
+                            <span className={(mappingDraft.checkpoint || mappingDraft.diffusionModel) ? 'ok' : 'missing'}>{t.model}</span>
+                            <span className={mappingDraft.positive ? 'ok' : 'missing'}>{t.positivePrompt}</span>
+                            <span className={mappingDraft.latent ? 'ok' : 'missing'}>{t.dimensions}</span>
+                            <span className={mappingDraft.ksampler ? 'ok' : 'missing'}>{t.sampler} ×{workflowMapping.samplerCount || 0}</span>
+                            <span className={mappingDraft.save ? 'ok' : 'missing'}>{t.outputNode}</span>
+                          </div>
+                        </div>
+                        <div className="workflow-mapping-grid">
+                          {workflowMappingKeys.map(key => (
+                            <label key={key}>
+                              <span>{t[`mapping_${key}`] || key}</span>
+                              <select
+                                value={mappingDraft[key] || ''}
+                                onChange={(event) => setMappingDraft(current => ({ ...current, [key]: event.target.value }))}
+                              >
+                                <option value="">{t.notMapped}</option>
+                                {workflowMapping.nodes.map(node => (
+                                  <option key={node.id} value={node.id}>
+                                    {node.id} · {node.title} ({node.classType})
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          className="mapping-save-btn"
+                          onClick={handleSaveWorkflowMapping}
+                          disabled={isSavingMapping}
+                        >
+                          {isSavingMapping ? '…' : t.saveMapping}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -618,6 +1206,7 @@ export const SettingsModal = ({
           )}
 
           {activeTab === 'update' && <UpdateTab t={t} />}
+          </main>
         </div>
       </div>
     </div>

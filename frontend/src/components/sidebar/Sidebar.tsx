@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import './Sidebar.css';
 import type { Session, Language, Theme, User, Message } from '../../types';
 import { getFullImageUrl } from '../../services/api';
+import { APP_CONFIG } from '../../config';
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -84,11 +85,7 @@ export const Sidebar = ({
       <div className={`sidebar-overlay ${sidebarOpen ? 'visible' : ''}`} onClick={() => setSidebarOpen(false)} />
       <aside className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
         <div className="sidebar-header">
-          <div className="sidebar-app-identity">
-            <div className="app-logo">✨</div>
-            <h1>{t.title}</h1>
-          </div>
-          <button className="close-sidebar-mobile" onClick={() => setSidebarOpen(false)}>×</button>
+          {sidebarOpen && <button className="close-sidebar-mobile" onClick={() => setSidebarOpen(false)}>×</button>}
           {backendError && <div className="backend-warning" title={t.backendOffline}>⚠️</div>}
         </div>
         <button className="new-chat-btn" onClick={() => { createNewSession(); setSidebarOpen(false); }}>
@@ -194,6 +191,9 @@ export const Sidebar = ({
               {currentUser?.isAdmin && <span className="profile-role">Admin</span>}
             </div>
             <div className="profile-more">•••</div>
+          </div>
+          <div className="sidebar-version" aria-label={`Version ${APP_CONFIG.VERSION}`}>
+            v{APP_CONFIG.VERSION}
           </div>
         </div>
       </aside>

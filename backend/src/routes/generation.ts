@@ -35,14 +35,22 @@ router.post('/generate', authenticate, async (req, res) => {
     const model = params?.comfyModel || 'dirtyRealism_DMDSAT.safetensors';
     const workflowFile = params?.workflowFile || 'workflow_lcm.json';
     const seed = (params?.seed && params.seed !== -1) ? params.seed : Math.floor(Math.random() * 1000000000000000);
+    const randomSelections = Array.isArray(req.body.randomSelections)
+      ? req.body.randomSelections.slice(0, 20).map((selection: any) => ({
+          listId: String(selection?.listId || '').slice(0, 80),
+          name: String(selection?.name || '').slice(0, 120),
+          slug: String(selection?.slug || '').slice(0, 80),
+          value: String(selection?.value || '').slice(0, 300)
+        })).filter((selection: { slug: string; value: string }) => selection.slug && selection.value)
+      : [];
     
-    const insertMsg = db.prepare('INSERT INTO messages (id, sessionId, role, text, prompt, imageUrl, timestamp, model, width, height, steps, cfg, workflow, status, seed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    const insertMsg = db.prepare('INSERT INTO messages (id, sessionId, role, text, prompt, imageUrl, timestamp, model, width, height, steps, cfg, workflow, status, seed, randomSelections) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
     
     if (!req.body.isRegeneration) {
-      insertMsg.run(userMessageId, sessionId, 'user', displayPrompt, '', null, timestamp - 1, null, null, null, null, null, null, 'completed', null);
+      insertMsg.run(userMessageId, sessionId, 'user', displayPrompt, '', null, timestamp - 1, null, null, null, null, null, null, 'completed', null, null);
     }
     
-    insertMsg.run(messageId, sessionId, 'bot', enhancedText, displayPrompt, null, timestamp, model, params?.width || 896, params?.height || 1152, params?.steps || 8, params?.cfg || 1.1, workflowFile, 'pending', seed);
+    insertMsg.run(messageId, sessionId, 'bot', enhancedText, displayPrompt, null, timestamp, model, params?.width || 896, params?.height || 1152, params?.steps || 8, params?.cfg || 1.1, workflowFile, 'pending', seed, JSON.stringify(randomSelections));
     
     db.prepare('INSERT INTO queue (messageId, prompt, originalPrompt, sessionId, params, status, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)')
       .run(messageId, prompt, originalPrompt, sessionId, JSON.stringify({ ...safeParams, seed }), 'pending', timestamp);

@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { API_BASE } from '../services/api';
 import type { Message, GenParameters } from '../types';
+import { resolveRandomPromptsWithSelections } from '../utils/randomPrompts';
 
 export const useGeneration = (
   currentSessionId: string | null,
@@ -30,13 +31,17 @@ export const useGeneration = (
     const activeSessionId = targetSessionId || currentSessionId;
     if (!textToSend.trim() || !activeSessionId) return;
 
+    const templatePrompt = textToSend;
+    const randomResult = resolveRandomPromptsWithSelections(templatePrompt, params.randomPromptLists);
+    const resolvedPrompt = randomResult.prompt;
+
     if (!isRegeneration) {
-      const userMsg: Message = { id: `temp-${Math.random().toString(36).substring(7)}`, role: 'user', text: textToSend, timestamp: Date.now() };
+      const userMsg: Message = { id: `temp-${Math.random().toString(36).substring(7)}`, role: 'user', text: templatePrompt, timestamp: Date.now() };
       setMessages(prev => [...prev, userMsg]);
     }
     
     try {
-      let finalPrompt = textToSend;
+      let finalPrompt = resolvedPrompt;
       let finalNegativePrompt = params.negativePrompt;
       const botMsgId = `temp-${Math.random().toString(36).substring(7)}`;
 
@@ -44,8 +49,9 @@ export const useGeneration = (
       const initialBotMsg: Message = { 
         id: botMsgId, 
         role: 'bot', 
-        text: '', 
-        prompt: textToSend, 
+        prompt: templatePrompt,
+        text: resolvedPrompt !== templatePrompt ? resolvedPrompt : '',
+        randomSelections: randomResult.selections,
         status: 'pending',
         isEnhancing: params.llmEnabled && !!params.llmUrl && !!params.llmModel && !isRegeneration,
         timestamp: Date.now(),
@@ -68,7 +74,7 @@ export const useGeneration = (
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-              prompt: textToSend, 
+              prompt: resolvedPrompt,
               llmUrl: params.llmUrl, 
               llmModel: params.llmModel,
               systemMessage: params.llmSystemMessage
@@ -83,7 +89,8 @@ export const useGeneration = (
             setMessages(prev => prev.map(m => m.id === botMsgId ? { 
               ...m, 
               text: finalPrompt, 
-              prompt: finalPrompt, // On met à jour le prompt de référence aussi
+              // Keep the template so "Regenerate" performs a fresh random draw.
+              prompt: templatePrompt,
               isEnhancing: false 
             } : m));
           } else {
@@ -104,7 +111,8 @@ export const useGeneration = (
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           prompt: finalPrompt, 
-          originalPrompt: textToSend,
+          originalPrompt: templatePrompt,
+          randomSelections: randomResult.selections,
           sessionId: activeSessionId,
           clientId: clientIdRef.current,
           isRegeneration: isRegeneration,

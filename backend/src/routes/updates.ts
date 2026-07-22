@@ -1,6 +1,6 @@
 import express from 'express';
 import axios from 'axios';
-import pkg from '../../package.json';
+import { APP_VERSION } from '../config/app-version';
 
 const router = express.Router();
 
@@ -20,7 +20,7 @@ router.get('/check', async (req, res) => {
     // Clean version strings: remove 'v', leading dots, and whitespace
     const clean = (v: string) => v.replace(/^v/, '').replace(/^\./, '').trim();
     
-    const currentVersion = clean(pkg.version);
+    const currentVersion = clean(APP_VERSION);
     const latestVersion = clean(latestRelease.tag_name);
     
     // Simple semver comparison: returns true if latest > current
@@ -50,7 +50,7 @@ router.get('/check', async (req, res) => {
     console.error('[UpdateCheck] Error:', error.message);
     // If GitHub fails, still return the local version
     res.json({
-      currentVersion: pkg.version,
+      currentVersion: APP_VERSION,
       error: 'Impossible de vérifier les mises à jour sur GitHub'
     });
   }

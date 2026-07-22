@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect } from 'react';
+import React, { useState, useLayoutEffect, useEffect, useRef } from 'react';
 import './ChatInterface.css';
 import type { Message, Language, GalleryItem, GenParameters } from '../../types';
 import { WelcomeScreen } from './WelcomeScreen';
@@ -33,7 +33,6 @@ interface ChatInterfaceProps {
   setFavoritesOnly: (val: boolean) => void;
   showArchivedInGallery: boolean;
   setShowArchivedInGallery: (val: boolean) => void;
-  resetGallery: () => void;
   setHasMoreGallery: (val: boolean) => void;
   lastImageElementRef: (node: HTMLDivElement) => void;
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -74,7 +73,6 @@ export const ChatInterface = ({
   setFavoritesOnly,
   showArchivedInGallery,
   setShowArchivedInGallery,
-  resetGallery,
   lastImageElementRef,
   containerRef,
   textareaRef,
@@ -87,6 +85,72 @@ export const ChatInterface = ({
   onScrollToBottom
 }: ChatInterfaceProps) => {
   const [showOptions, setShowOptions] = useState(false);
+  const [timerNow, setTimerNow] = useState(() => Date.now());
+  const promptHighlightRef = useRef<HTMLDivElement>(null);
+  const optionsDrawerRef = useRef<HTMLDivElement>(null);
+  const optionsToggleRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!showOptions) return;
+
+    const closeOptionsOnOutsidePress = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (optionsDrawerRef.current?.contains(target) || optionsToggleRef.current?.contains(target)) return;
+      setShowOptions(false);
+    };
+
+    document.addEventListener('pointerdown', closeOptionsOnOutsidePress);
+    return () => document.removeEventListener('pointerdown', closeOptionsOnOutsidePress);
+  }, [showOptions]);
+
+  const enabledRandomSlugs = new Set(
+    params.randomPromptLists
+      .filter(list => list.enabled && list.slug && list.values.some(value => value.trim()))
+      .map(list => list.slug.toLowerCase())
+  );
+  const promptParts = input.split(/(\[[a-zA-Z0-9_-]+\])/g);
+  const hasRandomCodes = promptParts.some(part => (
+    part.startsWith('[')
+    && part.endsWith(']')
+    && enabledRandomSlugs.has(part.slice(1, -1).toLowerCase())
+  ));
+
+  const syncPromptHighlightScroll = (textarea: HTMLTextAreaElement) => {
+    if (!promptHighlightRef.current) return;
+    promptHighlightRef.current.scrollTop = textarea.scrollTop;
+    promptHighlightRef.current.scrollLeft = textarea.scrollLeft;
+  };
+
+  const insertRandomSlug = (slug: string) => {
+    const textarea = textareaRef.current;
+    const start = textarea?.selectionStart ?? input.length;
+    const end = textarea?.selectionEnd ?? input.length;
+    const token = `[${slug}]`;
+    const before = input.slice(0, start);
+    const after = input.slice(end);
+    const prefix = before && !/\s$/.test(before) ? ' ' : '';
+    const suffix = after && !/^\s/.test(after) ? ' ' : '';
+    const nextInput = `${before}${prefix}${token}${suffix}${after}`;
+    const nextCursor = before.length + prefix.length + token.length;
+    setInput(nextInput);
+    window.requestAnimationFrame(() => {
+      textarea?.focus();
+      textarea?.setSelectionRange(nextCursor, nextCursor);
+    });
+  };
+
+  useEffect(() => {
+    const hasActiveGeneration = messages.some(message => (
+      message.role === 'bot'
+      && !message.imageUrl
+      && !message.isEnhancing
+      && message.status === 'processing'
+    ));
+    if (!hasActiveGeneration) return;
+    setTimerNow(Date.now());
+    const interval = window.setInterval(() => setTimerNow(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, [messages]);
   
   useLayoutEffect(() => {
     const textarea = textareaRef.current;
@@ -107,6 +171,7 @@ export const ChatInterface = ({
         textarea.style.height = '';
         textarea.style.overflowY = 'hidden';
       }
+      syncPromptHighlightScroll(textarea);
     }
   }, [input, textareaRef]);
 
@@ -134,10 +199,19 @@ export const ChatInterface = ({
                   <div className="message-content">
                     {shouldShowText && (
                       <div className="message-text-wrapper">
-                        {msg.text && msg.text !== msg.prompt && msg.role === 'bot' && <span className="ai-badge" title="Optimisé par l'IA">✨</span>}
                         <MessageText text={messageText} lang={lang} />
                       </div>
                     )}
+                  {msg.role === 'bot' && !!msg.randomSelections?.length && (
+                    <div className="random-selection-summary" aria-label={t.randomDraws}>
+                      {msg.randomSelections.map(selection => (
+                        <span key={`${selection.slug}:${selection.value}`} title={`[${selection.slug}]`}>
+                          <strong>{selection.name}</strong>
+                          <span>{selection.value}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {msg.role === 'bot' && !msg.imageUrl && msg.status !== 'failed' && (
                     <div className="generation-placeholder">
                       {(msg.isEnhancing || msg.status === 'processing') && (
@@ -151,9 +225,12 @@ export const ChatInterface = ({
                         <span className={msg.isEnhancing || msg.status === 'processing' ? 'ai-text-shimmer' : ''}>
                           {msg.isEnhancing ? t.enhancing : (msg.status === 'processing' ? t.generating : t.waiting)}
                         </span>
-                        {msg.status === 'processing' && msg.duration !== undefined && (
-                          <span style={{ display: 'block', fontSize: '0.8rem', opacity: 0.7, marginTop: '4px' }}>
-                            {formatDuration(msg.duration)}
+                        {!msg.isEnhancing && msg.status === 'processing' && (
+                          <span className="generation-live-timer">
+                            {formatDuration(Math.max(
+                              msg.duration || 0,
+                              Math.max(0, Math.floor((timerNow - (msg.generationStartedAt || msg.timestamp)) / 1000))
+                            ))}
                           </span>
                         )}
                       </p>
@@ -171,7 +248,7 @@ export const ChatInterface = ({
                       <div className="error-content">
                         <p className="error-title">{t.genFailed}</p>
                         <p className="error-details">{msg.text}</p>
-                        <button className="retry-btn" onClick={() => handleSend(msg.prompt || '', true)}>
+                        <button className="retry-btn" onClick={() => handleSend(msg.prompt || msg.text || '', true)}>
                           <span>{t.retry}</span>
                         </button>
                       </div>
@@ -211,7 +288,7 @@ export const ChatInterface = ({
                   )}
                   <div className={`message-actions ${msg.imageUrl ? 'has-image' : ''}`}>
                     <button className="action-btn-icon edit" onClick={() => { 
-                      const textToEdit = msg.role === 'user' ? (msg.text || '') : (msg.text || msg.prompt || '');
+                      const textToEdit = msg.role === 'user' ? (msg.text || '') : (msg.prompt || msg.text || '');
                       handleEdit(textToEdit); 
                     }} title={t.edit}>✎</button>
                     {msg.imageUrl && (
@@ -220,7 +297,7 @@ export const ChatInterface = ({
                           <InfoIcon />
                         </button>
                         <button className="action-btn-icon download" onClick={(e) => { e.stopPropagation(); downloadImage(getFullImageUrl(msg.imageUrl!), `img-${msg.id}.png`); }} title={t.download}>💾</button>
-                        <button className="action-btn-icon regenerate" onClick={(e) => { e.stopPropagation(); handleSend(msg.text || msg.prompt || '', true); }} title={t.regenerate}>
+                        <button className="action-btn-icon regenerate" onClick={(e) => { e.stopPropagation(); handleSend(msg.prompt || msg.text || '', true); }} title={t.regenerate}>
                           <RefreshIcon />
                         </button>
                       </>
@@ -242,6 +319,7 @@ export const ChatInterface = ({
                       {msg.duration !== undefined && (
                         <p><strong>{lang === 'fr' ? 'Durée' : 'Duration'}:</strong> {formatDuration(msg.duration)}</p>
                       )}
+                      <p><strong>{t.finalPrompt}:</strong> {msg.text || msg.prompt || t.unknown}</p>
                     </div>
                   )}
                 </div>
@@ -274,14 +352,14 @@ export const ChatInterface = ({
             <div className="gallery-header">
               <h2>{t.myContent}</h2>
               <div className="gallery-filters">
-                <button className={`gallery-filter-fav ${favoritesOnly ? 'active' : ''}`} onClick={() => { setFavoritesOnly(!favoritesOnly); resetGallery(); }}>
+                <button className={`gallery-filter-fav ${favoritesOnly ? 'active' : ''}`} onClick={() => setFavoritesOnly(!favoritesOnly)} aria-pressed={favoritesOnly}>
                   {favoritesOnly ? '❤️' : '🤍'} {t.favorites}
                 </button>
                 <div className="control-group">
-                  <button className={`control-pill ${!showArchivedInGallery ? 'active' : ''}`} onClick={() => { setShowArchivedInGallery(false); resetGallery(); }}>
+                  <button className={`control-pill ${!showArchivedInGallery ? 'active' : ''}`} onClick={() => setShowArchivedInGallery(false)}>
                     {t.active}
                   </button>
-                  <button className={`control-pill ${showArchivedInGallery ? 'active' : ''}`} onClick={() => { setShowArchivedInGallery(true); resetGallery(); }}>
+                  <button className={`control-pill ${showArchivedInGallery ? 'active' : ''}`} onClick={() => setShowArchivedInGallery(true)}>
                     {t.archived}
                   </button>
                 </div>
@@ -333,13 +411,13 @@ export const ChatInterface = ({
 
       {view === 'chat' && (
         <div className="input-container">
-          {showScrollBottom && (
-            <button className={`scroll-bottom-btn ${showOptions ? 'options-open' : ''}`} onClick={onScrollToBottom} title={lang === 'fr' ? 'Aller en bas' : 'Scroll to bottom'}>
+          {showScrollBottom && !showOptions && (
+            <button className="scroll-bottom-btn" onClick={onScrollToBottom} title={lang === 'fr' ? 'Aller en bas' : 'Scroll to bottom'}>
               <ChevronDownIcon size={24} />
             </button>
           )}
           {showOptions && (
-            <div className="generation-options-drawer fadeIn">
+            <div ref={optionsDrawerRef} className="generation-options-drawer fadeIn">
               <div className="options-group">
                 <div className="option-label">{t.seed}</div>
                 <div className="option-controls">
@@ -366,22 +444,58 @@ export const ChatInterface = ({
                   )}
                 </div>
               </div>
+              {params.randomPromptLists.some(list => list.enabled && list.slug && list.values.some(value => value.trim())) && (
+                <div className="options-group random-prompts-options">
+                  <div className="option-label">🎲 {t.randomLists}</div>
+                  <div className="random-prompts-quickbar" role="list" aria-label={t.randomLists}>
+                    {params.randomPromptLists
+                      .filter(list => list.enabled && list.slug && list.values.some(value => value.trim()))
+                      .map(list => (
+                        <button
+                          key={list.id}
+                          type="button"
+                          className="random-prompt-chip"
+                          onClick={() => insertRandomSlug(list.slug)}
+                          title={`${t.insertRandomSlug} [${list.slug}]`}
+                        >
+                          <span className="random-prompt-chip-name">{list.name}</span>
+                          <span className="random-prompt-chip-slug">+ [{list.slug}]</span>
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           <div className="input-wrapper">
-            <button className={`options-toggle-btn ${showOptions ? 'active' : ''}`} onClick={() => setShowOptions(!showOptions)} title={t.options}>
+            <button ref={optionsToggleRef} className={`options-toggle-btn ${showOptions ? 'active' : ''}`} onClick={() => setShowOptions(!showOptions)} title={t.options}>
               <PlusIcon size={20} />
             </button>
-            <div className={`input-box ${params.llmEnabled ? 'ai-active' : ''} ${input ? 'has-text' : ''}`}>
-              <textarea 
-                ref={textareaRef} 
-                value={input} 
-                onChange={(e) => setInput(e.target.value)} 
-                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())} 
-                placeholder={params.llmEnabled ? t.aiPlaceholder : t.placeholder} 
-                rows={1} 
-              />
+            <div className={`input-box ${params.llmEnabled ? 'ai-active' : ''} ${input ? 'has-text' : ''} ${hasRandomCodes ? 'has-random-code' : ''}`}>
+              <div className="prompt-editor">
+                {hasRandomCodes && (
+                  <div ref={promptHighlightRef} className="prompt-highlight-layer" aria-hidden="true">
+                    {promptParts.map((part, index) => {
+                      const isRandomCode = part.startsWith('[')
+                        && part.endsWith(']')
+                        && enabledRandomSlugs.has(part.slice(1, -1).toLowerCase());
+                      return isRandomCode
+                        ? <mark className="prompt-random-code" key={`${part}-${index}`}>{part}</mark>
+                        : <React.Fragment key={`${index}-${part.length}`}>{part}</React.Fragment>;
+                    })}
+                  </div>
+                )}
+                <textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onScroll={(e) => syncPromptHighlightScroll(e.currentTarget)}
+                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
+                  placeholder={params.llmEnabled ? t.aiPlaceholder : t.placeholder}
+                  rows={1}
+                />
+              </div>
               <div className="input-box-actions">
                 {input && (
                   <button className="clear-input-btn" onClick={() => setInput('')} title="Effacer le texte">
