@@ -34,6 +34,7 @@ export interface Message {
   duration: number | null;
   sampler: string | null;
   scheduler: string | null;
+  randomSelections: string | null;
 }
 
 export interface Session {
@@ -57,6 +58,7 @@ export interface QueueTask {
 
 export interface GenerationParams {
   comfyModel?: string;
+  comfyModelType?: 'checkpoint' | 'diffusion';
   comfyUrl?: string;
   workflowFile?: string;
   width?: number;
@@ -71,6 +73,7 @@ export interface GenerationParams {
 
 export interface WorkflowNodeMapping {
   checkpoint?: string;
+  diffusionModel?: string;
   positive?: string;
   negative?: string;
   ksampler?: string;

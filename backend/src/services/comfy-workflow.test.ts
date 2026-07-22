@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
-import { getComfyWsUrl } from './comfy';
+import { getComfyWsUrl, getWorkflow } from './comfy';
 
 describe('getComfyWsUrl', () => {
   it('converts http to ws', () => {
@@ -48,5 +48,43 @@ describe('Workflow config file structure', () => {
         expect(() => JSON.parse(content)).not.toThrow();
       }
     }
+  });
+});
+
+describe('ZIT API workflow mapping', () => {
+  it('injects the UNET model, prompt, dimensions and advanced sampler inputs', () => {
+    const workflowsDir = path.join(__dirname, '..', '..', 'workflows');
+    const workflowFile = fs.readdirSync(workflowsDir).find(file => /^ZIT.*\.json$/i.test(file) && !file.endsWith('.config.json'));
+    expect(workflowFile).toBeTruthy();
+    const workflow = getWorkflow('A mapped ZIT prompt', {
+      workflowFile: workflowFile!,
+      comfyModel: 'zit-test-model.safetensors',
+      comfyModelType: 'diffusion',
+      width: 1024,
+      height: 768,
+      steps: 12,
+      cfg: 1.5,
+      sampler: 'heun',
+      scheduler: 'karras',
+      seed: 42
+    });
+
+    const nodes = Object.values(workflow) as Array<any>;
+    const unet = nodes.find(node => node.class_type === 'UNETLoader');
+    const prompt = nodes.find(node => node.class_type === 'CLIPTextEncode');
+    const latent = nodes.find(node => node.class_type === 'EmptySD3LatentImage');
+    const samplers = nodes.filter(node => node.class_type === 'KSamplerAdvanced');
+    const save = nodes.find(node => node.class_type === 'SaveImage');
+
+    expect(unet.inputs.unet_name).toBe('zit-test-model.safetensors');
+    expect(prompt.inputs.text).toBe('A mapped ZIT prompt');
+    expect(latent.inputs.width).toBe(1024);
+    expect(latent.inputs.height).toBe(768);
+    expect(samplers[0].inputs.noise_seed).toBe(42);
+    expect(samplers.every(node => node.inputs.steps === 12)).toBe(true);
+    expect(samplers.every(node => node.inputs.cfg === 1.5)).toBe(true);
+    expect(samplers.every(node => node.inputs.sampler_name === 'heun')).toBe(true);
+    expect(samplers.every(node => node.inputs.scheduler === 'karras')).toBe(true);
+    expect(save.inputs.filename_prefix).toBe('ComfyRealism');
   });
 });

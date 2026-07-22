@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { after, before, test } from 'node:test';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -8,6 +9,8 @@ let vite;
 let api;
 let WelcomeScreen;
 let MessageText;
+let randomPrompts;
+let config;
 
 before(async () => {
   vite = await createServer({
@@ -17,6 +20,8 @@ before(async () => {
   });
 
   api = await vite.ssrLoadModule('/src/services/api.ts');
+  config = await vite.ssrLoadModule('/src/config.ts');
+  randomPrompts = await vite.ssrLoadModule('/src/utils/randomPrompts.ts');
   ({ WelcomeScreen } = await vite.ssrLoadModule('/src/components/chat/WelcomeScreen.tsx'));
   ({ MessageText } = await vite.ssrLoadModule('/src/components/chat/MessageText.tsx'));
 });
@@ -51,4 +56,27 @@ test('truncates long message text while keeping short text intact', () => {
   assert.match(longMarkup, /class="message-text truncated"/);
   assert.match(longMarkup, /Voir plus/);
   assert.doesNotMatch(longMarkup, new RegExp('a{180}'));
+});
+
+test('uses the root VERSION file as the frontend version', () => {
+  const rootVersion = readFileSync('../VERSION', 'utf8').trim();
+  assert.equal(config.APP_CONFIG.VERSION, rootVersion);
+});
+
+test('adds the hairstyle random list once when migrating existing settings', () => {
+  const existing = randomPrompts.DEFAULT_RANDOM_PROMPT_LISTS.filter(list => list.id !== 'hairstyle');
+  const migrated = randomPrompts.migrateRandomPromptLists(existing, 1);
+  const migratedAgain = randomPrompts.migrateRandomPromptLists(migrated, randomPrompts.RANDOM_PROMPT_LISTS_VERSION);
+
+  assert.equal(migrated.filter(list => list.id === 'hairstyle').length, 1);
+  assert.equal(migrated.find(list => list.id === 'hairstyle').slug, 'R-Hairstyle');
+  assert.deepEqual(migratedAgain, migrated);
+});
+
+test('returns the random values selected while resolving a prompt template', () => {
+  const lists = [{ id: 'hair', name: 'Coiffures', slug: 'R-Hair', values: ['long hair'], enabled: true }];
+  const result = randomPrompts.resolveRandomPromptsWithSelections('[R-Hair], portrait with [R-Hair]', lists);
+
+  assert.equal(result.prompt, 'long hair, portrait with long hair');
+  assert.deepEqual(result.selections, [{ listId: 'hair', name: 'Coiffures', slug: 'R-Hair', value: 'long hair' }]);
 });
