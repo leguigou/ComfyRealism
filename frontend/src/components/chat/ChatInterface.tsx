@@ -345,11 +345,14 @@ export const ChatInterface = ({
                       <p><strong>{t.workflow}:</strong> {msg.workflow || t.unknown}</p>
                       <p><strong>Sampler:</strong> {msg.sampler || t.unknown} | <strong>Scheduler:</strong> {msg.scheduler || t.unknown}</p>
                       <p><strong>{t.dimensions}:</strong> {msg.width}x{msg.height}</p>
-                      <p><strong>{t.steps}:</strong> {msg.steps} | <strong>CFG:</strong> {msg.cfg} | <strong>{t.seed}:</strong> <span className="reusable-seed" title={t.reuseSeed} onClick={() => { 
-                        setParams(prev => ({ ...prev, seedMode: 'fixed', forcedSeed: msg.seed?.toString() || '' }));
-                        setShowOptions(true);
-                        toast.success(t.reuseSeed);
-                      }}>{msg.seed || t.unknown}</span></p>
+                      <p><strong>{t.steps}:</strong> {msg.steps} | <strong>CFG:</strong> {msg.cfg}</p>
+                      <p><strong>{t.seed}:</strong> {msg.seed !== undefined && msg.seed !== null ? (
+                        <span className="reusable-seed" title={t.reuseSeed} onClick={() => {
+                          setParams(prev => ({ ...prev, seedMode: 'fixed', forcedSeed: msg.seed!.toString() }));
+                          setShowOptions(true);
+                          toast.success(t.reuseSeed);
+                        }}>{msg.seed}</span>
+                      ) : t.unknown}</p>
                       {msg.duration !== undefined && (
                         <p><strong>{lang === 'fr' ? 'Durée' : 'Duration'}:</strong> {formatDuration(msg.duration)}</p>
                       )}
