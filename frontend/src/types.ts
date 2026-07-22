@@ -18,7 +18,9 @@ export interface Message {
   status?: 'pending' | 'processing' | 'completed' | 'failed';
   isEnhancing?: boolean;
   duration?: number;
+  generationStartedAt?: number;
   isFavorite?: number;
+  randomSelections?: RandomPromptSelection[];
 }
 
 export interface GalleryItem {
@@ -40,6 +42,7 @@ export interface GalleryItem {
   scheduler?: string;
   duration?: number;
   isFavorite?: number;
+  randomSelections?: RandomPromptSelection[];
 }
 
 export interface NodeMapping {
@@ -51,6 +54,37 @@ export interface NodeMapping {
   save: string;
 }
 
+export interface FavoriteModel {
+  model: string;
+  workflowFile: string;
+  modelType?: 'checkpoint' | 'diffusion';
+  generationDefaults?: Partial<ModelGenerationDefaults>;
+}
+
+export interface ModelGenerationDefaults {
+  width: number;
+  height: number;
+  steps: number;
+  cfg: number;
+  sampler: string;
+  scheduler: string;
+}
+
+export interface RandomPromptList {
+  id: string;
+  name: string;
+  slug: string;
+  values: string[];
+  enabled: boolean;
+}
+
+export interface RandomPromptSelection {
+  listId: string;
+  name: string;
+  slug: string;
+  value: string;
+}
+
 export interface GenParameters {
   width: number;
   height: number;
@@ -60,6 +94,7 @@ export interface GenParameters {
   scheduler?: string;
   comfyUrl: string;
   comfyModel: string;
+  comfyModelType: 'checkpoint' | 'diffusion';
   llmUrl: string;
   llmModel: string;
   llmSystemMessage: string;
@@ -69,6 +104,9 @@ export interface GenParameters {
   nodeMapping: NodeMapping;
   seedMode: 'random' | 'fixed';
   forcedSeed?: string;
+  favoriteModels: FavoriteModel[];
+  randomPromptLists: RandomPromptList[];
+  randomPromptListsVersion?: number;
 }
 
 export interface Session {

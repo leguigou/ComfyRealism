@@ -66,7 +66,10 @@ export const useWebSocket = (
                   cfg: data.cfg || m.cfg,
                   seed: data.seed || m.seed,
                   workflow: data.workflow || m.workflow,
-                  duration: (data.duration !== undefined && data.duration !== null) ? data.duration : m.duration
+                  duration: (data.duration !== undefined && data.duration !== null) ? data.duration : m.duration,
+                  generationStartedAt: data.status === 'processing'
+                    ? (m.generationStartedAt || Date.now())
+                    : m.generationStartedAt
                 };
               }
               return m;

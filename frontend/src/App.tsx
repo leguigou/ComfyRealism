@@ -12,6 +12,7 @@ import type {
 import { API_BASE, getFullImageUrl } from './services/api';
 import { Sidebar } from './components/sidebar/Sidebar';
 import { SettingsModal } from './components/settings/SettingsModal';
+import { DEFAULT_RANDOM_PROMPT_LISTS, migrateRandomPromptLists, RANDOM_PROMPT_LISTS_VERSION } from './utils/randomPrompts';
 import { ChatInterface } from './components/chat/ChatInterface';
 import { APP_CONFIG } from './config';
 import { useAuth } from './hooks/useAuth';
@@ -19,7 +20,7 @@ import { useSessions } from './hooks/useSessions';
 import { useGeneration } from './hooks/useGeneration';
 import { useWebSocket } from './hooks/useWebSocket';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
-import { ComposeIcon } from './components/ui/Icons';
+import { ComposeIcon, MoreVerticalIcon } from './components/ui/Icons';
 import toast, { Toaster } from 'react-hot-toast';
 
 function App() {
@@ -127,7 +128,7 @@ function App() {
   const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [showSettings, setShowSettings] = useState(false);
-  const [activeTab, setActiveTab] = useState<'profile' | 'images' | 'comfy' | 'llm' | 'archives' | 'logs' | 'update' | 'admin'>('images');
+  const [activeTab, setActiveTab] = useState<'profile' | 'images' | 'random' | 'comfy' | 'llm' | 'archives' | 'update' | 'admin'>('images');
   
   const [input, setInput] = useState('');
   
@@ -139,6 +140,7 @@ function App() {
       cfg: 1.1,
       comfyUrl: 'http://127.0.0.1:8188',
       comfyModel: 'dirtyRealism_DMDSAT.safetensors',
+      comfyModelType: 'checkpoint',
       llmUrl: '',
       llmModel: 'llama3:latest',
       llmSystemMessage: "You are a professional stable diffusion prompt engineer. Transform the user's brief idea into a highly detailed, descriptive, and artistic prompt in ENGLISH. Also generate a negative prompt of things to avoid. Output your response as a JSON object with two keys: 'positive' and 'negative'. No other text.",
@@ -147,9 +149,13 @@ function App() {
       workflowFile: 'workflow_lcm.json',
       nodeMapping: { checkpoint: "1", positive: "3", negative: "4", ksampler: "10", latent: "6", save: "99" },
       seedMode: 'random',
-      forcedSeed: ''
+      forcedSeed: '',
+      favoriteModels: [],
+      randomPromptLists: DEFAULT_RANDOM_PROMPT_LISTS,
+      randomPromptListsVersion: RANDOM_PROMPT_LISTS_VERSION
     };
   });
+  const lastSavedParamsRef = useRef<string>('');
 
   const containerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -157,25 +163,42 @@ function App() {
   const pendingAnchorRef = useRef<string | null>(null);
   const isAnchoringRef = useRef<boolean>(false);
   const isProgrammaticScrollRef = useRef<boolean>(false);
+  const scrollAnimationFrameRef = useRef<number | null>(null);
+  const scrollRequestTimeoutRef = useRef<number | null>(null);
 
   const smoothScrollTo = useCallback((elementId: string) => {
     if (pendingAnchorRef.current || isAnchoringRef.current) return;
-    
-    setTimeout(() => {
+
+    // Only one scroll animation may control the container at a time. Without
+    // this, quick successive generations make independent animations fight
+    // over scrollTop and can briefly send the conversation back to the top.
+    if (scrollRequestTimeoutRef.current !== null) {
+      window.clearTimeout(scrollRequestTimeoutRef.current);
+    }
+    if (scrollAnimationFrameRef.current !== null) {
+      window.cancelAnimationFrame(scrollAnimationFrameRef.current);
+      scrollAnimationFrameRef.current = null;
+    }
+
+    scrollRequestTimeoutRef.current = window.setTimeout(() => {
+      scrollRequestTimeoutRef.current = null;
       const el = document.getElementById(elementId);
       const container = containerRef.current;
       if (!el || !container) return;
-      
-      const targetScroll = el.offsetTop - container.offsetTop - 40;
+
+      const containerRect = container.getBoundingClientRect();
+      const elementRect = el.getBoundingClientRect();
+      const unclampedTarget = container.scrollTop + elementRect.top - containerRect.top - 40;
+      const targetScroll = Math.max(0, Math.min(unclampedTarget, container.scrollHeight - container.clientHeight));
       const startScroll = container.scrollTop;
       const distance = targetScroll - startScroll;
-      
+
       if (Math.abs(distance) < 50) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        container.scrollTop = targetScroll;
         return;
       }
 
-      const duration = 1200; 
+      const duration = 1200;
       let start: number | null = null;
       const easeInOutQuart = (t: number, b: number, c: number, d: number) => {
         t /= d / 2;
@@ -185,14 +208,27 @@ function App() {
       };
       const animation = (currentTime: number) => {
         if (start === null) start = currentTime;
-        const timeElapsed = currentTime - start;
+        const timeElapsed = Math.min(currentTime - start, duration);
         const nextScroll = easeInOutQuart(timeElapsed, startScroll, distance, duration);
         container.scrollTop = nextScroll;
-        if (timeElapsed < duration) requestAnimationFrame(animation);
-        else container.scrollTop = targetScroll;
+        if (timeElapsed < duration) {
+          scrollAnimationFrameRef.current = window.requestAnimationFrame(animation);
+        } else {
+          container.scrollTop = targetScroll;
+          scrollAnimationFrameRef.current = null;
+        }
       };
-      requestAnimationFrame(animation);
+      scrollAnimationFrameRef.current = window.requestAnimationFrame(animation);
     }, 100);
+  }, []);
+
+  useEffect(() => () => {
+    if (scrollRequestTimeoutRef.current !== null) {
+      window.clearTimeout(scrollRequestTimeoutRef.current);
+    }
+    if (scrollAnimationFrameRef.current !== null) {
+      window.cancelAnimationFrame(scrollAnimationFrameRef.current);
+    }
   }, []);
 
   const { clientIdRef } = useWebSocket(isAuthenticated, currentSessionId, setMessages, fetchSessions, fetchSessionDetails);
@@ -369,10 +405,12 @@ function App() {
       });
       if (res.ok) {
         setMessages(prev => prev.map(m => m.id === messageId ? { ...m, isFavorite: newStatus } : m));
-        setGalleryItems(prev => prev.map(m => m.messageId === messageId ? { ...m, isFavorite: newStatus } : m));
+        setGalleryItems(prev => favoritesOnly && newStatus === 0
+          ? prev.filter(m => m.messageId !== messageId)
+          : prev.map(m => m.messageId === messageId ? { ...m, isFavorite: newStatus } : m));
       }
     } catch (err) { console.error('Error toggling favorite:', err); }
-  }, [setMessages]);
+  }, [setMessages, favoritesOnly]);
 
   const handleImageClick = useCallback((item: { url: string, thumbnailUrl?: string, sessionId: string, messageId: string, isFavorite?: number, source: 'chat' | 'gallery' }) => {
     if (clickTimeoutRef.current) {
@@ -416,6 +454,7 @@ function App() {
   }, [activeLightbox, messages, galleryItems, toggleFavorite]);
 
   const [comfyModels, setComfyModels] = useState<string[]>([]);
+  const [diffusionModels, setDiffusionModels] = useState<string[]>([]);
   const [isFetchingComfyModels, setIsFetchingComfyModels] = useState(false);
   const [comfyStatus, setComfyStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
   const [llmModels, setLlmModels] = useState<string[]>([]);
@@ -512,9 +551,19 @@ function App() {
       });
       const data = await res.json();
       if (data.models) {
-        setComfyModels(data.models);
-        setComfyStatus({ type: 'success', msg: `${data.models.length} ${t.modelsFound}` });
-        setParams(p => data.models.includes(p.comfyModel) ? p : { ...p, comfyModel: data.models[0] });
+        const checkpoints = data.checkpoints || data.models || [];
+        const diffusion = data.diffusionModels || [];
+        setComfyModels(checkpoints);
+        setDiffusionModels(diffusion);
+        setComfyStatus({ type: 'success', msg: `${checkpoints.length + diffusion.length} ${t.modelsFound}` });
+        setParams(p => {
+          const selectedList = p.comfyModelType === 'diffusion' ? diffusion : checkpoints;
+          if (selectedList.includes(p.comfyModel)) return p;
+          if (selectedList.length > 0) return { ...p, comfyModel: selectedList[0] };
+          if (checkpoints.length > 0) return { ...p, comfyModelType: 'checkpoint', comfyModel: checkpoints[0] };
+          if (diffusion.length > 0) return { ...p, comfyModelType: 'diffusion', comfyModel: diffusion[0] };
+          return p;
+        });
       }
     } catch (err) { setComfyStatus({ type: 'error', msg: 'Scan échoué : ' + (err instanceof Error ? err.message : String(err)) }); }
     finally { setIsFetchingComfyModels(false); }
@@ -532,7 +581,22 @@ function App() {
     try {
       const res = await fetch(`${API_BASE}/api/settings`, { credentials: 'include' });
       const data = await res.json();
-      if (data && data.width) setParams(prev => ({ ...prev, ...data }));
+      if (data && data.width) {
+        setParams(prev => {
+          const storedParams = {
+            ...prev,
+            ...data,
+            favoriteModels: data.favoriteModels || prev.favoriteModels,
+            randomPromptLists: data.randomPromptLists || prev.randomPromptLists
+          };
+          lastSavedParamsRef.current = JSON.stringify(storedParams);
+          return {
+            ...storedParams,
+            randomPromptLists: migrateRandomPromptLists(storedParams.randomPromptLists, data.randomPromptListsVersion),
+            randomPromptListsVersion: RANDOM_PROMPT_LISTS_VERSION
+          };
+        });
+      }
     } catch (err) { console.error('Error fetching settings:', err); }
     finally { setIsSettingsLoaded(true); }
   }, []);
@@ -574,8 +638,6 @@ function App() {
       fetchLLMModels();
     }
   }, [isAuthenticated, showSettings, fetchComfyModels, fetchWorkflows, fetchLLMModels]);
-
-  const lastSavedParamsRef = useRef<string>('');
 
   const saveSettings = useCallback(async (newParams: GenParameters, silent = false) => {
     if (!isSettingsLoaded) return;
@@ -641,8 +703,11 @@ function App() {
   }, [logout, setSessions, setCurrentSessionId, setMessages]);
 
   const galleryOffsetRef = useRef(0);
+  const galleryRequestRef = useRef(0);
   const fetchGallery = useCallback(async (isInitial = false) => {
-    if (isFetchingGalleryRef.current || (!hasMoreGallery && !isInitial)) return;
+    if (!isInitial && (isFetchingGalleryRef.current || !hasMoreGallery)) return;
+
+    const requestId = isInitial ? ++galleryRequestRef.current : galleryRequestRef.current;
     
     isFetchingGalleryRef.current = true;
     setIsFetchingGallery(true);
@@ -659,6 +724,8 @@ function App() {
         console.error('Gallery API did not return an array:', data);
         return;
       }
+
+      if (requestId !== galleryRequestRef.current) return;
 
       if (isInitial) {
         setGalleryItems(data);
@@ -678,8 +745,10 @@ function App() {
     } catch (err) { 
       console.error('Error fetching gallery:', err); 
     } finally { 
-      setIsFetchingGallery(false); 
-      isFetchingGalleryRef.current = false;
+      if (requestId === galleryRequestRef.current) {
+        setIsFetchingGallery(false);
+        isFetchingGalleryRef.current = false;
+      }
     }
   }, [hasMoreGallery, showArchivedInGallery, favoritesOnly]);
 
@@ -889,6 +958,15 @@ function App() {
   const onScrollToBottom = useCallback(() => {
     const container = containerRef.current;
     if (!container) return;
+
+    if (scrollRequestTimeoutRef.current !== null) {
+      window.clearTimeout(scrollRequestTimeoutRef.current);
+      scrollRequestTimeoutRef.current = null;
+    }
+    if (scrollAnimationFrameRef.current !== null) {
+      window.cancelAnimationFrame(scrollAnimationFrameRef.current);
+      scrollAnimationFrameRef.current = null;
+    }
     
     isProgrammaticScrollRef.current = true;
     setShowScrollBottom(false);
@@ -979,9 +1057,9 @@ function App() {
       <SettingsModal
         showSettings={showSettings} setShowSettings={setShowSettings} activeTab={activeTab} setActiveTab={setActiveTab}
         params={params} setParams={setParams} lang={lang} t={t} currentUser={currentUser}
-        comfyModels={comfyModels} isFetchingComfyModels={isFetchingComfyModels} fetchComfyModels={fetchComfyModels}
+        comfyModels={comfyModels} diffusionModels={diffusionModels} isFetchingComfyModels={isFetchingComfyModels} fetchComfyModels={fetchComfyModels}
         comfyStatus={comfyStatus} testComfyConnection={testComfyConnection} isCheckingComfy={isCheckingComfy} comfyCheckStatus={comfyCheckStatus}
-        availableWorkflows={availableWorkflows} llmModels={llmModels} isFetchingModels={isFetchingModels} fetchLLMModels={fetchLLMModels}
+        availableWorkflows={availableWorkflows} fetchWorkflows={fetchWorkflows} llmModels={llmModels} isFetchingModels={isFetchingModels} fetchLLMModels={fetchLLMModels}
         llmStatus={llmStatus} testLLMConnection={testLLMConnection} isCheckingLLM={isCheckingLLM} llmCheckStatus={llmCheckStatus}
         adminUsers={adminUsers} newUser={newUser} setNewUser={setNewUser} handleAddUser={handleAddUser} isAdminLoading={isAdminLoading}
         deleteUser={internalDeleteUser} resetPasswordId={resetPasswordId} setResetPasswordId={setResetPasswordId} newPasswordValue={newPasswordValue}
@@ -1045,7 +1123,14 @@ function App() {
                 <ComposeIcon size={18} />
               </button>
               <div className="session-menu-container" ref={sessionMenuRef}>
-                <button className="action-pill-btn" onClick={() => setShowSessionMenu(!showSessionMenu)}>⋮</button>
+                <button
+                  className={`action-pill-btn ${showSessionMenu ? 'active' : ''}`}
+                  onClick={() => setShowSessionMenu(!showSessionMenu)}
+                  aria-label={t.options}
+                  aria-expanded={showSessionMenu}
+                >
+                  <MoreVerticalIcon size={20} />
+                </button>
                 {showSessionMenu && currentSessionId && (
                   <div className="session-dropdown">
                     <button className="dropdown-item" onClick={() => { setRenamingId(currentSessionId); setRenameValue(sessions.find(s => s.id === currentSessionId)?.title || ''); setShowSessionMenu(false); setSidebarOpen(true); }}>
@@ -1068,7 +1153,7 @@ function App() {
           interruptGeneration={interruptGeneration} handleEdit={handleEdit} goToImage={goToImage} setActiveInfoId={setActiveInfoId} activeInfoId={activeInfoId}
           setMessageToDelete={setMessageToDelete} toggleFavorite={toggleFavorite} handleImageClick={handleImageClick} favoritedId={favoritedId}
           galleryItems={galleryItems} isFetchingGallery={isFetchingGallery} favoritesOnly={favoritesOnly} setFavoritesOnly={setFavoritesOnly}
-          showArchivedInGallery={showArchivedInGallery} setShowArchivedInGallery={setShowArchivedInGallery} resetGallery={resetGallery}
+          showArchivedInGallery={showArchivedInGallery} setShowArchivedInGallery={setShowArchivedInGallery}
           setHasMoreGallery={setHasMoreGallery} lastImageElementRef={lastImageElementRef} containerRef={containerRef} textareaRef={textareaRef}
           messagesEndRef={messagesEndRef} params={params} setParams={setParams} smoothScrollTo={smoothScrollTo} handleScroll={handleScroll} downloadImage={downloadImage}
           showScrollBottom={showScrollBottom} onScrollToBottom={onScrollToBottom}

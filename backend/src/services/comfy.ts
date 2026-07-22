@@ -65,8 +65,19 @@ export const getWorkflow = (prompt: string, params?: Partial<GenerationParams>) 
     }
   }
 
-  if (workflow[nodes.checkpoint!]?.inputs && params?.comfyModel) {
-    workflow[nodes.checkpoint!].inputs.ckpt_name = params.comfyModel;
+  if (params?.comfyModel) {
+    if (params.comfyModelType === 'diffusion') {
+      const diffusionNodeId = nodes.diffusionModel || Object.keys(workflow).find(nodeId => (
+        ['UNETLoader', 'UNETLoaderGGUF'].includes(workflow[nodeId]?.class_type)
+        && workflow[nodeId]?.inputs
+      ));
+      if (!diffusionNodeId || !workflow[diffusionNodeId]?.inputs) {
+        throw new Error(`Le workflow ${workflowFile} ne contient pas de nœud Load Diffusion Model compatible`);
+      }
+      workflow[diffusionNodeId].inputs.unet_name = params.comfyModel;
+    } else if (workflow[nodes.checkpoint!]?.inputs) {
+      workflow[nodes.checkpoint!].inputs.ckpt_name = params.comfyModel;
+    }
   }
   if (workflow[nodes.positive!]?.inputs) {
     workflow[nodes.positive!].inputs.text = prompt;
@@ -75,20 +86,41 @@ export const getWorkflow = (prompt: string, params?: Partial<GenerationParams>) 
     workflow[nodes.negative!].inputs.text = params.negativePrompt;
   }
   
-  if (workflow[nodes.ksampler!]?.inputs) {
-    workflow[nodes.ksampler!].inputs.seed = params?.seed ?? Math.floor(Math.random() * 1000000000000000);
+  const mappedSamplerId = nodes.ksampler;
+  const samplerNodeIds = Object.keys(workflow).filter(nodeId => (
+    ['KSampler', 'KSamplerAdvanced', 'KSampler (Efficient)'].includes(workflow[nodeId]?.class_type)
+  ));
+  if (mappedSamplerId && workflow[mappedSamplerId] && !samplerNodeIds.includes(mappedSamplerId)) samplerNodeIds.unshift(mappedSamplerId);
+  const generatedSeed = params?.seed ?? Math.floor(Math.random() * 1000000000000000);
+  samplerNodeIds.forEach((nodeId, index) => {
+    const inputs = workflow[nodeId]?.inputs;
+    if (!inputs) return;
+    if ('noise_seed' in inputs) inputs.noise_seed = index === 0 ? generatedSeed : inputs.noise_seed;
+    else inputs.seed = generatedSeed;
     if (params) {
-      if (params.steps) workflow[nodes.ksampler!].inputs.steps = params.steps;
-      if (params.cfg) workflow[nodes.ksampler!].inputs.cfg = params.cfg;
-      if (params.sampler) workflow[nodes.ksampler!].inputs.sampler_name = params.sampler;
-      if (params.scheduler) workflow[nodes.ksampler!].inputs.scheduler = params.scheduler;
+      if (params.steps) inputs.steps = params.steps;
+      if (params.cfg) inputs.cfg = params.cfg;
+      if (params.sampler) inputs.sampler_name = params.sampler;
+      if (params.scheduler) inputs.scheduler = params.scheduler;
     }
-  }
+  });
 
-  if (workflow[nodes.latent!]?.inputs && params) {
-    if (workflow[nodes.latent!].class_type !== 'SDXLEmptyLatentSizePicker+') {
-      if (params.width) workflow[nodes.latent!].inputs.width = params.width;
-      if (params.height) workflow[nodes.latent!].inputs.height = params.height;
+  const latentNodeId = nodes.latent || Object.keys(workflow).find(nodeId => {
+    const node = workflow[nodeId];
+    return /latent/i.test(String(node?.class_type || ''))
+      && node?.inputs
+      && ('width' in node.inputs || 'width_override' in node.inputs)
+      && ('height' in node.inputs || 'height_override' in node.inputs);
+  });
+  if (latentNodeId && workflow[latentNodeId]?.inputs && params) {
+    const inputs = workflow[latentNodeId].inputs;
+    if (params.width) {
+      if ('width' in inputs) inputs.width = params.width;
+      else if ('width_override' in inputs) inputs.width_override = params.width;
+    }
+    if (params.height) {
+      if ('height' in inputs) inputs.height = params.height;
+      else if ('height_override' in inputs) inputs.height_override = params.height;
     }
   }
 

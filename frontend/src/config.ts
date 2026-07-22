@@ -1,11 +1,11 @@
-import pkg from '../package.json';
+declare const __APP_VERSION__: string;
 
 /**
  * Global application configuration.
  * Centralizing this ensures a single source of truth for metadata and constants.
  */
 export const APP_CONFIG = {
-  VERSION: pkg.version,
+  VERSION: __APP_VERSION__,
   GITHUB_REPO: 'leguigou/ComfyRealism',
   API_ENDPOINTS: {
     CHECK_UPDATE: '/api/updates/check',

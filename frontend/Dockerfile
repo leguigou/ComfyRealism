@@ -3,10 +3,11 @@ FROM node:22-bullseye-slim AS build
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY frontend/package*.json ./
 RUN npm ci
 
-COPY . .
+COPY frontend/ ./
+COPY VERSION /VERSION
 RUN npm run build
 
 # Stage 2: Serve the application with Nginx
