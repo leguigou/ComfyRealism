@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { authenticate, requireAdmin } from '../middleware/auth';
 import { imagesDir, thumbnailsDir, generateThumbnail } from '../services/image';
+import { analyzeWorkflow } from '../services/workflow-import';
 
 const router = express.Router();
 
@@ -158,6 +159,17 @@ router.get('/workflows', authenticate, (req, res) => {
   res.json(files);
 });
 
+router.post('/workflows/analyze', requireAdmin, (req, res) => {
+  try {
+    return res.json({ success: true, analysis: analyzeWorkflow(req.body?.workflow) });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Workflow invalide'
+    });
+  }
+});
+
 router.post('/workflows', requireAdmin, (req, res) => {
   const filename = getSafeWorkflowFilename(req.body?.filename);
   const workflow = req.body?.workflow;
@@ -183,7 +195,13 @@ router.post('/workflows', requireAdmin, (req, res) => {
   if (fs.existsSync(workflowPath)) fs.copyFileSync(workflowPath, `${workflowPath}.backup`);
   fs.writeFileSync(workflowPath, JSON.stringify(workflow, null, 2), 'utf8');
 
-  const nodeMapping = detectWorkflowNodeMapping(workflow);
+  let analyzedMapping: Record<string, string | undefined> = {};
+  try {
+    analyzedMapping = { ...analyzeWorkflow(workflow).nodeMapping };
+  } catch {
+    // Keep the permissive importer compatible with custom ComfyUI nodes.
+  }
+  const nodeMapping = { ...detectWorkflowNodeMapping(workflow), ...analyzedMapping };
   const generationDefaults = detectWorkflowGenerationDefaults(workflow, nodeMapping);
   const configPath = workflowPath.replace(/\.json$/, '.config.json');
   fs.writeFileSync(configPath, JSON.stringify({ nodeMapping }, null, 2), 'utf8');
