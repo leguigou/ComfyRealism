@@ -11,7 +11,7 @@ Version actuelle : `1.5.11`
 - interface de chat responsive en français et en anglais ;
 - génération ComfyUI avec suivi de la file, annulation et reprise par polling ;
 - workflows JSON personnalisables, checkpoints, dimensions, seed, steps, CFG, sampler et scheduler ;
-- amélioration facultative des prompts via une API compatible OpenAI ou Ollama ;
+- amélioration facultative des prompts via OpenAI/ChatGPT, Anthropic Claude, Google Gemini, DeepSeek, xAI/Grok, Mistral, Groq, OpenRouter, Together, Ollama ou toute API compatible OpenAI ;
 - historique, galerie, favoris, archives et visionneuse mobile ;
 - conversion automatique des images et miniatures en WebP ;
 - comptes isolés, administration des utilisateurs et mots de passe hachés ;
@@ -53,10 +53,17 @@ docker compose up --build -d
 | `COMFY_URL` | URL de ComfyUI vue depuis le backend | `http://host.docker.internal:8188` |
 | `CORS_ORIGINS` | Origines frontend supplémentaires, séparées par des virgules | vide |
 | `SERVICE_URL_ALLOWLIST` | Origines ComfyUI/LLM supplémentaires autorisées | vide |
+| `ALLOW_PRIVATE_SERVICE_URLS` | Autorise les IP littérales de boucle locale et des réseaux privés, quel que soit le port | `false` |
 | `ALLOW_USER_LLM_URLS` | Autorise chaque utilisateur à définir librement son URL LLM | `false` |
 | `PORT` | Port de l’API | `3001` |
 
-Les URL de services personnalisées sont refusées si leur origine n’est pas connue du serveur. Ajoutez les origines nécessaires dans `SERVICE_URL_ALLOWLIST`, ou activez `ALLOW_USER_LLM_URLS` si ce comportement est volontaire.
+Les URL de services personnalisées sont refusées si leur origine n’est pas connue du serveur. Ajoutez les origines nécessaires dans `SERVICE_URL_ALLOWLIST`, activez `ALLOW_PRIVATE_SERVICE_URLS` pour les adresses IP locales/privées, ou activez `ALLOW_USER_LLM_URLS` si ce comportement est volontaire.
+
+### Providers IA
+
+Dans **Réglages → IA (LLM)**, ajoutez un ou plusieurs providers, renseignez leur clé API et choisissez le provider actif. Les modèles peuvent être récupérés depuis le service ou saisis manuellement. Les clés sont chiffrées dans SQLite avec une clé dérivée de `AUTH_SECRET` et ne sont jamais renvoyées au navigateur. Une modification de `AUTH_SECRET` impose donc de ressaisir les clés API.
+
+Pour un serveur personnalisé, ajoutez son origine à `SERVICE_URL_ALLOWLIST`. Les providers cloud prédéfinis utilisent exclusivement leur URL officielle intégrée à l’application.
 
 ## Développement local
 

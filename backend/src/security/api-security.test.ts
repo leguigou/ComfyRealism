@@ -47,6 +47,7 @@ beforeAll(async () => {
   process.env.COMFY_URL = 'http://127.0.0.1:8188';
   delete process.env.CORS_ORIGINS;
   delete process.env.SERVICE_URL_ALLOWLIST;
+  delete process.env.ALLOW_PRIVATE_SERVICE_URLS;
 
   const [{ createApp }, databaseModule] = await Promise.all([
     import('../app'),
@@ -140,6 +141,24 @@ describe('API security boundaries', () => {
       expect(() => validateServiceUrl('http://user:password@192.0.2.10:1234', 'LLM')).toThrow('Invalid LLM URL');
     } finally {
       delete process.env.ALLOW_USER_LLM_URLS;
+    }
+  });
+
+  it('allows literal private network service URLs only when explicitly enabled', async () => {
+    const { validateServiceUrl } = await import('./service-url');
+    process.env.ALLOW_PRIVATE_SERVICE_URLS = 'true';
+
+    try {
+      expect(validateServiceUrl('http://127.0.0.1:51234', 'LLM')).toBe('http://127.0.0.1:51234');
+      expect(validateServiceUrl('http://10.20.30.40:1234', 'LLM')).toBe('http://10.20.30.40:1234');
+      expect(validateServiceUrl('http://172.31.0.5:1234', 'LLM')).toBe('http://172.31.0.5:1234');
+      expect(validateServiceUrl('http://192.168.0.40:1234', 'LLM')).toBe('http://192.168.0.40:1234');
+      expect(validateServiceUrl('http://[::1]:1234', 'LLM')).toBe('http://[::1]:1234');
+      expect(validateServiceUrl('http://[fd00::40]:1234', 'LLM')).toBe('http://[fd00::40]:1234');
+      expect(() => validateServiceUrl('http://169.254.169.254', 'LLM')).toThrow('SERVICE_URL_ALLOWLIST');
+      expect(() => validateServiceUrl('https://example.com', 'LLM')).toThrow('SERVICE_URL_ALLOWLIST');
+    } finally {
+      delete process.env.ALLOW_PRIVATE_SERVICE_URLS;
     }
   });
 

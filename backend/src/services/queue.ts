@@ -188,5 +188,8 @@ export const processQueue = async () => {
 
 export const initQueue = (wsServer: WebSocketServer) => {
   setWss(wsServer);
+  db.prepare("UPDATE queue SET status = 'pending' WHERE status = 'processing'").run();
+  db.prepare("UPDATE messages SET status = 'pending' WHERE status = 'processing' AND id IN (SELECT messageId FROM queue)").run();
+  processQueue();
   setInterval(processQueue, 2000);
 };

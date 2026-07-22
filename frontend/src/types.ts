@@ -100,6 +100,7 @@ export interface GenParameters {
   llmSystemMessage: string;
   negativePrompt: string;
   llmEnabled: boolean;
+  llmProviderId?: string;
   workflowFile: string;
   nodeMapping: NodeMapping;
   seedMode: 'random' | 'fixed';
@@ -107,6 +108,16 @@ export interface GenParameters {
   favoriteModels: FavoriteModel[];
   randomPromptLists: RandomPromptList[];
   randomPromptListsVersion?: number;
+}
+
+export interface LLMProvider {
+  id: string;
+  name: string;
+  type: 'openai' | 'anthropic' | 'google';
+  baseUrl: string;
+  model: string;
+  isActive: boolean;
+  hasApiKey: boolean;
 }
 
 export interface Session {

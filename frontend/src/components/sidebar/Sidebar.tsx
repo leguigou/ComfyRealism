@@ -23,7 +23,6 @@ interface SidebarProps {
   setRenameValue: (val: string) => void;
   renameSession: (id: string, title: string) => void;
   toggleArchive: (id: string, archived: boolean) => void;
-  deleteSession: (e: React.MouseEvent, id: string) => void;
   setShowSettings: (show: boolean) => void;
   handleLogout: () => void;
   currentUser: User | null;
@@ -54,7 +53,6 @@ export const Sidebar = ({
   setRenameValue,
   renameSession,
   toggleArchive,
-  deleteSession,
   setShowSettings,
   handleLogout,
   currentUser,
@@ -130,20 +128,11 @@ export const Sidebar = ({
               ) : (
                 <>
                   <span className="session-title">{s.title}</span>
-                  <div className="session-actions">
-                    {s.isArchived ? (
-                      <button className="edit-session" onClick={(e) => { e.stopPropagation(); toggleArchive(s.id, false); }} title={t.unarchive}>📤</button>
-                    ) : (
-                      <button className="edit-session" onClick={(e) => { 
-                        e.stopPropagation(); 
-                        if (window.innerWidth > 768) {
-                          setRenamingId(s.id); 
-                          setRenameValue(s.title); 
-                        }
-                      }} title={t.edit} style={{ display: window.innerWidth <= 768 ? 'none' : 'flex' }}>✎</button>
-                    )}
-                    <button className="delete-session" onClick={(e) => deleteSession(e, s.id)}>🗑️</button>
-                  </div>
+                  {Boolean(s.isArchived) && (
+                    <div className="session-actions">
+                      <button className="unarchive-session" onClick={(e) => { e.stopPropagation(); toggleArchive(s.id, false); }} title={t.unarchive}>📤</button>
+                    </div>
+                  )}
                 </>
               )}
             </div>

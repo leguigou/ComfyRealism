@@ -35,6 +35,8 @@ export interface Message {
   sampler: string | null;
   scheduler: string | null;
   randomSelections: string | null;
+  generationPrompt: string | null;
+  generationParams: string | null;
 }
 
 export interface Session {
@@ -69,6 +71,7 @@ export interface GenerationParams {
   sampler?: string;
   scheduler?: string;
   negativePrompt?: string;
+  nodeMapping?: WorkflowNodeMapping;
 }
 
 export interface WorkflowNodeMapping {

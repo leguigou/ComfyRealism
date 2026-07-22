@@ -57,6 +57,7 @@ export const useWebSocket = (
                   ...m, 
                   id: data.messageId, // Ensure we sync with real backend ID
                   status: data.status, 
+                  text: data.status === 'failed' && data.error ? data.error : m.text,
                   imageUrl: data.imageUrl ? `${API_BASE}${data.imageUrl}` : m.imageUrl,
                   thumbnailUrl: data.thumbnailUrl ? `${API_BASE}${data.thumbnailUrl}` : m.thumbnailUrl,
                   model: data.model || m.model,
