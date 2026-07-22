@@ -20,7 +20,7 @@ import { useSessions } from './hooks/useSessions';
 import { useGeneration } from './hooks/useGeneration';
 import { useWebSocket } from './hooks/useWebSocket';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
-import { ComposeIcon, MoreVerticalIcon } from './components/ui/Icons';
+import { ComposeIcon, MoreVerticalIcon, RefreshIcon } from './components/ui/Icons';
 import toast, { Toaster } from 'react-hot-toast';
 
 function App() {
@@ -962,6 +962,13 @@ function App() {
 
   const isAlreadyLoaded = activeLightbox ? loadedHdImages.has(activeLightbox.messageId) : false;
 
+  const regenerateLightboxImage = () => {
+    if (!activeLightbox || !currentLightboxItem) return;
+    const prompt = currentLightboxItem.prompt || currentLightboxItem.text || '';
+    if (!prompt.trim()) return;
+    void handleSend(prompt, true, activeLightbox.sessionId);
+  };
+
   return (
     <ErrorBoundary name="ComfyRealism App">
       <div className={`app-layout ${theme}`}>
@@ -988,6 +995,9 @@ function App() {
                 } 
             }} title={t.reuseSeed}>🎲</button>
             <button className="lightbox-btn" onClick={() => { if (currentLightboxItem) { handleEdit(currentLightboxItem.text || currentLightboxItem.prompt || ''); setActiveLightbox(null); } }} title={t.edit}>✎</button>
+            <button className="lightbox-btn" onClick={regenerateLightboxImage} title={t.regenerate} aria-label={t.regenerate}>
+              <RefreshIcon />
+            </button>
             <button className="lightbox-btn" onClick={() => downloadImage(getFullImageUrl(activeLightbox.url), `img-${activeLightbox.messageId}.png`)} title="Télécharger">💾</button>
             <button className="lightbox-btn close" onClick={() => setActiveLightbox(null)}>×</button>
           </div>
