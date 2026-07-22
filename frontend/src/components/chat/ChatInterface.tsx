@@ -18,6 +18,8 @@ interface ChatInterfaceProps {
   input: string;
   setInput: (val: string) => void;
   handleSend: (overrideInput?: string, isRegeneration?: boolean) => void;
+  retryMessage: (messageId: string) => Promise<unknown>;
+  retryAllIncomplete: () => Promise<{ queued: number }>;
   interruptGeneration: () => void;
   handleEdit: (text: string) => void;
   goToImage: (sessionId: string, messageId: string) => void;
@@ -58,6 +60,8 @@ export const ChatInterface = ({
   input,
   setInput,
   handleSend,
+  retryMessage,
+  retryAllIncomplete,
   interruptGeneration,
   handleEdit,
   goToImage,
@@ -86,6 +90,8 @@ export const ChatInterface = ({
 }: ChatInterfaceProps) => {
   const [showOptions, setShowOptions] = useState(false);
   const [timerNow, setTimerNow] = useState(() => Date.now());
+  const [isRetryingAll, setIsRetryingAll] = useState(false);
+  const [showRetryAllConfirm, setShowRetryAllConfirm] = useState(false);
   const promptHighlightRef = useRef<HTMLDivElement>(null);
   const optionsDrawerRef = useRef<HTMLDivElement>(null);
   const optionsToggleRef = useRef<HTMLButtonElement>(null);
@@ -114,6 +120,20 @@ export const ChatInterface = ({
     && part.endsWith(']')
     && enabledRandomSlugs.has(part.slice(1, -1).toLowerCase())
   ));
+  const firstFailedMessageId = messages.find(message => message.role === 'bot' && message.status === 'failed')?.id;
+
+  const handleRetryAll = async () => {
+    setShowRetryAllConfirm(false);
+    setIsRetryingAll(true);
+    try {
+      const result = await retryAllIncomplete();
+      toast.success(result.queued > 0 ? `${result.queued} ${t.retryQueued}` : t.nothingToRetry);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t.retryFailed);
+    } finally {
+      setIsRetryingAll(false);
+    }
+  };
 
   const syncPromptHighlightScroll = (textarea: HTMLTextAreaElement) => {
     if (!promptHighlightRef.current) return;
@@ -248,9 +268,23 @@ export const ChatInterface = ({
                       <div className="error-content">
                         <p className="error-title">{t.genFailed}</p>
                         <p className="error-details">{msg.text}</p>
-                        <button className="retry-btn" onClick={() => handleSend(msg.prompt || msg.text || '', true)}>
-                          <span>{t.retry}</span>
-                        </button>
+                        <div className="retry-actions">
+                          <button className="retry-btn" onClick={async () => {
+                            try {
+                              await retryMessage(msg.id);
+                              toast.success(t.retryStarted);
+                            } catch (error) {
+                              toast.error(error instanceof Error ? error.message : t.retryFailed);
+                            }
+                          }}>
+                            <span>{t.retry}</span>
+                          </button>
+                          {msg.id === firstFailedMessageId && (
+                            <button className="retry-all-btn" onClick={() => setShowRetryAllConfirm(true)} disabled={isRetryingAll}>
+                              {isRetryingAll ? t.retryingAll : t.retryAllIncomplete}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -510,6 +544,17 @@ export const ChatInterface = ({
                   )}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showRetryAllConfirm && (
+        <div className="settings-modal-overlay" onClick={() => setShowRetryAllConfirm(false)}>
+          <div className="settings-modal confirm-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <h3>{t.confirmRetryAll}</h3>
+            <div className="confirm-buttons">
+              <button className="confirm-btn archive" onClick={handleRetryAll}>{t.confirm}</button>
+              <button className="confirm-btn cancel" onClick={() => setShowRetryAllConfirm(false)}>{t.cancel}</button>
             </div>
           </div>
         </div>

@@ -6,6 +6,7 @@ import { RefreshIcon, XIcon } from '../ui/Icons';
 import { MarkdownLoader } from '../ui/MarkdownLoader';
 import { formatBytes, getFullImageUrl, API_BASE } from '../../services/api';
 import toast from 'react-hot-toast';
+import { LLMProvidersPanel } from './LLMProvidersPanel';
 
 interface WorkflowMappingData {
   filename: string;
@@ -58,13 +59,6 @@ interface SettingsModalProps {
   comfyCheckStatus: { type: 'success' | 'error', msg: string } | null;
   availableWorkflows: string[];
   fetchWorkflows: () => void;
-  llmModels: string[];
-  isFetchingModels: boolean;
-  fetchLLMModels: () => void;
-  llmStatus: { type: 'success' | 'error', msg: string } | null;
-  testLLMConnection: () => void;
-  isCheckingLLM: boolean;
-  llmCheckStatus: { type: 'success' | 'error', msg: string } | null;
   adminUsers: User[];
   newUser: { username: string; password: string; isAdmin: boolean };
   setNewUser: (user: { username: string; password: string; isAdmin: boolean }) => void;
@@ -102,13 +96,6 @@ export const SettingsModal = ({
   comfyCheckStatus,
   availableWorkflows,
   fetchWorkflows,
-  llmModels,
-  isFetchingModels,
-  fetchLLMModels,
-  llmStatus,
-  testLLMConnection,
-  isCheckingLLM,
-  llmCheckStatus,
   adminUsers,
   newUser,
   setNewUser,
@@ -1052,40 +1039,8 @@ export const SettingsModal = ({
                   <div className={`toggle-switch ${params.llmEnabled ? 'on' : ''}`}></div>
                 </div>
               </div>
-              <div className="setting-item" style={{ gridColumn: 'span 2' }}>
-                <label>{t.llmUrl}</label>
-                <div className="model-select-group">
-                  <input 
-                    type="text" 
-                    value={params.llmUrl} 
-                    onChange={(e) => setParams({ ...params, llmUrl: e.target.value })} 
-                    placeholder="http://localhost:11434" 
-                    style={{ flex: 1 }}
-                  />
-                  <button
-                    className="refresh-models-btn test-conn-btn"
-                    onClick={testLLMConnection}
-                    disabled={isCheckingLLM || !params.llmUrl}
-                    title={t.testConnection}
-                  >
-                    {isCheckingLLM ? '...' : t.testConnection}
-                  </button>
-                </div>
-                {llmCheckStatus && <p className={`llm-status-msg ${llmCheckStatus.type}`}>{llmCheckStatus.msg}</p>}
-              </div>
-              <div className="setting-item" style={{ gridColumn: 'span 2' }}>
-                <label>{t.llmModel}</label>
-                <div className="model-select-group">
-                  {llmModels.length > 0 ? (
-                    <select value={params.llmModel} onChange={(e) => setParams({ ...params, llmModel: e.target.value })} className="model-select">
-                      {llmModels.map(m => <option key={m} value={m}>{m}</option>)}
-                    </select>
-                  ) : (
-                    <input type="text" value={params.llmModel} onChange={(e) => setParams({ ...params, llmModel: e.target.value })} placeholder="llama3:latest" />
-                  )}
-                  <button className="refresh-models-btn" onClick={fetchLLMModels} disabled={isFetchingModels || !params.llmUrl} title={t.refreshModels}>{isFetchingModels ? '...' : <RefreshIcon size={16} />}</button>
-                </div>
-                {llmStatus && <p className={`llm-status-msg ${llmStatus.type}`}>{llmStatus.msg}</p>}
+              <div style={{ gridColumn: 'span 2' }}>
+                <LLMProvidersPanel params={params} setParams={setParams} t={t} />
               </div>
               <div className="setting-item" style={{ gridColumn: 'span 2' }}>
                 <label>{t.llmSystemMessage}</label>

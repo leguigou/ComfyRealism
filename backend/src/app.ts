@@ -13,6 +13,7 @@ import llmRoutes from './routes/llm';
 import galleryRoutes from './routes/gallery';
 import miscRoutes from './routes/misc';
 import updateRoutes from './routes/updates';
+import { configureProviderEncryption } from './services/llm-providers';
 
 const corsOptions = (req: Request): CorsOptions => ({
   origin: isAllowedRequestOrigin(req),
@@ -25,6 +26,7 @@ export const createApp = (authSecret: string) => {
   const app = express();
 
   app.set('trust proxy', 1);
+  configureProviderEncryption(authSecret);
   initDatabase();
 
   app.use((req, res, next) => {

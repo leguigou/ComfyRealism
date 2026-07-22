@@ -1,3 +1,5 @@
+import { isIP } from 'node:net';
+
 export class ServiceUrlError extends Error {
   readonly statusCode = 403;
 }
@@ -11,6 +13,27 @@ const toOrigin = (value: string | undefined) => {
   } catch {
     return null;
   }
+};
+
+const isPrivateNetworkHost = (hostname: string) => {
+  const host = hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (host === 'localhost') return true;
+
+  if (isIP(host) === 4) {
+    const [first, second] = host.split('.').map(Number);
+    return first === 10
+      || first === 127
+      || (first === 172 && second >= 16 && second <= 31)
+      || (first === 192 && second === 168);
+  }
+
+  if (isIP(host) === 6) {
+    if (host === '::1') return true;
+    const firstGroup = Number.parseInt(host.split(':')[0], 16);
+    return (firstGroup & 0xfe00) === 0xfc00;
+  }
+
+  return false;
 };
 
 export const getAllowedServiceOrigins = () => {
@@ -51,6 +74,11 @@ export const validateServiceUrl = (value: unknown, serviceName: string) => {
   const allowsPerUserLlmUrl = serviceName === 'LLM'
     && process.env.ALLOW_USER_LLM_URLS?.toLowerCase() === 'true';
   if (allowsPerUserLlmUrl) {
+    return url.toString().replace(/\/$/, '');
+  }
+
+  const allowsPrivateServiceUrls = process.env.ALLOW_PRIVATE_SERVICE_URLS?.toLowerCase() === 'true';
+  if (allowsPrivateServiceUrls && isPrivateNetworkHost(url.hostname)) {
     return url.toString().replace(/\/$/, '');
   }
 

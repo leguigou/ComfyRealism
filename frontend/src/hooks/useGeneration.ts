@@ -3,6 +3,15 @@ import { API_BASE } from '../services/api';
 import type { Message, GenParameters } from '../types';
 import { resolveRandomPromptsWithSelections } from '../utils/randomPrompts';
 
+const readApiResponse = async (response: Response) => {
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) return response.json();
+  const body = await response.text();
+  throw new Error(response.status === 404
+    ? 'Le backend doit être redémarré pour activer la reprise des générations.'
+    : `Réponse serveur inattendue (${response.status})${body ? `: ${body.slice(0, 120)}` : ''}`);
+};
+
 export const useGeneration = (
   currentSessionId: string | null,
   params: GenParameters,
@@ -26,6 +35,38 @@ export const useGeneration = (
       console.error('[Generation] Failed to interrupt:', err);
     }
   };
+
+  const retryMessage = useCallback(async (messageId: string) => {
+    const res = await fetch(`${API_BASE}/api/generate/retry/${encodeURIComponent(messageId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ params }),
+      credentials: 'include'
+    });
+    const data = await readApiResponse(res);
+    if (!res.ok || !data.success) throw new Error(data.error || 'Retry failed');
+    setMessages(prev => prev.map(message => message.id === messageId
+      ? { ...message, text: '', status: 'pending', duration: 0, generationStartedAt: undefined }
+      : message));
+    return data;
+  }, [params, setMessages]);
+
+  const retryAllIncomplete = useCallback(async () => {
+    const res = await fetch(`${API_BASE}/api/generate/retry-incomplete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ params }),
+      credentials: 'include'
+    });
+    const data = await readApiResponse(res);
+    if (!res.ok || !data.success) throw new Error(data.error || 'Bulk retry failed');
+    const retriedIds = new Set<string>(data.messageIds || []);
+    setMessages(prev => prev.map(message => retriedIds.has(message.id)
+      ? { ...message, text: '', status: 'pending', duration: 0, generationStartedAt: undefined }
+      : message));
+    fetchSessions();
+    return data as { queued: number; messageIds: string[] };
+  }, [params, setMessages, fetchSessions]);
 
   const handleSend = useCallback(async (textToSend: string, isRegeneration = false, targetSessionId?: string) => {
     const activeSessionId = targetSessionId || currentSessionId;
@@ -53,7 +94,7 @@ export const useGeneration = (
         text: resolvedPrompt !== templatePrompt ? resolvedPrompt : '',
         randomSelections: randomResult.selections,
         status: 'pending',
-        isEnhancing: params.llmEnabled && !!params.llmUrl && !!params.llmModel && !isRegeneration,
+        isEnhancing: params.llmEnabled && !!params.llmProviderId && !isRegeneration,
         timestamp: Date.now(),
         model: params.comfyModel,
         workflow: params.workflowFile,
@@ -66,7 +107,7 @@ export const useGeneration = (
       setTimeout(() => smoothScrollTo(`msg-${botMsgId}`), 50);
       
       // 2. Interprétation IA
-      if (params.llmEnabled && params.llmUrl && params.llmModel && !isRegeneration) {
+      if (params.llmEnabled && params.llmProviderId && !isRegeneration) {
         enhancingCount.current++;
         setIsEnhancing(true);
         try {
@@ -75,8 +116,7 @@ export const useGeneration = (
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
               prompt: resolvedPrompt,
-              llmUrl: params.llmUrl, 
-              llmModel: params.llmModel,
+              providerId: params.llmProviderId,
               systemMessage: params.llmSystemMessage
             }),
             credentials: 'include'
@@ -141,5 +181,5 @@ export const useGeneration = (
     }
   }, [currentSessionId, params, clientIdRef, setMessages, smoothScrollTo, fetchSessions]);
 
-  return { handleSend, interruptGeneration, isEnhancing };
+  return { handleSend, retryMessage, retryAllIncomplete, interruptGeneration, isEnhancing };
 };

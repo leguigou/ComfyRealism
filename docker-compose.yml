@@ -18,6 +18,7 @@ services:
       - AUTH_SECRET=${AUTH_SECRET:?Set AUTH_SECRET in .env}
       - CORS_ORIGINS=${CORS_ORIGINS:-}
       - SERVICE_URL_ALLOWLIST=${SERVICE_URL_ALLOWLIST:-}
+      - ALLOW_PRIVATE_SERVICE_URLS=${ALLOW_PRIVATE_SERVICE_URLS:-false}
       - ALLOW_USER_LLM_URLS=${ALLOW_USER_LLM_URLS:-false}
     extra_hosts:
       - "host.docker.internal:host-gateway"

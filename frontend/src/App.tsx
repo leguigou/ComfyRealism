@@ -232,7 +232,7 @@ function App() {
   }, []);
 
   const { clientIdRef } = useWebSocket(isAuthenticated, currentSessionId, setMessages, fetchSessions, fetchSessionDetails);
-  const { handleSend, interruptGeneration, isEnhancing } = useGeneration(currentSessionId, params, clientIdRef, setMessages, smoothScrollTo, fetchSessions);
+  const { handleSend, retryMessage, retryAllIncomplete, interruptGeneration, isEnhancing } = useGeneration(currentSessionId, params, clientIdRef, setMessages, smoothScrollTo, fetchSessions);
 
   const isGenerating = isEnhancing || messages.some(m => m.role === 'bot' && (m.status === 'pending' || m.status === 'processing'));
 
@@ -457,31 +457,9 @@ function App() {
   const [diffusionModels, setDiffusionModels] = useState<string[]>([]);
   const [isFetchingComfyModels, setIsFetchingComfyModels] = useState(false);
   const [comfyStatus, setComfyStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
-  const [llmModels, setLlmModels] = useState<string[]>([]);
-  const [isFetchingModels, setIsFetchingModels] = useState(false);
-  const [llmStatus, setLlmStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
   const [comfyCheckStatus, setComfyCheckStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
   const [isCheckingComfy, setIsCheckingComfy] = useState(false);
-  const [llmCheckStatus, setLlmCheckStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
-  const [isCheckingLLM, setIsCheckingLLM] = useState(false);
   const [availableWorkflows, setAvailableWorkflows] = useState<string[]>([]);
-
-  const testLLMConnection = useCallback(async () => {
-    setIsCheckingLLM(true);
-    setLlmCheckStatus(null);
-    try {
-      const res = await fetch(`${API_BASE}/api/llm/check`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ llmUrl: params.llmUrl }),
-        credentials: 'include'
-      });
-      const data = await res.json();
-      if (data.success) setLlmCheckStatus({ type: 'success', msg: t.connectionSuccess });
-      else setLlmCheckStatus({ type: 'error', msg: data.error || t.connectionFailed });
-    } catch (err) { setLlmCheckStatus({ type: 'error', msg: t.connectionFailed + ': ' + (err instanceof Error ? err.message : String(err)) }); }
-    finally { setIsCheckingLLM(false); }
-  }, [params.llmUrl, t.connectionSuccess, t.connectionFailed]);
 
   const testComfyConnection = useCallback(async () => {
     setIsCheckingComfy(true);
@@ -601,29 +579,6 @@ function App() {
     finally { setIsSettingsLoaded(true); }
   }, []);
 
-  const fetchLLMModels = useCallback(async () => {
-    if (!params.llmUrl) return;
-    setIsFetchingModels(true);
-    setLlmStatus(null);
-    try {
-      const res = await fetch(`${API_BASE}/api/llm/models`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ llmUrl: params.llmUrl }),
-        credentials: 'include'
-      });
-      const data = await res.json();
-      if (data.models) {
-        setLlmModels(data.models);
-        setLlmStatus({ type: 'success', msg: `${data.models.length} ${t.modelsFound}` });
-        if (data.models.length > 0 && !data.models.includes(params.llmModel)) {
-          setParams(p => ({ ...p, llmModel: data.models[0] }));
-        }
-      }
-    } catch (err) { setLlmStatus({ type: 'error', msg: 'Connexion échouée : ' + (err instanceof Error ? err.message : String(err)) }); }
-    finally { setIsFetchingModels(false); }
-  }, [params.llmUrl, params.llmModel, t.modelsFound]);
-
   useEffect(() => {
     if (isAuthenticated) {
       fetchSessions();
@@ -635,9 +590,8 @@ function App() {
     if (isAuthenticated && showSettings) {
       fetchComfyModels();
       fetchWorkflows();
-      fetchLLMModels();
     }
-  }, [isAuthenticated, showSettings, fetchComfyModels, fetchWorkflows, fetchLLMModels]);
+  }, [isAuthenticated, showSettings, fetchComfyModels, fetchWorkflows]);
 
   const saveSettings = useCallback(async (newParams: GenParameters, silent = false) => {
     if (!isSettingsLoaded) return;
@@ -1059,8 +1013,7 @@ function App() {
         params={params} setParams={setParams} lang={lang} t={t} currentUser={currentUser}
         comfyModels={comfyModels} diffusionModels={diffusionModels} isFetchingComfyModels={isFetchingComfyModels} fetchComfyModels={fetchComfyModels}
         comfyStatus={comfyStatus} testComfyConnection={testComfyConnection} isCheckingComfy={isCheckingComfy} comfyCheckStatus={comfyCheckStatus}
-        availableWorkflows={availableWorkflows} fetchWorkflows={fetchWorkflows} llmModels={llmModels} isFetchingModels={isFetchingModels} fetchLLMModels={fetchLLMModels}
-        llmStatus={llmStatus} testLLMConnection={testLLMConnection} isCheckingLLM={isCheckingLLM} llmCheckStatus={llmCheckStatus}
+        availableWorkflows={availableWorkflows} fetchWorkflows={fetchWorkflows}
         adminUsers={adminUsers} newUser={newUser} setNewUser={setNewUser} handleAddUser={handleAddUser} isAdminLoading={isAdminLoading}
         deleteUser={internalDeleteUser} resetPasswordId={resetPasswordId} setResetPasswordId={setResetPasswordId} newPasswordValue={newPasswordValue}
         setNewPasswordValue={setNewPasswordValue} handleResetPassword={handleResetPassword} archiveAllSessions={archiveAllSessions} deleteAllActiveSessions={deleteAllActiveSessions}
@@ -1098,7 +1051,7 @@ function App() {
         sessions={sessions} currentSessionId={currentSessionId} setCurrentSessionId={setCurrentSessionId}
         setMessages={setMessages}
         renamingId={renamingId} setRenamingId={setRenamingId} renameValue={renameValue} setRenameValue={setRenameValue}
-        renameSession={renameSession} toggleArchive={toggleArchive} deleteSession={deleteSession}
+        renameSession={renameSession} toggleArchive={toggleArchive}
         setShowSettings={(show) => { setShowSettings(show); if (show) setSidebarOpen(false); }} 
         handleLogout={handleLogout}
         currentUser={currentUser} lang={lang} setLang={setLang} theme={theme} setTheme={setTheme}
@@ -1150,6 +1103,7 @@ function App() {
         <ChatInterface
           view={view} messages={messages} lang={lang} t={t} isGenerating={isGenerating} isEnhancing={isEnhancing}
           currentSessionId={currentSessionId} input={input} setInput={onInputChange} handleSend={onHandleSend}
+          retryMessage={retryMessage} retryAllIncomplete={retryAllIncomplete}
           interruptGeneration={interruptGeneration} handleEdit={handleEdit} goToImage={goToImage} setActiveInfoId={setActiveInfoId} activeInfoId={activeInfoId}
           setMessageToDelete={setMessageToDelete} toggleFavorite={toggleFavorite} handleImageClick={handleImageClick} favoritedId={favoritedId}
           galleryItems={galleryItems} isFetchingGallery={isFetchingGallery} favoritesOnly={favoritesOnly} setFavoritesOnly={setFavoritesOnly}
