@@ -125,6 +125,7 @@ export interface Session {
   title: string;
   updatedAt: number;
   isArchived?: number;
+  generationStatus?: 'idle' | 'processing' | 'unseen';
 }
 
 export type Theme = 'light' | 'dark';

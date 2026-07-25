@@ -39,6 +39,27 @@
   display: block;
 }
 
+@media (min-width: 769px) {
+  .sidebar {
+    position: relative;
+    flex: 0 0 260px;
+    z-index: 1100;
+    box-shadow: none;
+    transform: none;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar.closed {
+    margin-left: -260px;
+    transform: none;
+  }
+
+  .sidebar-overlay,
+  .sidebar-overlay.visible {
+    display: none;
+  }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -189,10 +210,56 @@
 }
 
 .session-title { 
-  flex: 1; 
+  flex: 1;
+  min-width: 0;
+  padding-right: 1.25rem;
   overflow: hidden; 
   text-overflow: ellipsis; 
   line-height: 1.2;
+}
+
+.session-unread-dot {
+  position: absolute;
+  top: 50%;
+  right: 0.65rem;
+  width: 8px;
+  height: 8px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25), 0 0 6px rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.session-processing-loader {
+  position: absolute;
+  top: 50%;
+  right: 0.6rem;
+  width: 14px;
+  height: 14px;
+  transform: translateY(-50%);
+  border: 2px solid rgba(59, 130, 246, 0.28);
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: session-loader-spin 0.75s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.session-item.status-processing {
+  padding-right: 2rem;
+}
+
+@keyframes session-loader-spin {
+  from { transform: translateY(-50%) rotate(0deg); }
+  to { transform: translateY(-50%) rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .session-processing-loader {
+    animation-duration: 1.5s;
+  }
 }
 
 .session-actions { 

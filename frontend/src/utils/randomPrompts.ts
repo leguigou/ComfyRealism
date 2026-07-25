@@ -1,6 +1,6 @@
 import type { RandomPromptList, RandomPromptSelection } from '../types';
 
-export const RANDOM_PROMPT_LISTS_VERSION = 2;
+export const RANDOM_PROMPT_LISTS_VERSION = 3;
 
 export const DEFAULT_RANDOM_PROMPT_LISTS: RandomPromptList[] = [
   {
@@ -37,14 +37,32 @@ export const DEFAULT_RANDOM_PROMPT_LISTS: RandomPromptList[] = [
     slug: 'R-Hairstyle',
     values: ['long wavy hair', 'sleek bob haircut', 'high ponytail', 'messy bun', 'braided hairstyle', 'pixie cut', 'shoulder-length curly hair', 'twin braids'],
     enabled: true
+  },
+  {
+    id: 'country-origin',
+    name: 'Origine',
+    slug: 'R-Origin',
+    values: ['french', 'american', 'italian', 'spanish', 'british', 'german', 'brazilian', 'mexican', 'japanese', 'south korean', 'chinese', 'indian', 'moroccan', 'swedish', 'australian'],
+    enabled: true
   }
 ];
 
 export const migrateRandomPromptLists = (lists: RandomPromptList[], version = 1) => {
   if (version >= RANDOM_PROMPT_LISTS_VERSION) return lists;
-  const hairstyle = DEFAULT_RANDOM_PROMPT_LISTS.find(list => list.id === 'hairstyle')!;
-  const alreadyExists = lists.some(list => list.id === hairstyle.id || list.slug.toLowerCase() === hairstyle.slug.toLowerCase());
-  return alreadyExists ? lists : [...lists, { ...hairstyle, values: [...hairstyle.values] }];
+
+  const additions = [
+    { version: 2, id: 'hairstyle' },
+    { version: 3, id: 'country-origin' }
+  ];
+
+  return additions.reduce((migrated, addition) => {
+    if (version >= addition.version) return migrated;
+    const defaultList = DEFAULT_RANDOM_PROMPT_LISTS.find(list => list.id === addition.id)!;
+    const alreadyExists = migrated.some(list =>
+      list.id === defaultList.id || list.slug.toLowerCase() === defaultList.slug.toLowerCase()
+    );
+    return alreadyExists ? migrated : [...migrated, { ...defaultList, values: [...defaultList.values] }];
+  }, lists);
 };
 
 export const normalizeRandomSlug = (value: string) => value

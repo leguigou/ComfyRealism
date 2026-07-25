@@ -7,7 +7,11 @@ export const useWebSocket = (
   currentSessionId: string | null,
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>,
   fetchSessions: () => void,
-  fetchSessionDetails: (id: string) => Promise<void>
+  fetchSessionDetails: (id: string) => Promise<void>,
+  onGenerationStatus?: (
+    sessionId: string,
+    status: 'pending' | 'processing' | 'completed' | 'failed'
+  ) => void | Promise<void>
 ) => {
   const wsRef = useRef<WebSocket | null>(null);
   const clientIdRef = useRef<string>('');
@@ -15,9 +19,13 @@ export const useWebSocket = (
   
   // Refs to maintain fresh values inside WebSocket handlers
   const currentSessionIdRef = useRef(currentSessionId);
+  const onGenerationStatusRef = useRef(onGenerationStatus);
   useEffect(() => {
     currentSessionIdRef.current = currentSessionId;
   }, [currentSessionId]);
+  useEffect(() => {
+    onGenerationStatusRef.current = onGenerationStatus;
+  }, [onGenerationStatus]);
 
   const connectRef = useRef<() => void>(() => {});
 
@@ -37,6 +45,7 @@ export const useWebSocket = (
 
     ws.onopen = () => {
       console.log('[WS] Connected');
+      fetchSessions();
       if (currentSessionIdRef.current) {
         fetchSessionDetails(currentSessionIdRef.current);
       }
@@ -50,6 +59,7 @@ export const useWebSocket = (
           clientIdRef.current = data.clientId;
         } else if (data.type === 'queue_update') {
           console.log('[WS] Queue update:', data);
+          const status = data.status as 'pending' | 'processing' | 'completed' | 'failed';
           if (data.sessionId === currentSessionIdRef.current) {
             setMessages(prev => prev.map(m => {
               if (m.id === data.messageId || m.id === `temp-${data.messageId}`) {
@@ -76,8 +86,9 @@ export const useWebSocket = (
               return m;
             }));
           }
-          if (data.status === 'completed') {
-            fetchSessions();
+          const statusUpdate = onGenerationStatusRef.current?.(data.sessionId, status);
+          if (data.status === 'completed' || data.status === 'failed') {
+            void Promise.resolve(statusUpdate).finally(fetchSessions);
           }
         }
       } catch (e) {
@@ -106,6 +117,7 @@ export const useWebSocket = (
       connect();
       const handleVisibilityChange = () => {
         if (document.visibilityState === 'visible') {
+          fetchSessions();
           if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
             console.log('[WS] Visibility wake, reconnecting...');
             connect();
@@ -119,7 +131,7 @@ export const useWebSocket = (
         if (reconnectTimeoutRef.current) window.clearTimeout(reconnectTimeoutRef.current);
       };
     }
-  }, [isAuthenticated, connect]);
+  }, [isAuthenticated, connect, fetchSessions]);
 
   return { clientIdRef };
 };

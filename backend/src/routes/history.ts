@@ -7,14 +7,33 @@ import { withParsedRandomSelections } from '../services/message-metadata';
 
 const router = express.Router();
 
+const sessionListQuery = `
+  SELECT
+    s.id,
+    s.title,
+    s.updatedAt,
+    s.isArchived,
+    CASE
+      WHEN EXISTS(
+        SELECT 1 FROM messages m
+        WHERE m.sessionId = s.id AND m.status IN ('pending', 'processing')
+      ) THEN 'processing'
+      WHEN COALESCE(s.lastImageAt, 0) > COALESCE(s.lastViewedAt, 0) THEN 'unseen'
+      ELSE 'idle'
+    END AS generationStatus
+  FROM sessions s
+  WHERE s.isArchived = ? AND s.userId = ?
+  ORDER BY s.updatedAt DESC
+`;
+
 router.get('/', authenticate, (req, res) => {
   const user = (req as any).user;
-  res.json(db.prepare('SELECT id, title, updatedAt, isArchived FROM sessions WHERE isArchived = 0 AND userId = ? ORDER BY updatedAt DESC').all(user.id));
+  res.json(db.prepare(sessionListQuery).all(0, user.id));
 });
 
 router.get('/archives', authenticate, (req, res) => {
   const user = (req as any).user;
-  res.json(db.prepare('SELECT id, title, updatedAt, isArchived FROM sessions WHERE isArchived = 1 AND userId = ? ORDER BY updatedAt DESC').all(user.id));
+  res.json(db.prepare(sessionListQuery).all(1, user.id));
 });
 
 router.post('/', authenticate, (req, res) => {
@@ -37,6 +56,14 @@ router.patch('/:id', authenticate, (req, res) => {
   const user = (req as any).user;
   db.prepare('UPDATE sessions SET title = ? WHERE id = ? AND userId = ?').run(req.body.title, req.params.id, user.id);
   res.json({ success: true, title: req.body.title });
+});
+
+router.patch('/:id/viewed', authenticate, (req, res) => {
+  const user = (req as any).user;
+  const result = db.prepare('UPDATE sessions SET lastViewedAt = ? WHERE id = ? AND userId = ?')
+    .run(Date.now(), req.params.id, user.id);
+  if (result.changes === 0) return res.status(404).json({ error: 'Session not found' });
+  res.json({ success: true });
 });
 
 router.delete('/:id', authenticate, (req, res) => {

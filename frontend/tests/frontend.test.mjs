@@ -63,14 +63,28 @@ test('uses the root VERSION file as the frontend version', () => {
   assert.equal(config.APP_CONFIG.VERSION, rootVersion);
 });
 
-test('adds the hairstyle random list once when migrating existing settings', () => {
-  const existing = randomPrompts.DEFAULT_RANDOM_PROMPT_LISTS.filter(list => list.id !== 'hairstyle');
+test('adds new default random lists once when migrating existing settings', () => {
+  const existing = randomPrompts.DEFAULT_RANDOM_PROMPT_LISTS.filter(list =>
+    list.id !== 'hairstyle' && list.id !== 'country-origin'
+  );
   const migrated = randomPrompts.migrateRandomPromptLists(existing, 1);
   const migratedAgain = randomPrompts.migrateRandomPromptLists(migrated, randomPrompts.RANDOM_PROMPT_LISTS_VERSION);
 
   assert.equal(migrated.filter(list => list.id === 'hairstyle').length, 1);
   assert.equal(migrated.find(list => list.id === 'hairstyle').slug, 'R-Hairstyle');
+  assert.equal(migrated.filter(list => list.id === 'country-origin').length, 1);
+  assert.equal(migrated.find(list => list.id === 'country-origin').slug, 'R-Origin');
   assert.deepEqual(migratedAgain, migrated);
+});
+
+test('adds the origin random list to version 2 settings', () => {
+  const existing = randomPrompts.DEFAULT_RANDOM_PROMPT_LISTS.filter(list => list.id !== 'country-origin');
+  const migrated = randomPrompts.migrateRandomPromptLists(existing, 2);
+
+  assert.equal(migrated.filter(list => list.id === 'country-origin').length, 1);
+  assert.equal(migrated.find(list => list.id === 'country-origin').values.includes('french'), true);
+  assert.equal(migrated.find(list => list.id === 'country-origin').values.includes('american'), true);
+  assert.equal(migrated.find(list => list.id === 'country-origin').values.includes('italian'), true);
 });
 
 test('returns the random values selected while resolving a prompt template', () => {

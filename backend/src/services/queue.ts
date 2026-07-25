@@ -153,7 +153,9 @@ export const processQueue = async () => {
     const imageUrl = `/api/image-files/${userId}/${fullWebpName}`;
     const thumbnailUrl = `/api/image-files/thumbnails/${userId}/${thumbWebpName}`;
     
+    const completedAt = Date.now();
     db.prepare('UPDATE messages SET imageUrl = ?, thumbnailUrl = ?, status = ?, duration = ?, sampler = ?, scheduler = ? WHERE id = ?').run(imageUrl, thumbnailUrl, 'completed', finalDuration, sampler, scheduler, task.messageId);
+    db.prepare('UPDATE sessions SET lastImageAt = ?, updatedAt = ? WHERE id = ?').run(completedAt, completedAt, task.sessionId);
     db.prepare('DELETE FROM queue WHERE id = ?').run(task.id);
     
     broadcastToSession(task.sessionId, { 

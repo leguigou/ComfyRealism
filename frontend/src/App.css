@@ -129,6 +129,13 @@ div:focus:not(:focus-visible) {
   border-bottom: none;
   pointer-events: none;
   transform: none !important;
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (min-width: 769px) {
+  .app-layout.sidebar-open .chat-header {
+    left: 260px;
+  }
 }
 
 .chat-header > * {
@@ -356,6 +363,7 @@ div:focus:not(:focus-visible) {
 /* Lightbox */
 .lightbox {
   position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  height: 100dvh;
   background-color: var(--lightbox-bg); display: flex; align-items: center; justify-content: center;
   z-index: 3000; cursor: zoom-out;
 }
@@ -391,15 +399,29 @@ div:focus:not(:focus-visible) {
 
 .lightbox-actions {
   position: absolute; top: 20px; right: 20px; display: flex; gap: 1rem; align-items: center;
+  z-index: 20;
+}
+
+.lightbox-actions-primary,
+.lightbox-actions-secondary {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
 }
 
 .lightbox-btn {
+  position: relative;
   background: var(--lightbox-btn-bg); border: 1px solid var(--border);
   color: var(--lightbox-btn-text); width: 46px; height: 46px; padding: 0;
   border-radius: 0.8rem; cursor: pointer; font-weight: 600; font-size: 1.2rem;
   transition: all 0.2s; display: flex; align-items: center; justify-content: center;
   backdrop-filter: blur(10px); flex-shrink: 0;
   outline: none;
+}
+
+.lightbox-btn .regeneration-count-badge {
+  top: -10px;
+  right: -10px;
 }
 
 .lightbox-btn:focus:not(:focus-visible),
@@ -417,7 +439,7 @@ div:focus:not(:focus-visible) {
   color: var(--text-h);
 }
 
-.lightbox-btn:focus:not(:focus-visible) * {
+.lightbox-btn:focus:not(:focus-visible) svg {
   color: inherit !important;
 }
 
@@ -441,6 +463,27 @@ div:focus:not(:focus-visible) {
 }
 
 @media (max-width: 768px) {
+  .lightbox-actions {
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .lightbox-actions-primary,
+  .lightbox-actions-secondary {
+    position: absolute;
+    right: max(12px, env(safe-area-inset-right));
+    gap: 0.5rem;
+    pointer-events: auto;
+  }
+
+  .lightbox-actions-primary {
+    top: max(12px, env(safe-area-inset-top));
+  }
+
+  .lightbox-actions-secondary {
+    bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
   .lightbox-btn { width: 44px; height: 44px; font-size: 1.1rem; }
 }
 

@@ -18,6 +18,8 @@ interface ChatInterfaceProps {
   input: string;
   setInput: (val: string) => void;
   handleSend: (overrideInput?: string, isRegeneration?: boolean) => void;
+  regenerationCounts: Record<string, number>;
+  recordRegeneration: (messageId: string) => void;
   retryMessage: (messageId: string) => Promise<unknown>;
   retryAllIncomplete: () => Promise<{ queued: number }>;
   interruptGeneration: () => void;
@@ -60,6 +62,8 @@ export const ChatInterface = ({
   input,
   setInput,
   handleSend,
+  regenerationCounts,
+  recordRegeneration,
   retryMessage,
   retryAllIncomplete,
   interruptGeneration,
@@ -101,13 +105,17 @@ export const ChatInterface = ({
 
     const closeOptionsOnOutsidePress = (event: PointerEvent) => {
       const target = event.target as Node;
-      if (optionsDrawerRef.current?.contains(target) || optionsToggleRef.current?.contains(target)) return;
+      if (
+        optionsDrawerRef.current?.contains(target)
+        || optionsToggleRef.current?.contains(target)
+        || textareaRef.current?.contains(target)
+      ) return;
       setShowOptions(false);
     };
 
     document.addEventListener('pointerdown', closeOptionsOnOutsidePress);
     return () => document.removeEventListener('pointerdown', closeOptionsOnOutsidePress);
-  }, [showOptions]);
+  }, [showOptions, textareaRef]);
 
   const enabledRandomSlugs = new Set(
     params.randomPromptLists
@@ -320,9 +328,9 @@ export const ChatInterface = ({
                       {favoritedId === msg.id && <div className="image-overlay-heart">❤️</div>}
                     </div>
                   )}
-                  <div className={`message-actions ${msg.imageUrl ? 'has-image' : ''}`}>
+                  <div className={`message-actions ${msg.imageUrl ? 'has-image' : ''} ${(regenerationCounts[msg.id] || 0) >= 2 ? 'has-regeneration-count' : ''}`}>
                     <button className="action-btn-icon edit" onClick={() => { 
-                      const textToEdit = msg.role === 'user' ? (msg.text || '') : (msg.text || msg.prompt || '');
+                      const textToEdit = msg.role === 'user' ? (msg.text || '') : (msg.prompt || msg.text || '');
                       handleEdit(textToEdit); 
                     }} title={t.edit}>✎</button>
                     {msg.imageUrl && (
@@ -331,8 +339,24 @@ export const ChatInterface = ({
                           <InfoIcon />
                         </button>
                         <button className="action-btn-icon download" onClick={(e) => { e.stopPropagation(); downloadImage(getFullImageUrl(msg.imageUrl!), `img-${msg.id}.png`); }} title={t.download}>💾</button>
-                        <button className="action-btn-icon regenerate" onClick={(e) => { e.stopPropagation(); handleSend(msg.prompt || msg.text || '', true); }} title={t.regenerate}>
+                        <button
+                          className="action-btn-icon regenerate"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const prompt = msg.prompt || msg.text || '';
+                            if (!prompt.trim()) return;
+                            recordRegeneration(msg.id);
+                            handleSend(prompt, true);
+                          }}
+                          title={t.regenerate}
+                          aria-label={`${t.regenerate}${(regenerationCounts[msg.id] || 0) >= 2 ? ` ×${regenerationCounts[msg.id]}` : ''}`}
+                        >
                           <RefreshIcon />
+                          {(regenerationCounts[msg.id] || 0) >= 2 && (
+                            <span className="regeneration-count-badge" aria-hidden="true">
+                              ×{regenerationCounts[msg.id]}
+                            </span>
+                          )}
                         </button>
                       </>
                     )}
@@ -356,7 +380,6 @@ export const ChatInterface = ({
                       {msg.duration !== undefined && (
                         <p><strong>{lang === 'fr' ? 'Durée' : 'Duration'}:</strong> {formatDuration(msg.duration)}</p>
                       )}
-                      <p><strong>{t.finalPrompt}:</strong> {msg.text || msg.prompt || t.unknown}</p>
                     </div>
                   )}
                 </div>
@@ -492,6 +515,7 @@ export const ChatInterface = ({
                           key={list.id}
                           type="button"
                           className="random-prompt-chip"
+                          onMouseDown={(event) => event.preventDefault()}
                           onClick={() => insertRandomSlug(list.slug)}
                           title={`${t.insertRandomSlug} [${list.slug}]`}
                         >
@@ -506,7 +530,13 @@ export const ChatInterface = ({
           )}
 
           <div className="input-wrapper">
-            <button ref={optionsToggleRef} className={`options-toggle-btn ${showOptions ? 'active' : ''}`} onClick={() => setShowOptions(!showOptions)} title={t.options}>
+            <button
+              ref={optionsToggleRef}
+              className={`options-toggle-btn ${showOptions ? 'active' : ''}`}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => setShowOptions(!showOptions)}
+              title={t.options}
+            >
               <PlusIcon size={20} />
             </button>
             <div className={`input-box ${params.llmEnabled ? 'ai-active' : ''} ${input ? 'has-text' : ''} ${hasRandomCodes ? 'has-random-code' : ''}`}>

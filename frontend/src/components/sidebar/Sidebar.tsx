@@ -14,6 +14,7 @@ interface SidebarProps {
   setView: (view: 'chat' | 'gallery' | 'archives') => void;
   fetchGallery: (initial?: boolean) => void;
   sessions: Session[];
+  onSessionViewed: (id: string) => void;
   currentSessionId: string | null;
   setCurrentSessionId: (id: string | null) => void;
   setMessages: (msgs: Message[]) => void;
@@ -44,6 +45,7 @@ export const Sidebar = ({
   setView,
   fetchGallery,
   sessions,
+  onSessionViewed,
   currentSessionId,
   setCurrentSessionId,
   setMessages,
@@ -77,6 +79,11 @@ export const Sidebar = ({
   }, []);
 
   const userInitial = currentUser?.username?.charAt(0).toUpperCase() || '?';
+  const closeSidebarOnMobile = () => {
+    if (window.matchMedia('(max-width: 768px)').matches) {
+      setSidebarOpen(false);
+    }
+  };
 
   return (
     <>
@@ -86,10 +93,10 @@ export const Sidebar = ({
           {sidebarOpen && <button className="close-sidebar-mobile" onClick={() => setSidebarOpen(false)}>×</button>}
           {backendError && <div className="backend-warning" title={t.backendOffline}>⚠️</div>}
         </div>
-        <button className="new-chat-btn" onClick={() => { createNewSession(); setSidebarOpen(false); }}>
+        <button className="new-chat-btn" onClick={() => { createNewSession(); closeSidebarOnMobile(); }}>
           <span>+</span> {t.newChat}
         </button>
-        <button className={`new-chat-btn gallery-btn ${view === 'gallery' ? 'active' : ''}`} onClick={() => { setView('gallery'); fetchGallery(true); setSidebarOpen(false); }}>
+        <button className={`new-chat-btn gallery-btn ${view === 'gallery' ? 'active' : ''}`} onClick={() => { setView('gallery'); fetchGallery(true); closeSidebarOnMobile(); }}>
           <span>🖼️</span> {t.myContent}
         </button>
         <button className="new-chat-btn" onClick={() => { setView(view === 'archives' ? 'chat' : 'archives'); }}>
@@ -100,16 +107,18 @@ export const Sidebar = ({
           {sessions.map(s => (
             <div 
               key={s.id} 
-              className={`session-item ${currentSessionId === s.id && (view === 'chat' || view === 'archives') ? 'active' : ''}`} 
+              className={`session-item status-${s.generationStatus || 'idle'} ${currentSessionId === s.id && (view === 'chat' || view === 'archives') ? 'active' : ''}`}
+              data-generation-status={s.generationStatus || 'idle'}
               onClick={() => { 
+                onSessionViewed(s.id);
                 if (currentSessionId === s.id && view === 'chat') {
-                  setSidebarOpen(false);
+                  closeSidebarOnMobile();
                   return;
                 }
                 setMessages([]);
                 setCurrentSessionId(s.id); 
                 setView('chat'); 
-                setSidebarOpen(false); 
+                closeSidebarOnMobile();
               }}
             >
               {renamingId === s.id ? (
@@ -128,6 +137,19 @@ export const Sidebar = ({
               ) : (
                 <>
                   <span className="session-title">{s.title}</span>
+                  {s.generationStatus === 'processing' ? (
+                    <span
+                      className="session-processing-loader"
+                      title={lang === 'fr' ? 'Génération en cours' : 'Generation in progress'}
+                      aria-label={lang === 'fr' ? 'Génération en cours' : 'Generation in progress'}
+                    />
+                  ) : s.generationStatus === 'unseen' && (
+                    <span
+                      className="session-unread-dot"
+                      title={lang === 'fr' ? 'Nouvelle image non visionnée' : 'New unseen image'}
+                      aria-label={lang === 'fr' ? 'Nouvelle image non visionnée' : 'New unseen image'}
+                    />
+                  )}
                   {Boolean(s.isArchived) && (
                     <div className="session-actions">
                       <button className="unarchive-session" onClick={(e) => { e.stopPropagation(); toggleArchive(s.id, false); }} title={t.unarchive}>📤</button>
@@ -153,7 +175,7 @@ export const Sidebar = ({
                 <button className="popover-item" onClick={() => { setKeepAwake(!keepAwake); setProfileMenuOpen(false); }}>
                   <span>{keepAwake ? '📱' : '📱'}</span> {keepAwake ? (lang === 'fr' ? 'Écran actif (Oui)' : 'Keep Awake (On)') : (lang === 'fr' ? 'Écran actif (Non)' : 'Keep Awake (Off)')}
                 </button>
-                <button className="popover-item" onClick={() => { setShowSettings(true); setProfileMenuOpen(false); setSidebarOpen(false); }}>
+                <button className="popover-item" onClick={() => { setShowSettings(true); setProfileMenuOpen(false); closeSidebarOnMobile(); }}>
                   <span>⚙️</span> {t.settings}
                 </button>
               </div>

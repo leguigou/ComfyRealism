@@ -28,6 +28,7 @@ jobs:
         working-directory: ./backend
         run: |
           npm ci
+          npm audit --audit-level=high
           npm test
           npm run build
 
@@ -35,6 +36,7 @@ jobs:
         working-directory: ./frontend
         run: |
           npm ci
+          npm audit --audit-level=high
           npm run lint
           npm test
           npm run build

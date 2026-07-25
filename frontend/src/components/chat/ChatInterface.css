@@ -307,6 +307,10 @@
   .message-actions {
     opacity: 0.4; /* Semi-transparent sur desktop au repos */
   }
+
+  .message-actions.has-regeneration-count {
+    opacity: 1;
+  }
   
   @media (hover: hover) {
   
@@ -317,6 +321,7 @@
 }
 
 .action-btn-icon {
+  position: relative;
   background-color: var(--social-bg);
   border: 1px solid var(--border);
   color: var(--text);
@@ -332,6 +337,27 @@
   outline: none;
 }
 
+.regeneration-count-badge {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  z-index: 2;
+  min-width: 24px;
+  height: 21px;
+  padding: 0 6px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: #ff9f0a;
+  color: #15100a;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.65);
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 17px;
+  letter-spacing: -0.02em;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
 .action-btn-icon:focus:not(:focus-visible) {
   outline: none;
   background-color: var(--social-bg);
@@ -341,7 +367,7 @@
   box-shadow: none;
 }
 
-.action-btn-icon:focus:not(:focus-visible) * {
+.action-btn-icon:focus:not(:focus-visible) svg {
   color: inherit !important;
   stroke: currentColor !important;
 }

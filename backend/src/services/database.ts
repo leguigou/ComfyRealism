@@ -48,6 +48,8 @@ export const initDatabase = () => {
       title TEXT NOT NULL,
       updatedAt INTEGER NOT NULL,
       isArchived INTEGER DEFAULT 0,
+      lastImageAt INTEGER DEFAULT 0,
+      lastViewedAt INTEGER DEFAULT 0,
       FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
     );
     
@@ -143,6 +145,15 @@ export const initDatabase = () => {
   } catch (e) {
     db.exec('ALTER TABLE sessions ADD COLUMN userId TEXT');
     console.log('[Migration] Added userId column to sessions table');
+  }
+
+  for (const column of ['lastImageAt', 'lastViewedAt']) {
+    try {
+      db.prepare(`SELECT ${column} FROM sessions LIMIT 1`).get();
+    } catch {
+      db.exec(`ALTER TABLE sessions ADD COLUMN ${column} INTEGER DEFAULT 0`);
+      console.log(`[Migration] Added ${column} column to sessions table`);
+    }
   }
 
   try {

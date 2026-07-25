@@ -231,7 +231,69 @@ function App() {
     }
   }, []);
 
-  const { clientIdRef } = useWebSocket(isAuthenticated, currentSessionId, setMessages, fetchSessions, fetchSessionDetails);
+  const markSessionAsViewed = useCallback(async (sessionId: string) => {
+    setSessions(previous => previous.map(session =>
+      session.id === sessionId && session.generationStatus !== 'processing'
+        ? { ...session, generationStatus: 'idle' }
+        : session
+    ));
+    try {
+      await fetch(`${API_BASE}/api/history/${sessionId}/viewed`, {
+        method: 'PATCH',
+        credentials: 'include'
+      });
+    } catch (error) {
+      console.error('Error marking session as viewed:', error);
+    }
+  }, [setSessions]);
+
+  const handleGenerationStatus = useCallback(async (
+    sessionId: string,
+    status: 'pending' | 'processing' | 'completed' | 'failed'
+  ) => {
+    const isCurrentlyVisible = document.visibilityState === 'visible'
+      && view === 'chat'
+      && currentSessionId === sessionId;
+
+    setSessions(previous => previous.map(session => {
+      if (session.id !== sessionId) return session;
+      return {
+        ...session,
+        generationStatus: status === 'pending' || status === 'processing'
+          ? 'processing'
+          : status === 'completed'
+            ? (isCurrentlyVisible ? 'idle' : 'unseen')
+            : session.generationStatus === 'processing'
+              ? 'idle'
+              : session.generationStatus
+      };
+    }));
+
+    if (status === 'completed' && isCurrentlyVisible) {
+      await markSessionAsViewed(sessionId);
+    }
+  }, [currentSessionId, markSessionAsViewed, setSessions, view]);
+
+  useEffect(() => {
+    const markCurrentSessionAsViewed = () => {
+      if (document.visibilityState === 'visible' && view === 'chat' && currentSessionId) {
+        void markSessionAsViewed(currentSessionId);
+      }
+    };
+
+    markCurrentSessionAsViewed();
+    document.addEventListener('visibilitychange', markCurrentSessionAsViewed);
+    return () => document.removeEventListener('visibilitychange', markCurrentSessionAsViewed);
+  }, [currentSessionId, markSessionAsViewed, view]);
+
+  const { clientIdRef } = useWebSocket(
+    isAuthenticated,
+    currentSessionId,
+    setMessages,
+    fetchSessions,
+    fetchSessionDetails,
+    handleGenerationStatus
+  );
   const { handleSend, retryMessage, retryAllIncomplete, interruptGeneration, isEnhancing } = useGeneration(currentSessionId, params, clientIdRef, setMessages, smoothScrollTo, fetchSessions);
 
   const isGenerating = isEnhancing || messages.some(m => m.role === 'bot' && (m.status === 'pending' || m.status === 'processing'));
@@ -246,6 +308,31 @@ function App() {
 
   const [hdLoaded, setHdLoaded] = useState<string | null>(null);
   const [loadedHdImages, setLoadedHdImages] = useState<Set<string>>(new Set());
+  const [regenerationCounts, setRegenerationCounts] = useState<Record<string, number>>({});
+  const regenerationCountTimeoutsRef = useRef<Record<string, number>>({});
+
+  const recordRegeneration = useCallback((messageId: string) => {
+    setRegenerationCounts(previous => ({
+      ...previous,
+      [messageId]: (previous[messageId] || 0) + 1
+    }));
+
+    const existingTimeout = regenerationCountTimeoutsRef.current[messageId];
+    if (existingTimeout) window.clearTimeout(existingTimeout);
+
+    regenerationCountTimeoutsRef.current[messageId] = window.setTimeout(() => {
+      setRegenerationCounts(previous => {
+        const next = { ...previous };
+        delete next[messageId];
+        return next;
+      });
+      delete regenerationCountTimeoutsRef.current[messageId];
+    }, 3000);
+  }, []);
+
+  useEffect(() => () => {
+    Object.values(regenerationCountTimeoutsRef.current).forEach(window.clearTimeout);
+  }, []);
 
   // Pinch-to-zoom states
   const [zoomScale, setZoomScale] = useState(1);
@@ -478,10 +565,20 @@ function App() {
     finally { setIsCheckingComfy(false); }
   }, [params.comfyUrl, t.connectionSuccess, t.connectionFailed]);
 
-  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
+  const [sidebarOpen, setSidebarOpen] = useState(() => (
+    window.innerWidth > 768
+      ? localStorage.getItem('desktopSidebarOpen') !== 'false'
+      : false
+  ));
   const [backendError] = useState(false);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const scrollTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (window.matchMedia('(min-width: 769px)').matches) {
+      localStorage.setItem('desktopSidebarOpen', String(sidebarOpen));
+    }
+  }, [sidebarOpen]);
 
   const handleScroll = useCallback((isUserScroll: boolean | React.UIEvent = false) => {
     if (isProgrammaticScrollRef.current) return;
@@ -642,6 +739,18 @@ function App() {
   }, [isGenerating, currentSessionId, fetchSessionDetails, isEnhancing]);
 
   useEffect(() => {
+    if (!sessions.some(session => session.generationStatus === 'processing')) return;
+    const interval = window.setInterval(fetchSessions, 3000);
+    return () => window.clearInterval(interval);
+  }, [fetchSessions, sessions]);
+
+  useEffect(() => {
+    if (sidebarOpen) {
+      void fetchSessions();
+    }
+  }, [fetchSessions, sidebarOpen]);
+
+  useEffect(() => {
     localStorage.setItem('theme', theme);
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
@@ -732,30 +841,45 @@ function App() {
   }, [view, showArchivedInGallery, favoritesOnly, resetGallery]);
 
   const goToImage = useCallback((sessionId: string, messageId: string) => {
+    pendingAnchorRef.current = messageId;
+    isAnchoringRef.current = true;
     setMessages([]);
     setCurrentSessionId(sessionId);
     setView('chat');
-    pendingAnchorRef.current = messageId;
-    isAnchoringRef.current = true;
+    void fetchSessionDetails(sessionId);
     setTimeout(() => { if (isAnchoringRef.current) isAnchoringRef.current = false; }, 5000);
-  }, [setCurrentSessionId, setMessages]);
+  }, [fetchSessionDetails, setCurrentSessionId, setMessages]);
 
   useEffect(() => {
     if (view === 'chat' && pendingAnchorRef.current && messages.length > 0) {
       const messageId = pendingAnchorRef.current;
-      const element = document.getElementById(`msg-${messageId}`);
-      if (element) {
+      const frame = window.requestAnimationFrame(() => {
+        const element = document.getElementById(`msg-${messageId}`);
+        const container = containerRef.current;
+        if (!element || !container) return;
+
         pendingAnchorRef.current = null;
         isAnchoringRef.current = true;
+
+        const containerRect = container.getBoundingClientRect();
+        const elementRect = element.getBoundingClientRect();
+        const offset = elementRect.height >= containerRect.height - 32
+          ? 16
+          : (containerRect.height - elementRect.height) / 2;
+        const targetScroll = Math.max(0, Math.min(
+          container.scrollTop + elementRect.top - containerRect.top - offset,
+          container.scrollHeight - container.clientHeight
+        ));
+
+        container.scrollTo({ top: targetScroll, behavior: 'smooth' });
+        element.classList.add('highlight-message');
         setTimeout(() => {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          element.classList.add('highlight-message');
-          setTimeout(() => {
-            element.classList.remove('highlight-message');
-            isAnchoringRef.current = false;
-          }, 2500);
-        }, 100);
-      }
+          element.classList.remove('highlight-message');
+          isAnchoringRef.current = false;
+        }, 2500);
+      });
+
+      return () => window.cancelAnimationFrame(frame);
     }
   }, [view, messages]);
 
@@ -966,12 +1090,13 @@ function App() {
     if (!activeLightbox || !currentLightboxItem) return;
     const prompt = currentLightboxItem.prompt || currentLightboxItem.text || '';
     if (!prompt.trim()) return;
+    recordRegeneration(activeLightbox.messageId);
     void handleSend(prompt, true, activeLightbox.sessionId);
   };
 
   return (
     <ErrorBoundary name="ComfyRealism App">
-      <div className={`app-layout ${theme}`}>
+      <div className={`app-layout ${theme} ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
         <Toaster position="top-right" />
         {activeLightbox && (
         <div className="lightbox" onClick={() => setActiveLightbox(null)} onTouchStart={handleLightboxTouchStart} onTouchMove={handleLightboxTouchMove} onTouchEnd={handleLightboxTouchEnd}>
@@ -983,9 +1108,10 @@ function App() {
             {favoritedId === activeLightbox.messageId && <div className="image-overlay-heart" style={{ fontSize: '8rem' }}>❤️</div>}
           </div>
           <div className="lightbox-actions" onClick={(e) => e.stopPropagation()}>
-            <button className="lightbox-btn" onClick={() => { goToImage(activeLightbox.sessionId, activeLightbox.messageId); setActiveLightbox(null); }} title={t.viewInChat}>💬</button>
-            <button className={`lightbox-btn favorite ${currentLightboxItem?.isFavorite ? 'active' : ''}`} onClick={() => toggleFavorite(activeLightbox.sessionId, activeLightbox.messageId, currentLightboxItem?.isFavorite)} title={t.favorites}>{currentLightboxItem?.isFavorite ? '❤️' : '🤍'}</button>
-            <button className="lightbox-btn" onClick={() => { 
+            <div className="lightbox-actions-secondary">
+              <button className="lightbox-btn" onClick={() => { goToImage(activeLightbox.sessionId, activeLightbox.messageId); setActiveLightbox(null); }} title={t.viewInChat} aria-label={t.viewInChat}>💬</button>
+              <button className={`lightbox-btn favorite ${currentLightboxItem?.isFavorite ? 'active' : ''}`} onClick={() => toggleFavorite(activeLightbox.sessionId, activeLightbox.messageId, currentLightboxItem?.isFavorite)} title={t.favorites} aria-label={t.favorites}>{currentLightboxItem?.isFavorite ? '❤️' : '🤍'}</button>
+              <button className="lightbox-btn" onClick={() => {
                 const seed = currentLightboxItem?.seed;
                 if (seed) { 
                     setParams(prev => ({ ...prev, seedMode: 'fixed', forcedSeed: seed.toString() })); 
@@ -993,13 +1119,26 @@ function App() {
                     setActiveLightbox(null); 
                     toast.success(t.reuseSeed); 
                 } 
-            }} title={t.reuseSeed}>🎲</button>
-            <button className="lightbox-btn" onClick={() => { if (currentLightboxItem) { handleEdit(currentLightboxItem.text || currentLightboxItem.prompt || ''); setActiveLightbox(null); } }} title={t.edit}>✎</button>
-            <button className="lightbox-btn" onClick={regenerateLightboxImage} title={t.regenerate} aria-label={t.regenerate}>
-              <RefreshIcon />
-            </button>
-            <button className="lightbox-btn" onClick={() => downloadImage(getFullImageUrl(activeLightbox.url), `img-${activeLightbox.messageId}.png`)} title="Télécharger">💾</button>
-            <button className="lightbox-btn close" onClick={() => setActiveLightbox(null)}>×</button>
+              }} title={t.reuseSeed} aria-label={t.reuseSeed}>🎲</button>
+            </div>
+            <div className="lightbox-actions-primary">
+              <button className="lightbox-btn" onClick={() => { if (currentLightboxItem) { handleEdit(currentLightboxItem.prompt || currentLightboxItem.text || ''); setActiveLightbox(null); } }} title={t.edit} aria-label={t.edit}>✎</button>
+              <button
+                className="lightbox-btn regenerate"
+                onClick={regenerateLightboxImage}
+                title={t.regenerate}
+                aria-label={`${t.regenerate}${(regenerationCounts[activeLightbox.messageId] || 0) >= 2 ? ` ×${regenerationCounts[activeLightbox.messageId]}` : ''}`}
+              >
+                <RefreshIcon />
+                {(regenerationCounts[activeLightbox.messageId] || 0) >= 2 && (
+                  <span className="regeneration-count-badge" aria-hidden="true">
+                    ×{regenerationCounts[activeLightbox.messageId]}
+                  </span>
+                )}
+              </button>
+              <button className="lightbox-btn" onClick={() => downloadImage(getFullImageUrl(activeLightbox.url), `img-${activeLightbox.messageId}.png`)} title={t.download} aria-label={t.download}>💾</button>
+              <button className="lightbox-btn close" onClick={() => setActiveLightbox(null)} title={t.close} aria-label={t.close}>×</button>
+            </div>
           </div>
         </div>
       )}
@@ -1015,8 +1154,6 @@ function App() {
           </div>
         </div>
       )}
-
-      {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
 
       <SettingsModal
         showSettings={showSettings} setShowSettings={setShowSettings} activeTab={activeTab} setActiveTab={setActiveTab}
@@ -1058,11 +1195,12 @@ function App() {
       <Sidebar
         sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} backendError={backendError} t={t}
         createNewSession={createNewSession} view={view} setView={setView} fetchGallery={fetchGallery}
-        sessions={sessions} currentSessionId={currentSessionId} setCurrentSessionId={setCurrentSessionId}
+        sessions={sessions} onSessionViewed={(id) => { void markSessionAsViewed(id); }}
+        currentSessionId={currentSessionId} setCurrentSessionId={setCurrentSessionId}
         setMessages={setMessages}
         renamingId={renamingId} setRenamingId={setRenamingId} renameValue={renameValue} setRenameValue={setRenameValue}
         renameSession={renameSession} toggleArchive={toggleArchive}
-        setShowSettings={(show) => { setShowSettings(show); if (show) setSidebarOpen(false); }} 
+        setShowSettings={setShowSettings}
         handleLogout={handleLogout}
         currentUser={currentUser} lang={lang} setLang={setLang} theme={theme} setTheme={setTheme}
         keepAwake={keepAwake} setKeepAwake={setKeepAwake}
@@ -1113,6 +1251,7 @@ function App() {
         <ChatInterface
           view={view} messages={messages} lang={lang} t={t} isGenerating={isGenerating} isEnhancing={isEnhancing}
           currentSessionId={currentSessionId} input={input} setInput={onInputChange} handleSend={onHandleSend}
+          regenerationCounts={regenerationCounts} recordRegeneration={recordRegeneration}
           retryMessage={retryMessage} retryAllIncomplete={retryAllIncomplete}
           interruptGeneration={interruptGeneration} handleEdit={handleEdit} goToImage={goToImage} setActiveInfoId={setActiveInfoId} activeInfoId={activeInfoId}
           setMessageToDelete={setMessageToDelete} toggleFavorite={toggleFavorite} handleImageClick={handleImageClick} favoritedId={favoritedId}
