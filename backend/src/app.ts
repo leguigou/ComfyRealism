@@ -1,6 +1,7 @@
 import express, { Request } from 'express';
 import cors, { CorsOptions } from 'cors';
 import cookieParser from 'cookie-parser';
+import { rateLimit } from 'express-rate-limit';
 import { initDatabase } from './services/database';
 import { isAllowedRequestOrigin } from './security/origin';
 import authRoutes from './routes/auth';
@@ -22,6 +23,14 @@ const corsOptions = (req: Request): CorsOptions => ({
   allowedHeaders: ['Content-Type', 'Authorization'],
 });
 
+const apiRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 300,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please try again shortly.' },
+});
+
 export const createApp = (authSecret: string) => {
   const app = express();
 
@@ -36,6 +45,7 @@ export const createApp = (authSecret: string) => {
     next();
   });
   app.use(cors((req, callback) => callback(null, corsOptions(req))));
+  app.use(apiRateLimiter);
   app.use(express.json({ limit: '10mb' }));
   app.use(cookieParser(authSecret));
 

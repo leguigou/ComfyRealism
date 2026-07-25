@@ -1,11 +1,20 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
+import { rateLimit } from 'express-rate-limit';
 import db from '../services/database';
 import { authenticate } from '../middleware/auth';
 import { CookieOptions, User } from '../types';
 import net from 'net';
 
 const router = Router();
+
+const loginRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { error: 'Too many login attempts. Please try again later.' },
+});
 
 const getCookieDomain = (req: Request) => {
   const rawHost = (req.headers['x-forwarded-host'] as string) || req.headers.host || '';
@@ -67,7 +76,7 @@ const clearAuthCookies = (req: Request, res: Response) => {
   variants.forEach(options => res.clearCookie('userId', options as any));
 };
 
-router.post('/login', (req: Request, res: Response) => {
+router.post('/login', loginRateLimiter, (req: Request, res: Response) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
