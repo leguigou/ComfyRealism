@@ -15,17 +15,17 @@
   "license": "MIT",
   "description": "",
   "dependencies": {
-    "axios": "^1.18.1",
+    "axios": "^1.19.0",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.9.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "express-rate-limit": "^8.6.0",
+    "express-rate-limit": "^8.6.2",
     "sharp": "^0.35.3",
-    "uuid": "^14.0.0",
-    "ws": "^8.21.1"
+    "uuid": "^14.0.1",
+    "ws": "^8.21.2"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -36,8 +36,8 @@
     "@types/node": "^25.6.0",
     "@types/uuid": "^10.0.0",
     "@types/ws": "^8.18.1",
-    "tsx": "^4.23.1",
+    "tsx": "^4.23.8",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.10"
   }
 }
